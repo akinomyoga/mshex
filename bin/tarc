@@ -1,0 +1,60 @@
+#!/bin/bash
+
+#
+# TODO: *.tar.xz などのアーカイブファイルを除去する設定
+#
+
+RAR=/unix/koichi/prog/wrar371j/WinRAR
+
+if [ -z "$1" ]; then
+  if [ ${0:0:1} == '.' ]; then
+    self=${0}
+  elif [ $(which ${0##*/}) == "$0" ]; then
+    self=${0##*/}
+  else
+    self=${0}
+  fi
+  
+  echo "usage: $self <dstfile> <srcfiles>+"
+  exit 1
+fi
+
+if [ -e "$1" ]; then
+  echo "Specified destination file '$1' is already exists!"
+  exit 1
+fi
+
+dst="$1"
+shopt -s extglob
+case "${dst##*.}" in
+exe)
+    if [ -d "$2" ]; then
+      "$RAR" a -msrar -m5 -s -sfx -r "$@"
+    else
+      "$RAR" a -msrar -m5 -s -sfx "$@"
+    fi
+    ;;
+rar)
+    if [ -d "$2" ]; then
+      "$RAR" a -msrar -m5 -s -r "$@"
+    else
+      "$RAR" a -msrar -m5 -s "$@"
+    fi
+    ;;
+@(lzma|tlz))
+    tar --lzma -cvf "$@" #$1 $2
+    ;;
+@(bz2|tbz))
+    tar cjvf "$@" #$1 $2
+    ;;
+@(gz|tgz))
+    tar czvf "$@" #$1 $2
+    ;;
+@(xz|txz))
+    #shift; tar cvf - "$@" | xz -7 > "$dst"
+    tar --xz -cvf "$@"
+    ;;
+*)
+    echo 'unknown filetype' >/dev/stderr
+    ;;
+esac
