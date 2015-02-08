@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#data="$(openssl enc -d -des3 -in "$1" -out /dev/stdout)"
+#echo "$data" | less
+
+# openssl enc -d -des3 -in "$1" -out .tmp
+# xzless .tmp
+# rm -rf .tmp
+
+if test ! -s "$1"; then
+  if test ! -e "$1"; then
+    echo "czless: the specified file '$1' is not found." >&2
+  elif test -d "$1"; then
+    echo "czless: the specified file '$1' is a directory." >&2
+  else
+    echo "czless: the specified file '$1' is empty." >&2
+  fi
+  exit 1
+fi
+
+data="$(openssl enc -d -des3 -in "$1" -out /dev/stdout|xz -d - || echo -n '--czless.error--')"
+if test "$data" == '--czless.error--'; then
+  echo "czless: failed to open the specified file '$1'." >&2
+  exit 1
+fi
+
+echo -n "$data" | less

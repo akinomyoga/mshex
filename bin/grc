@@ -1,0 +1,97 @@
+#!/bin/bash
+
+EndsWith() {
+  test "${1%$2}" != "$1"
+}
+GetExtension:() {
+  local _slash=/
+  local v="$1"; shift
+  local cand="${1##*.}"
+  if test "$cand" != "$1" -a "${cand/$_slash/}" == "$cand"; then
+    eval "$v='.${1##*.}'"
+  else
+    eval "$v=''"
+  fi
+}
+
+declare color_option=--color=auto
+
+declare -a findsrc_args
+
+declare -a args_option
+while test "x${1:0:1}" == 'x-'; do
+  case "$1" in
+  (--help)
+    cat <<EOF
+usage: grc [options] pattern
+
+options
+  --help
+  -C NUMBER
+  --color
+
+findsrc options:
+  -x EXTENSIONS
+  -a
+  -b
+  -t SRCTYPE
+EOF
+    exit
+    ;;
+  (-C)
+    args_option[${#args_option[@]}]='-C'
+    args_option[${#args_option[@]}]="$2"
+    shift 2
+    ;;
+  (-C?*)
+    args_option[${#args_option[@]}]='-C'
+    args_option[${#args_option[@]}]="${1:2}"
+    shift
+    ;;
+  (-x)
+    findsrc_args+=("$1" "$2")
+    shift 2;;
+  (-a|-b|-x?*)
+    findsrc_args+=("$1")
+    shift 1 ;;
+  (--color)
+    color_option=--color=always
+    shift 1 ;;
+  (-t) # findsrc type
+    findsrc_type="$2"
+    shift 2 ;;
+  (-t*) # findsrc type
+    findsrc_type="${1:2}"
+    shift 1 ;;
+  (*)
+    echo "$0: unknown option $1" >/dev/stderr
+    exit 1
+  esac
+done
+
+regexp="$1"; shift
+
+shopt -s extglob
+declare -a args_file
+while test $# -gt 0; do
+  declare arg="$1"; shift
+  EndsWith "$arg" '~' && continue
+
+  declare ext
+  GetExtension: ext "$arg"
+  case "$ext" in
+  (.c|.cpp|.cc|.C|.cxx|.h|.hpp|.hxx|.hh|.inl) ;;
+  (.js|.ctx|.css) ;;
+  (*)
+    continue ;;
+  esac
+  
+  args_file+=("$arg")
+done
+
+if ((${#args_file[@]}==0)); then
+  args_file=($(findsrc "${findsrc_args[@]}" $findsrc_type))
+fi
+if ((${#args_file[@]}>=1)); then
+  egrep $color_option -n -H "${args_option[@]}" "$regexp" "${args_file[@]}"
+fi

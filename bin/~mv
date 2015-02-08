@@ -1,0 +1,52 @@
+#!/bin/bash
+
+prog="$0"
+
+mv_file_with_bk () {
+  local src="$1"
+  local dst="$2"
+  if test ! -e "$src"; then
+    echo "$prog! file '$src' does not exists." >&2
+    return 1
+  fi
+
+  local src2="$1~"
+  if test -d "$dst"; then
+    local dst2="$dst"
+  else
+    local dst2="$dst~"
+  fi
+
+  echo mv -i "$src" "$dst"
+  test -e "$src2" && echo mv "$src2" "$dst2"
+  
+  mv -i "$src" "$dst" || return
+  if test -e "$src2"; then
+    mv "$src2" "$dst2"
+  fi
+}
+
+if test $# -eq 0; then
+  echo "usage: $0 <files...> <target>" >&2
+  exit 1
+elif test $# -eq 1; then
+  echo "$0! target file is not specified." >&2
+  exit 1
+elif test $# -eq 2; then
+  mv_file_with_bk "$1" "$2"
+else
+  eval dst='${'$#'}'
+  echo "# dst=$dst"
+  if test ! -d "$dst"; then
+    echo "$0! target file is not a directory." >&2
+    exit 1
+  fi
+
+  ext=0
+  while test $# -ge 2; do
+    mv_file_with_bk "$1" "$dst" || ext=1
+    shift
+  done
+
+  exit $ext
+fi

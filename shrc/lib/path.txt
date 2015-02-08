@@ -1,0 +1,74 @@
+# -*- mode:sh -*-
+# 過去の実装の一覧
+
+# gauge .bashrc
+mwg.bashrc.addpath() {
+  local t="$PATH"
+  while test $# -gt 0; do
+    t="${t//:$1:/:}"
+    t="${t%:$1}"
+    t="$1:${t#$1:}"
+    shift
+  done
+  export PATH="$t"
+}
+
+# laguerre mcxx config.src
+function PATH.append {
+  local _var=PATH
+  if test "x$1" = x-v; then
+    _var="$2"
+    shift 2
+  fi
+
+  eval "local _value=\"\${$_var}\""
+  while test $# -gt 0; do
+    _value="$_value${_value:+:}$1"
+    shift
+  done
+  eval "export $_var='$_value'"
+}
+
+# gauge mshex libmwg_sh
+mwg.PATH.add() {
+  mwg.PATH.remove "$@"
+
+  local name="$1"; shift
+  local paths; eval "paths=\${$name}"
+  for p in "$@"; do
+    paths="$p${paths:+:}$paths"
+  done
+  eval "export $name='$paths'"
+}
+
+mwg.PATH.append() {
+  mwg.PATH.remove "$@"
+
+  local name="$1"; shift
+  local paths; eval "paths=\${$name}"
+  for p in "$@"; do
+    paths="$paths${paths:+:}$p"
+  done
+  eval "export $name='$paths'"
+}
+
+mwg.PATH.remove() {
+  local name="$1"; shift
+  local paths; eval "paths=\${$name}"
+  for p in "$@"; do
+    paths="${paths//:$p:/:}"
+    paths="${paths#$p:}"
+    paths="${paths%:$p}"
+    if test "$paths" == "$p"; then
+      paths=''
+      break
+    fi
+  done
+  #echo "export $name='$paths'"
+  eval "export $name='$paths'"
+}
+
+mwg.PATH.show() {
+  local name="${1-PATH}"|sed 's/:/\n/g'
+  eval "echo \"\${$name}\""
+}

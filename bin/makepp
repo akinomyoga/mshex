@@ -1,0 +1,3 @@
+#!/bin/bash
+
+[ -s Makefile.pp ] && mwg_pp.awk Makefile.pp > Makefile

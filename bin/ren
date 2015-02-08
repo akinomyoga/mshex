@@ -1,0 +1,141 @@
+#!/bin/bash
+
+if test $# -lt 2; then
+  echo '[1;31musage[m: ren before:rex after:txt [files...]' >&2
+  exit 1
+fi
+
+export ren_before="$1"
+export ren_after="$2"
+shift 2
+
+test $# -eq 0 && set -- *
+
+function mshex.yn {
+  local prompt_yn='yes/no'
+  local ret_default=
+  case "$1" in
+  -y)
+    ret_default=0
+    prompt_yn='Yes/no'
+    shift ;;
+  -n)
+    ret_default=1
+    prompt_yn='yes/No'
+    shift ;;
+  esac
+
+  while read -ep "$* ($prompt_yn): " line; do
+    case "x${line,,}" in
+    (xyes)
+      return 0 ;;
+    (xno)
+      return 1 ;;
+    (x)
+      if test -n "$ret_default"; then
+        if test "$ret_default" -eq 0; then
+          echo "$* ($prompt_yn): yes"
+        else
+          echo "$* ($prompt_yn): no"
+        fi
+        return "$ret_default"
+      fi ;;
+    esac
+  done
+}
+
+srclist=()
+dstlist=()
+quote="'\"'\"'"
+while read -r src && read -r dst; do
+  test ! -e "$src" && continue
+
+  if test -e "$dst"; then
+    echo "[1;31mren[m: the file '$dst' already exists!" >&2
+    continue
+  fi
+
+  if
+    for((j=0;j<${#dstlist[*]};j++)); do
+      [[ "$dst" = "${dstlist[j]}" ]] && break
+    done
+    ((j<${#dstlist[*]}))
+  then
+    echo "[1;31mren[m: collision of the resulting filename '$dst'!" >&2
+    continue
+  fi
+
+  srclist+=("$src")
+  dstlist+=("$dst")
+  echo "mv -n '${src//\'/$quote}' '${dst//\'/$quote}'"
+done < <(
+  # ※ファイル名に改行が含まれていると駄目
+  for f in "$@"; do echo "$f"; done | awk '
+    #-------------------------------------------------------------------------------
+    # replace
+    function replace(text,before,after, _is_tmpl,_is_head,_captures,_rep,_ltext,_rtext){
+      _is_tmpl=(match(after,/\$[0-9]+/)>0);
+      _is_head=(substr(before,1,1)=="^");
+
+      _ret="";
+      while(match(text,before,_captures)>0){
+        _ltext=substr(text,1,RSTART-1);
+        _rtext=substr(text,RSTART+RLENGTH);
+    
+        _rep=_is_tmpl?rep_instantiate_tmpl(after,_captures):after;
+    
+        _ret=_ret _ltext _rep;
+        text=_rtext;
+
+        if(_is_head)break;
+        if(RLENGTH==0){
+          _ret=_ret substr(text,1,1);
+          text=substr(text,2);
+          if(length(text)==0)break;
+        }
+      }
+      return _ret text;
+    }
+    function rep_instantiate_tmpl(text,captures,  _ret,_num){
+      _ret="";
+      while(match(text,/\$([0-9]+)/,_num)){
+        #print "dbg: $ captured: RSTART=" RSTART "; num=" _num[1] "; captures[num]=" captures[_num[1]] > "/dev/stderr"
+        _ret=_ret substr(text,1,RSTART-1) captures[_num[1]];
+        text=substr(text,RSTART+RLENGTH);
+      }
+      return _ret text;
+    }
+
+    BEGIN{
+      g_before=ENVIRON["ren_before"];
+      g_after =ENVIRON["ren_after"];
+    }
+    {
+      q=0x27;
+      src=$0;
+      dst=replace($0,g_before,g_after);
+
+      if(src!=dst){
+        # printf("mv -n %c%s%c %c%s%c\n",q,src,q,q,dst,q);
+
+        # gsub("[\"\\\\$]","\\\\&",src);
+        # gsub("[\"\\\\$]","\\\\&",dst);
+        # printf("mv -n \"%s\" \"%s\"\n",src,dst);
+
+        print src;
+        print dst;
+      }
+    }
+  '
+)
+
+if test ${#srclist[@]} -eq 0; then
+  echo "ren: files to change do not exist."
+  exit
+fi
+
+mshex.yn -n "execute rename? " || exit 0
+
+for((i=0,iN=${#srclist[@]};i<iN;i++)); do
+  mv -nv "${srclist[i]}" "${dstlist[i]}"
+done

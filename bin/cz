@@ -1,0 +1,79 @@
+#!/bin/bash
+
+rmbk() {
+  local file="$1"
+  local out="${1%.*}.`date +%Y%m%d-%H%M%S`"
+  local ext=".${1##*.}"
+  test "$ext" == . && ext=
+
+  while test -e "$out$ext"; do
+    out="$out+"
+  done
+  
+  mv "$file" "$out$ext"
+}
+
+fRemoveBackup=1
+while test $# -gt 0; do
+  case "$1" in
+  -b)
+    # don't remove the backup file
+    fRemoveBackup=
+    ;;
+  -*)
+    echo unknown options >&2
+    exit 1 ;;
+  *)
+    break ;;
+  esac
+done
+
+if test ! -f "$1"; then
+  echo "the file does not exist!" >&2
+  exit 1
+fi
+
+if test "${1%.cz}" != "$1"; then
+  in="$1"
+  out="${1%.cz}"
+
+  if test -e "$out"; then
+    echo "output file already exists!" >&2
+    exit 1
+  fi
+
+  if ! openssl enc -d -des3 -in "$1" -out /dev/stdout | xz -d - > "$out"; then
+    echo 'failed to decrypt!' >&2
+    exit 1
+  fi
+
+  if test ! -s "$out"; then
+    echo 'failed to decrypt!' >&2
+    exit 1
+  fi
+
+  rmbk "$in"
+else
+  in="$1"
+  out="$1.cz"
+
+  if test -e "$out"; then
+    echo "output file already exists!" >&2
+    exit 1
+  fi
+
+  if ! xz -c "$in" | openssl enc -e -des3 -in /dev/stdin -out "$out"; then
+    echo 'failed to crypt!' >&2
+    exit 1
+  fi
+
+  if test ! -s "$out"; then
+    echo 'failed to crypt!' >&2
+    exit 1
+  fi
+
+  /bin/rm -f "$in"
+  if test -n "$fRemoveBackup" -a -f "$in~"; then
+    /bin/rm -f "$in~"
+  fi
+fi

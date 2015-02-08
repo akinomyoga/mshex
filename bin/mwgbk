@@ -1,0 +1,218 @@
+#!/bin/bash
+
+if [ $# -lt 1 ]; then
+  echo "usage: $0 <filename>" > /dev/stderr
+  exit 1
+fi
+
+is_same(){
+  if test ! -f "$1" -o ! -f "$2"; then
+    return 1
+  else
+    md5sum "$1" "$2" | awk 'NR==1{hash1=$1}NR==2{hash2=$1}END{issame=hash1!=""&&hash2!=""&&hash1==hash2;exit !issame}' &>/dev/null
+  fi
+}
+
+get_directory_name () {
+  if test "$1" == "${1##*/}"; then
+    echo "$PWD"
+  else
+    echo "${1%/*}"
+  fi
+}
+
+function get_parent_directory {
+  if test "$1" == /; then
+    echo /
+  else
+    get_directory_name "${1%/}"
+  fi
+}
+
+function insert_date {
+  local file="$1"
+  local date="$2"
+
+  if [[ "$file" =~ ^(.*[^/])\.(tar\.[^/.]+)$ ]]; then
+    local filename="${BASH_REMATCH[1]}"
+    local extension="${BASH_REMATCH[2]}"
+    echo "$filename.$date.$extension"
+  elif [[ "$file" =~ ^(.*[^/])\.([^/]+)$ ]]; then
+    local filename="${BASH_REMATCH[1]}"
+    local extension="${BASH_REMATCH[2]}"
+    echo "$filename.$date.$extension"
+  else
+    echo "$file.$date"
+    return
+  fi
+}
+
+fMOVE=
+fFORCE=
+fTRAVERSE=
+
+function get_backup_directory {
+  local file="$1"
+  local dir="$(get_directory_name "$file")"
+
+  if test -z "$fTRAVERSE"; then
+    local bkdir="$dir/backup"
+    test -d "$bkdir" && echo "$bkdir"
+  else
+    local pdir="$dir"
+    while ! test -d "$pdir/backup" -o -z "${pdir%[/.]}"; do
+      pdir="$(get_parent_directory "$pdir")"
+    done
+
+    if test -n "$pdir" -a -d "$pdir/backup"; then
+      local bkdir="$pdir/backup${dir:${#pdir}}"
+      test -d "$bkdir" || mkdir -p "$bkdir"
+      echo "$bkdir"
+    fi
+  fi
+}
+
+mwgbk_file () {
+  local file="$1"
+  if test ! -f "$file"; then
+    if test ! -e "$file"; then
+      echo "mwgbk! the file does not exist." 1>&2
+    else
+      echo "mwgbk! the file is not an ordinary file." 1>&2
+    fi
+    exit 1
+  fi
+
+  local filebk="${file%'~'}"
+  local bkdir="$(get_backup_directory "$file")"
+  if test -n "$bkdir"; then
+    filebk="$bkdir/${filebk##*/}"
+  fi
+  
+  date=`date -r "$file" +'%Y%m%d'`
+  dst=`insert_date "$filebk" "$date" `
+  
+  #----------------------------------------------------------------------------
+  # avoid overwriting
+  if test -e "$dst"; then
+    if test -z "$fFORCE" && is_same "$file" "$dst"; then
+      echo "mwgbk: the file '$file' has already backupped to '$dst'." >&2
+      return 0
+    fi
+
+    date=`date -r "$file" +'%Y%m%d-%H%M%S'`
+    dst=`insert_date "$filebk" "$date" `
+  fi
+  
+  i=0
+  while test -e "$dst"; do
+    if test -z "$fFORCE" && is_same "$file" "$dst"; then
+      echo "mwgbk: the file '$file' has already backupped to '$dst'." >&2
+      return 0
+    fi
+
+    date2="$date[$i]"
+    dst=`insert_date "$filebk" "$date2" `
+    i=$((i+1))
+  done
+
+  #----------------------------------------------------------------------------
+  # copy the file
+ 
+  if test -z "$fMOVE"; then
+    echo copy "$file" to "$dst"
+    cp -p "$file" "$dst"
+  else
+    echo "move $file to $dst"
+    mv "$file" "$dst"
+  fi
+}
+
+
+fFILE=
+
+while test $# -ge 1; do
+  if test -z "$fFILE" -a "x${1::1}" == 'x-'; then
+    if test "x${1::2}" == 'x--'; then
+      case "x${1:2}" in
+      (xhelp)
+        cat <<EOF >&2
+usage: mwgbk [options] files...
+
+options
+  -M        copy files into the backup directory.
+            コピーしてバックアップを作成します。既定値の動作です。
+
+  -m        move files to the backup directory instead of copying
+            コピーしてバックアップを作成する代わりに、ファイルをバックアップ
+            先に移動します。
+
+  -F        (既定) 既に同内容のファイルがバックアップされているかどうかを確認
+            し、バックアップされていれば新しいバックアップを省略します。
+
+  -f        既にバックアップされているかの確認を省略し、常に新しくバックアッ
+            プを行います。
+
+  -t        ディレクトリを遡って backup ディレクトリを探索します。
+
+  -T        (既定) ファイルの存在しているディレクトリ (dir1) 内の backup 子デ
+            ィレクトリにバックアップします。backup が見付からない時は dir1 内
+            に直接バックアップを作成します。
+
+  --        以降の引数をファイル名と見做します。
+
+  --help    簡単な使用方法を表示して終了します。
+
+  --dir     既定のバックアップ先ディレクトリ名を表示します。
+
+  --list    既定のバックアップ先ディレクトリ内のファイル一覧を表示します。
+
+mwgbk, copyright (c) 2011-2013 KM. All rights reserved.
+
+EOF
+        exit ;;
+      (xdir)
+        declare bkdir="$(fTRAVERSE=1 get_backup_directory .)"
+        test -z "$bkdir" && bkdir="$PWD"
+        echo "$bkdir"
+        exit ;;
+      (xlist)
+        shift
+        
+        declare bkdir="$(fTRAVERSE=1 get_backup_directory .)"
+        test -z "$bkdir" && bkdir="$PWD"
+        echo "$bkdir"
+        if type l &>/dev/null; then
+          l "$@" "$bkdir"
+        else
+          ls -la "$@" "$bkdir"
+        fi
+        exit ;;
+      (x)
+        # 以降の引数はファイル名と見做す
+        fFILE=1 ;;
+      (*)
+        echo "unknown long-name option '$1'" >&2
+        exit 1 ;;
+      esac
+    else
+      declare i
+      for((i=1;i<${#1};i++)); do
+        case "${1:i:1}" in
+        (m) fMOVE=1 ;;
+        (M) fMOVE=  ;;
+        (f) fFORCE=1;;
+        (F) fFORCE= ;;
+        (t) fTRAVERSE=1 ;;
+        (T) fTRAVERSE=  ;;
+        (*)
+          echo "unknown option '-${1:i:1}'" >&2
+          ;;
+        esac
+      done
+    fi
+  else
+    mwgbk_file "$1"
+  fi
+  shift
+done

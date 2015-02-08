@@ -1,0 +1,111 @@
+#!/bin/bash
+
+
+#------------------------------------------------------------------------------
+# read options
+fR=
+fI=
+fF=
+fV=
+fS=
+
+while test "${1:0:1}" == '-'; do
+  flags="${1:1}"
+  iN=${#flags}
+  for((i=0;i<iN;i++));do
+    case "${flags:$i:1}" in
+    r)
+        fR=1
+        ;;
+    i)
+        fI=1
+        ;;
+    f)
+        fF=1
+        ;;
+    v)
+        fV=-v
+        ;;
+    s)
+        fS=1
+        ;;
+    *)
+        echo "unrecognized option" >&2
+        exit 1
+        ;;
+    esac
+  done
+  shift
+done
+
+if test $# -eq 0; then
+  echo "no files to remove are specified" >&2
+  exit 1
+fi
+
+#------------------------------------------------------------------------------
+# checking files
+if test -z "$fR" -o -z "$fF"; then
+  for file in "$@"; do
+    if test -z "$fF" -a ! -e "$file" -a ! -h "$file"; then
+      echo "'$file' is not existing!" >&2
+      exit 1
+    elif test -z "$fR" -a -d "$file" -a ! -h "$file"; then
+      echo "'$file' is directory! (use -r option to remove directory)" >&2
+      exit 1
+    fi
+  done
+fi
+
+#------------------------------------------------------------------------------
+# create backup directory
+mkd () { test -d "$1" || mkdir -p "$1"; }
+dir="$HOME/.recycle"
+now="$(date +%Y%m%d-%H%M%S)"
+
+delete_waiting_files () {
+  test -d "$dir/wait" || return
+  
+  local -a gomigomi
+  for file in "$dir"/wait/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]*; do
+    local date="${file#$dir/wait/}"
+    date="${date:0:8}"
+    if test "$((date+100))" -lt "${now:0:8}"; then
+      gomigomi+=("$file")
+    fi
+  done
+
+  if test "${#gomigomi}" -gt 0; then
+    mkd "$dir/gomi"
+    mv $fV "${gomigomi[@]}" "$dir/gomi/"
+  fi
+}
+
+delete_waiting_files
+
+destination="$dir/wait"
+test -n "$fS" && destination="$dir"
+mkd "$destination"
+
+path_separator_pattern='[/\\]'
+function escape_filename {
+  local _value="$1"
+  _value="${_value//%/%%}"
+  _value="${_value//$path_separator_pattern/%-}"
+  echo "$_value"
+}
+
+if test $# -eq 1; then
+  src="${1%/}"
+  dst="$destination/$now-$(escape_filename "$PWD/$src")"
+  while test -e "$dst"; do dst+=+; done
+  mv $fV "$src" "$dst"
+else
+  dst="$destination/$now@$(escape_filename "$PWD")"
+  while test -e "$dst"; do dst+=+; done
+  mkdir "$dst"
+  while test $# -gt 0; do
+    mv $fV "$1" "$dst/$(escape_filename "$1")"
+    shift
+  done
+fi

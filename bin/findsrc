@@ -1,0 +1,70 @@
+#!/bin/bash
+
+fNoExtension=
+extensions=()
+
+fIncludeDot=
+
+function add_extensions {
+  [[ "$1" =~ ^:|::|:$ ]] && fNoExtension=1
+
+  IFS=: eval 'local arr=($1) ext'
+  for ext in "${arr[@]}"; do
+    test -n "$ext" && extensions+=("${ext#.}")
+  done
+}
+
+
+while test $# -gt 0 -a "x${1::1}" = x-; do
+  case "$1" in
+  (-x)
+    add_extensions "$2"
+    shift 2 ;;
+  (-x*)
+    add_extensions "${1:2}"
+    shift 1 ;;
+  (-a) # do not exclude dotfiles
+    fIncludeDot=1
+    shift ;;
+  (-b) # do not exclude backups
+    fIncludeBackup=1
+    shift ;;
+  (*)
+    echo "findsrc: uknown option ($1)" >&2
+    exit ;;
+  esac
+done
+
+[[ "$1" =~ ^(|c|c\+\+)$ ]] && extensions+=(c h inl cpp cxx hpp hxx)
+[[ "$1" =~ ^(|js)$      ]] && extensions+=(js ctx css)
+[[ "$1" =~ ^(|f)$       ]] && extensions+=(f inc)
+[[ "$1" =~ ^(|el)$      ]] && extensions+=(el)
+[[ "$1" =~ ^(|sh)$      ]] && extensions+=(sh src)
+[[ "$1" =~ ^all$        ]] && fALL=1 extensions+=(all)
+if ((${#extensions[@]}<=0)); then
+  echo "findsrc: unrecognized argument '$1'" >&2
+  exit 1
+fi
+
+# egrep -v の引数を構築
+grepv_excludes=('^$')
+if test -z "$fIncludeBackup"; then
+  grepv_excludes+=('/backup/|\.[[:digit:]]{8}($|\.\w+)')
+  test -n "$fAll" && grepv_excludes+=('~$')
+fi
+if test -z "$fIncludeDot"; then
+  grepv_excludes+=('/\.[^/]')
+fi
+IFS='|' eval 'grepv_excludes="${grepv_excludes[*]}"'
+
+
+# 実行
+if test -n "$fALL"; then
+  find | \egrep -v "$grepv_excludes"
+else
+  IFS='|' eval 'rex_extensions="${extensions[*]}"'
+
+  # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
+  find -regextype posix-extended -regex '.+\.('"$rex_extensions"')'| \egrep -v "$grepv_excludes"
+  # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+'
+fi

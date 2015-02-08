@@ -1,0 +1,207 @@
+#!/bin/bash
+## 
+## $HOME/.mwg/bash_tools
+##   requires $HOME/.mwg/bashrc_interactive
+## 
+## copyright (c) 2012-2014 Koichi Murase <murase@nt.phys.s.u-tokyo.ac.jp>
+## 
+## .shrc settings specific to bash
+##
+# if test -n "$mwg_bashrc_include_bash_tools"; then
+#   mwg_bashrc_include_bash_tools=1
+#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+
+# : ${MWGDIR=$HOME/.mwg}
+# . $HOME/.mwg/echox &>/dev/null||:
+
+#------------------------------------------------------------------------------
+# mwg_menu.select
+
+mwg_term.register_key smso smso '[7m'
+mwg_term.register_key rmso rmso '[m'
+
+source "${MWGDIR:-$HOME/.mwg}/share/mshex/shrc/menu.sh"
+
+#------------------------------------------------------------------------------
+# cd
+
+if test -z "$mwg_cdhist_level"; then
+  declare -a mwg_cdhist=("$PWD")
+  declare -i mwg_cdhist_level=0
+  declare -i mwg_cdhist_count=1
+fi
+
+mwg_cdhist.indexof() {
+  local i
+  for((i=0;i<${#mwg_cdhist};i++));do
+    if test "$1" == "${mwg_cdhist[$i]}"; then
+      echo $i
+      return
+    fi
+  done
+
+  return 1
+}
+mwg_cdhist.remove() {
+  local -i i1="$1"
+  local -i i2="${2-$((i1+1))}"
+  test $i1 -lt 0 && i1=0
+  test $i2 -gt $mwg_cdhist_count && i2=$mwg_cdhist_count
+
+  local -i i
+  for((i=0;i<i2-i1;i++));do
+    mwg_cdhist[$((i1+i))]="${mwg_cdhist[$((i2+i))]}"
+  done
+
+  let mwg_cdhist_count-=i2-i1
+  for((i="${#mwg_cdhist[*]}"-1;i>=$mwg_cdhist_count;i--));do
+    unset mwg_cdhist[$i]
+  done
+}
+mwg_cdhist.bubble() {
+  local i iN="$1"
+  local value="${mwg_cdhist[$iN]}"
+  for((i="$iN";i>0;i--));do
+    mwg_cdhist[$i]="${mwg_cdhist[$((i-1))]}"
+  done
+  mwg_cdhist[0]="$value"
+}
+mwg_cdhist.push() {
+  if test -n "$mwg_cdhist_config_DiscardBranch"; then
+    if test $mwg_cdhist_level -gt 0; then
+      mwg_cdhist.remove 0 $mwg_cdhist_level
+    fi
+  fi
+
+  if test -n "$mwg_cdhist_config_BubbleHist" -a "$mwg_cdhist_level" -ge 0; then
+    mwg_cdhist.bubble $mwg_cdhist_level
+  fi
+  mwg_cdhist_level=0
+
+  local index i
+  if ! index=$(mwg_cdhist.indexof "$1"); then
+    index="$mwg_cdhist_count"
+    let mwg_cdhist_count++
+    mwg_cdhist[$index]="$1"
+  fi
+
+  mwg_cdhist.bubble "$index"
+}
+mwg_cdhist.list() {
+  echo "${mwg_cdhist[@]//$HOME/~}"
+}
+
+function mwg_cdhist.select/readkey/exch {
+  local index="$1"
+  ((0<index&&index<mwg_cdhist_count)) || return 1
+
+  mwg_cdhist=(
+    "${mwg_cdhist[@]::index-1}"
+    "${mwg_cdhist[index]}"
+    "${mwg_cdhist[index-1]}"
+    "${mwg_cdhist[@]:index+1}")
+  if((index==mwg_cdhist_level)); then
+    let mwg_cdhist_level--
+  elif((index==mwg_cdhist_level)); then
+    let mwg_cdhist_level++
+  fi
+
+  mwg_menu/exch "$index"
+}
+
+function mwg_cdhist.select/readkey {
+  case "$key" in
+  (delete)
+    if ((mwg_cdhist_count>1)); then
+      mwg_cdhist=("${mwg_cdhist[@]::mwg_menu_index}" "${mwg_cdhist[@]:mwg_menu_index+1}")
+      let mwg_cdhist_count--
+      (((mwg_cdhist_level>mwg_menu_index)&&(mwg_cdhist_level--)))
+      mwg_menu/delete
+      return 0
+    fi ;;
+  (,)
+    if ((mwg_menu_index>0)); then
+      mwg_cdhist.select/readkey/exch "$mwg_menu_index"
+      return 0
+    fi ;;
+  (.)
+    if ((mwg_menu_index+1<mwg_cdhist_count)); then
+      mwg_cdhist.select/readkey/exch "$((mwg_menu_index+1))"
+      return 0
+    fi ;;
+  esac
+  return 1
+}
+
+function mwg_cdhist.onChangeLevel {
+  local d="${mwg_cdhist[$mwg_cdhist_level]}"
+  if test "$d" != "$PWD"; then
+    echo "[cd: $d]"
+    builtin cd "$d"
+  fi
+}
+
+mwg_cdhist.select() {
+  local -i index
+  local MWG_MENU_ONREADKEY=mwg_cdhist.select/readkey
+  local MWG_MENU_CANCEL=1
+  mwg_menu -v index -i "$mwg_cdhist_level" "${mwg_cdhist[@]//$HOME/~}"
+
+  if((index>=0)); then
+    mwg_cdhist_level="$index"
+    mwg_cdhist.onChangeLevel
+  fi
+}
+mwg_cdhist.next() {
+  if test $mwg_cdhist_level -gt 0; then
+    let mwg_cdhist_level--
+    mwg_cdhist.onChangeLevel
+  fi
+}
+mwg_cdhist.prev() {
+  if test $mwg_cdhist_level -lt $((mwg_cdhist_count-1)); then
+    let mwg_cdhist_level++
+    mwg_cdhist.onChangeLevel
+  fi
+}
+
+mwg_cdhist.cd() {
+  # read arguments
+  local -a args=()
+  local dst=
+  local fForce=
+  while(($#)); do
+    case "$1" in
+    (-f) fForce=1 ;;
+    (-)
+      dst="$OLDPWD"
+      args+=("$1") ;;
+    (-*)
+      args+=("$1") ;;
+    (*)
+      : ${dst:=$1}
+      args+=("$1") ;;
+    esac
+    shift
+  done
+
+  if test -n "$fForce"; then
+    : ${dst:=$HOME}
+    test -e "$dst" || mkdir -p "$dst"
+  fi
+
+  if test "x$dst" != "x$PWD"&& builtin cd "${args[@]}"; then
+    mwg_cdhist.push "$PWD" &>/dev/null
+  fi
+}
+
+# alias cd=mwg_cdhist.cd
+# - () { mwg_cdhist.prev; }
+# + () { mwg_cdhist.next; }
+# = () { mwg_cdhist.select; }
+# bind -x '"\ec":mwg_cdhist.select'
+# bind '"[D":"a"' && bind -x '"a":mwg_cdhist.prev'
+# bind '"[C":"b"' && bind -x '"b":mwg_cdhist.next'
+
+#HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+# fi

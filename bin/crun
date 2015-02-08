@@ -1,0 +1,33 @@
+#!/bin/bash
+
+function impl {
+  # これは crun とは別にした方が良いのでは?
+  # crun を使っていたとしても、既存の実行形式を上書きせずに新しく実行形式を作成し実行したい事がある。
+  if test -x "$1"; then
+    # copy&exec to permit editting the original file while execution
+    local _base="./+.$(date +%Y%m%d).tmp" _i=1
+    while local _tmpname="$_base$((_i++))"; test -e "$_tmpname"; do :; done
+    /bin/cp "$1" "$_tmpname"
+    shift
+    "$_tmpname" "$@"
+    local _ret="$?"
+    /bin/rm -f "$_tmpname"
+    return "$_ret"
+  fi
+
+  if [[ "$1" =~ \.(cpp|cxx|cc)$ ]]; then
+    cpp="$1"; shift
+    exe="${cpp%.*}.exe"
+    
+    if test "$exe" -ot "$cpp" || cxx -o "$exe" "$cpp"; then
+      [[ "$exe" =~ ^/ ]] || exe="./$exe"
+      "$exe" "$@"
+    else
+      echo "run: failed to compile '$cpp'." >&2
+    fi
+  else
+    echo "run: unknown type of source: '$cpp'." >&2
+  fi
+}
+
+impl "$@"

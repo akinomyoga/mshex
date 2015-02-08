@@ -1,0 +1,205 @@
+#!/bin/bash
+
+. ~/.mwg/echox
+
+dstdir="${1%/}"
+
+if test -z "$dstdir"; then
+  echoe "the destination directory is not specified."
+  echom "usage: $0 <destination dir> <source dir>"
+  exit 1
+elif test ! -d "$dstdir"; then
+  echoe "the specified destination directory does not exist or is not a directory."
+  echom "usage: $0 <destination dir> <source dir>"
+  exit 1
+fi
+
+srcdir="${2%/}"
+
+if test -z "$srcdir"; then
+  echoe "the source directory is not specified."
+  echom "usage: $0 <destination dir> <source dir>"
+elif test ! -d "$srcdir"; then
+  echoe "the specified destination directory does not exist or is not a directory."
+  echom "usage: $0 <destination dir> <source dir>"
+  exit 1
+fi
+
+echom "dstdir=$dstdir"
+echom "srcdir=$srcdir"
+
+fFlat=
+fExec=false
+
+shift 2
+while test $# -gt 0; do
+  case "x$1" in
+  xexecute)
+    fExec=true ;;
+  xflat)
+    fFlat=1 ;;
+  *)
+    echoe "unknown option \`$1'"
+    exit 1
+    ;;
+  esac
+  shift
+done
+
+if ! $fExec; then
+  echoe "this is test and actual operation will not be done!"
+fi
+
+#-------------------------------------------------------------------------------
+# updated files
+
+issame() {
+  local src="$1"
+  local dst="$2"
+  if [ -h "$src" -a -h "$dst" ]; then
+    #echom cheking links "$src" / "$dst" > /dev/stderr
+    test "$(readlink "$src")" == "$(readlink "$dst")"
+  else
+    [ ! -e "$src" -o ! -e "$dst" ] && return 1
+    [ -d "$src" -a -d "$dst" ] && return 0
+    [ -d "$src" -o -d "$dst" ] && return 1
+    test "$(md5sum "$src" "$dst"|awk '{print $1}'|uniq|wc -l)" == '1'
+  fi
+}
+
+get_backpath2 () {
+  local file="$1"
+  local content="$2"
+  if test -n "$fFlat"; then
+    local bkdir="$dstdir"
+  else
+    local bkdir="$dstdir/.mwgbk"
+  fi
+  local dest="$bkdir${1#$dstdir}"
+  
+  local d="${dest%/*}"
+  local f="${dest##*/}"
+
+  if test ! -d "$d";then
+    echox mkdir -p "$d" > /dev/stderr
+    $fExec && mkdir -p "$d"
+  fi
+
+  if [ "${f:0:1}" != '.' -a "$f" != "${f/./_}" ]; then
+    d="$d/${f%.*}"
+    f=".${f##*.}"
+  else
+    d="$d/$f"
+    f=''
+  fi
+
+  local dt="$(date -r $1 +'%Y%m%d')"
+  if test -e "$d.$dt$f" && ! issame "$d.$dt$f" "$content"; then
+    dt="$(date -r $1 +'%Y%m%d-%H%M%S')"
+    while test -e "$d.$dt$f" && ! issame "$d.$dt$f" "$content"; do
+      dt="$dt+"
+    done
+  fi
+
+  echo "$d.$dt$f"
+}
+
+get_backpath() {
+  local d="${1%/*}"
+  local f="${1##*/}"
+
+  test -d "$d/backup" && d="$d/backup"
+
+  if [ "${f:0:1}" != '.' ] && [ "$f" != "${f/./_}" ]; then
+    d="$d/${f%.*}"
+    f=".${f##*.}"
+  else
+    d="$d/$f"
+    f=''
+  fi
+
+  local dt="$(date -r $1 +'%Y%m%d')"
+  if test -e "$d.$dt$f"; then
+    dt="$(date -r $1 +'%Y%m%d-%H%M%S')"
+    while test -e "$d.$dt$f"; do
+      dt="$dt+"
+    done
+  fi
+  echo "$d.$dt$f"
+}
+
+back_file() {
+  local file=$1
+  local back="$(get_backpath2 "$file" "$file")"
+  if ! [ -e "$back" -o -h "$back" ]; then
+    echox mv "$file" "$back"
+    $fExec && mv "$file" "$back"
+  fi
+}
+
+copy_file() {
+  local src="$1"
+  local dst="$2"
+  if [ -d "$src" ]; then
+    echox mkdir "$dst"
+    $fExec && mkdir "$dst"
+  else
+    echox cp -pP "$src" "$dst"
+    $fExec && cp -pP "$src" "$dst"
+  fi
+}
+
+copy_back() {
+  local file="$1"
+  local dest="$2"
+  local back="$(get_backpath2 "$dest" "$file")"
+  if ! [ -e "$back" -o -h "$back" ]; then
+    echox cp -pP "$file" "$back"
+    $fExec && cp -pP "$file" "$back"
+  fi
+}
+
+join <(
+  find "$srcdir" -ls|grep -v '/\.mwgbk/'|awk '{print $11,$7 "-" $8 "-" $9 "-" $10}'|while read line;do
+    echo ${line#"$srcdir/"}
+  done | sort
+) <(
+  find "$dstdir" -ls|grep -v '/\.mwgbk/'|awk '{print $11,$7 "-" $8 "-" $9 "-" $10}'|while read line;do
+    echo ${line#"$dstdir/"}
+  done | sort
+) | while read line; do
+  a=($line)
+  [ "${a[1]}" == "${a[2]}" ] && continue
+  file="${a[0]}"
+  
+  echom "checking update of $file..."
+  issame "$srcdir/$file" "$dstdir/$file" && continue
+  
+  echom "updating $file..."
+  if test "$srcdir/$file" -nt "$dstdir/$file"; then
+    back_file "$dstdir/$file"
+    copy_file "$srcdir/$file" "$dstdir/$file"
+  else
+    copy_back "$srcdir/$file" "$dstdir/$file"
+  fi
+done
+
+#-------------------------------------------------------------------------------
+# new files
+
+find "$srcdir"|while read path; do
+  [ "$path" == "$srcdir" ] && continue
+  
+  file=${path#"$srcdir/"}
+  [ -e "$dstdir/$file" -o -h "$dstdir/$file" ] && continue
+  copy_file "$srcdir/$file" "$dstdir/$file"
+done
+# for path in $(find $srcdir);do
+#   [ "$path" == "$srcdir" ] && continue
+  
+#   file=${path#"$srcdir/"}
+#   [ -e "$dstdir/$file" -o -h "$dstdir/$file" ] && continue
+#   copy_file "$srcdir/$file" "$dstdir/$file"
+# done
+
+exit

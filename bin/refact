@@ -1,0 +1,189 @@
+#!/bin/bash
+
+function mshex.yn {
+  local prompt_yn='yes/no'
+  local ret_default=
+  case "$1" in
+  -y)
+    ret_default=0
+    prompt_yn='Yes/no'
+    shift ;;
+  -n)
+    ret_default=1
+    prompt_yn='yes/No'
+    shift ;;
+  esac
+
+  while read -ep "$* ($prompt_yn): " line; do
+    case "x${line,,}" in
+    (xyes)
+      return 0 ;;
+    (xno)
+      return 1 ;;
+    (x)
+      if test -n "$ret_default"; then
+        if test "$ret_default" -eq 0; then
+          echo "$* ($prompt_yn): yes"
+        else
+          echo "$* ($prompt_yn): no"
+        fi
+        return "$ret_default"
+      fi ;;
+    esac
+  done
+}
+
+#------------------------------------------------------------------------------
+# read arguments
+
+grc_options=(--color)
+fB=
+while test $# -gt 0 -a "x${1::1}" == x-; do
+  case "$1" in
+  (-B)
+    fB=1
+    shift ;;
+  (-Wg,?*)
+    IFS=, eval 'grc_options+=(${1:4})'
+    shift ;;
+  (--help)
+    cat <<EOF
+usage: refact [options...] extended_regex after
+
+OPTIONS
+  -B        do not set the word-boundary condition
+  -Wg,<options for grc separated with comma>
+            set options for grc
+  --help    show this help
+
+EOF
+    exit 0 ;;
+  *)
+    echo "refact: unknown option ($1)" >&2
+    exit 1 ;;
+  esac
+done
+
+function usage_exit {
+  echo "usage: refact [options...] beforeExtendedRegex afterText [files...]" >&2
+  exit 1
+}
+
+if (($#<2)); then
+  usage exit
+fi
+before="$1"
+after="$2"
+shift 2
+
+# check args
+inputfiles=("$@")
+for f in "${inputfiles[@]}"; do
+  if test ! -s "$f"; then
+    usage exit
+  fi
+done
+
+# for debug
+# fB=1
+# before=Check
+# after=_check
+
+#------------------------------------------------------------------------------
+# construct pattern
+
+# 拡張正規表現文字クラスの文字順序
+export LC_COLLATE=C
+
+if test -z "$fB"; then
+  bpat="$before"
+  [[ "$bpat" =~ ^[_[:alnum:]] ]] && bpat='\b'"$bpat"
+  [[ "$bpat" =~ [_[:alnum:]]$ ]] && bpat="$bpat"'\b'
+
+  apat="$after"
+  [[ "$apat" =~ ^[_[:alnum:]] ]] && apat='\b'"$apat"
+  [[ "$apat" =~ [_[:alnum:]]$ ]] && apat="$apat"'\b'
+else
+  bpat="$before"
+  apat="$after"
+fi
+
+sl=/
+esl='\/'
+bpat_escaped="${bpat//$sl/$esl}"
+after_escaped="${after//$sl/$esl}"
+
+#echo "dbg: bpat=($bpat) apat=($apat)"
+
+#------------------------------------------------------------------------------
+# search pattern
+
+target_files=()
+declare -A target_files_dict
+
+echo --------- replace ---------
+
+# time 0.672s
+function enumerate_matches.i2 {
+  exec 5>&1
+
+  function search_target_files {
+    # fd1 に一致ファイル一覧を出力
+    # fd5 に一致箇所のレポートを出力
+    
+    exec 6>&1
+    grc --color "${grc_options[@]}" "$bpat" "${inputfiles[@]}" | gawk '
+      {
+        line=$0;
+        gsub(/\x1b\[[ -?]*[@-~]/,"",line); # remove csi
+        if(match(line,/^(([^:]|:[^0-9]|:[0-9]+[^:0-9])*):[0-9]+:/,m)>0){
+          file=m[1];
+          if(!target_files_dict[file]){
+            target_files_dict[file]=1;
+            print file > "/dev/fd/6";
+            print ">>> " file;
+          }
+        }
+        print $0;
+      }
+    ' | sed -r "
+       /^>>> /!{
+         h
+         s/^/-/
+         p
+         g
+         s/\[[ -?]*[@-~]//g
+         s/${bpat_escaped}/${after_escaped}/g
+         s/^/+/
+       }
+    " 1>&5
+  }
+  
+  IFS=$'\n' eval 'result=($(search_target_files))'
+
+  local file
+  for file in "${result[@]}"; do
+    test -f "$file" && target_files+=("$file")
+  done
+}
+
+enumerate_matches.i2
+
+if test "${#target_files[@]}" -le 0; then
+  echo ---------------------------
+  echo "refact: pattern ($bpat) not found!" >&2
+  exit 2
+fi
+echo ------- collision? --------
+grc "${grc_options[@]}" "$apat" "${inputfiles[@]}"
+echo ---------------------------
+
+#------------------------------------------------------------------------------
+# execute replace
+
+mshex.yn -n "execute replace? " || exit 0
+
+sedx="s/${bpat_escaped}/${after_escaped}/g"
+sed -r -i "$sedx" "${target_files[@]}"
+
+#------------------------------------------------------------------------------

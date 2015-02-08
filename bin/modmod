@@ -1,0 +1,126 @@
+#!/bin/bash
+
+declare fRecursive=
+
+declare -a files=()
+while test $# -gt 0; do
+  case "$1" in
+  -r)
+    # recursive
+    fRecursive=1
+    ;;
+  (-'?'|--help)
+    cat <<EOF
+usage: modmod [files...]
+
+OPTIONS
+  -r         recursively apply
+  -? --help  print help
+
+EOF
+    exit 0
+    ;;
+  -*)
+    echo "unknown option '$1'" >&2
+    exit 1
+    ;;
+  *)
+    files+=("$1")
+    ;;
+  esac
+  shift
+done
+
+if [ "${#files[@]}" -eq 0 ]; then
+  if test -n "$fRecursive"; then
+    find
+  else
+    for file in *; do
+      echo "$file"
+    done
+  fi
+else
+  if test -n "$fRecursive"; then
+    find "${files[@]}" | sort -u
+  else
+    for file in "${files[@]}"; do
+      echo "$file"
+    done
+  fi
+fi|awk '
+  /\.(dll|so|lib|a|la|exe|bat|com|cmd|sh|awk|ws[hf]|jse?|vb[es]|hta|tt[fc])\~?$/{
+    print "x" $0;
+    next;
+  }
+
+  /^(.*\/)?[^./]+$/{
+    print "o" $0;
+    next;
+  }
+
+  {
+    print "-" $0;
+    next;
+  }
+
+  END{
+    print "E";
+  }
+'|while read line ; do
+  declare -a file755
+  declare -a file644
+  
+  add_to_755 () {
+    file755[${#file755[*]}]="$1";
+  }
+  
+  add_to_644 () {
+    file644[${#file644[*]}]="$1";
+  }
+
+  mark="${line:0:1}"
+  file="${line:1}"
+  if [ "$mark" == 'E' ]; then
+    test "${#file755[@]}" -gt 0 && chmod 755 "${file755[@]}" >/dev/null 2>&1
+    test "${#file644[@]}" -gt 0 && chmod 644 "${file644[@]}" >/dev/null 2>&1
+  elif [ "$mark" == 'x' ] || [ -d "$file" ]; then
+    #echo "755 $line"
+    add_to_755 "$file"
+  elif [ "$mark" == 'o' ] && test -f "$file" -o -d "$file"; then
+    declare permission=$(stat -c %a "$file")
+    if ((permission==0)) || ((permission==777)) && test ! -h "$file"; then
+      if test -d "$file" -o "$(head -c 2 "$file" 2>&1)" == '#!'; then
+        add_to_755 "$file"
+      else
+        add_to_644 "$file"
+      fi
+    fi
+  else
+    #echo "644 $line"
+    add_to_644 "$file"
+  fi
+done
+exit 0
+
+#-------------------------------------------------------------------------------
+# old
+if false; then
+  if [ "$1" == '' ]; then
+    chmod 644 * >/dev/null 2>&1
+    chmod 755 *.{dll,so,lib,a,la,exe,bat,com,sh} >/dev/null 2>&1
+    chmod 755 */ >/dev/null 2>&1
+  else
+    for file in "$@"; do
+      ext=${file##*.}
+      ext_x=$(echo $ext|egrep '^(dll|so|lib|a|la|exe|bat|com|cmd|sh|awk|ws[hf]|jse?|vb[es]|hta)$')
+      if [ -d "$file" ]; then
+        chmod 755 "$file" >/dev/null 2>&1
+      elif [ "$ext" == "$ext_x" ]; then
+        chmod 755 "$file" >/dev/null 2>&1
+      else
+        chmod 644 "$file" >/dev/null 2>&1
+      fi
+    done
+  fi
+  exit 0
+fi
