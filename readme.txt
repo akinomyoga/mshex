@@ -50,9 +50,17 @@ PATH="$HOME/bin:$HOME/.mwg/bin:$PATH"
     他にも $(mwg.dict new:...) なども遅くなる原因だった。
     (cygwin では可能な限り fork が起きない様にしなければならない事を再認識した)。
   * shrc/bash_tools, shrc/lib/menu.sh: cdhist で項目の移動を "," "." でできる様に。
-  * shrc/tools/menu.bash_source (menu.sh の旧版) を削除
-  * git の repository を作成
-  * shrc/out: 自動的に生成されるファイルはこの中に移動
+  * shrc/lib/term.sh: 諸々の修正
+    - read -sn と read -sN の version による切り替えが逆転していた
+    - read -srN 等の様に -r を指定しないとバックスラッシュがエスケープの一部と解釈される。
+    - IFS= としておかないと -N を指定していても改行などの読み取り結果が '' になってしまう。
+    - まとめ: 正しくは IFS= read -srN 1 var 等としなければならない。
+  * git で管理する事に
+  * 古いファイルなどの整理
+    - shrc/tools/menu.bash_source (menu.sh の旧版) を削除
+    - shrc/out: 自動的に生成されるファイルはこの中に移動
+    - install-copy_script.sh は分かり易い様に make-install_script.sh に改名。
+    - shrc/lib: 中身を shrc/ に移動
   
 2015-01-19
   * bin/refact: 引数にファイルを指定した場合、そのファイルを対象に置換する。

@@ -56,10 +56,10 @@ $(MWGDIR)/%d%: %s%
 
 #%x install.r|%s%|shrc/bashrc.cygwin|.r|%d%|bashrc.cygwin|
 #%x install.r|%s%|shrc/bash_tools|.r|%d%|share/mshex/shrc/bash_tools|
-#%x install.r|%s%|shrc/lib/dict.sh|.r|%d%|share/mshex/shrc/dict.sh|
-#%x install.r|%s%|shrc/lib/term.sh|.r|%d%|share/mshex/shrc/term.sh|
-#%x install.r|%s%|shrc/lib/menu.sh|.r|%d%|share/mshex/shrc/menu.sh|
-#%x install.r|%s%|shrc/lib/path.sh|.r|%d%|share/mshex/shrc/path.sh|
+#%x install.r|%s%|shrc/dict.sh|.r|%d%|share/mshex/shrc/dict.sh|
+#%x install.r|%s%|shrc/term.sh|.r|%d%|share/mshex/shrc/term.sh|
+#%x install.r|%s%|shrc/menu.sh|.r|%d%|share/mshex/shrc/menu.sh|
+#%x install.r|%s%|shrc/path.sh|.r|%d%|share/mshex/shrc/path.sh|
 
 # 以下は互換性の為
 #%x shrc_pp0 .r|%in%|libmwg_src.pp|.r|%out%|out/libmwg_src.sh|
