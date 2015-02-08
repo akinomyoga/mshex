@@ -24,8 +24,10 @@ upd_mv() {
 }
 upd_rm() {
   if test -f "$1"; then
+    echo rm -f "$1"
     rm -f "$1"
   elif test -d "$1"; then
+    echo rm -rf "$1"
     rm -rf "$1"
   fi
 }

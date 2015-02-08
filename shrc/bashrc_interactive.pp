@@ -38,6 +38,14 @@ alias ..='cd ../'
 # alias d=$'date +"\e[94m%F %T %Z\e[m \e[32m%x %r\e[m"'
 alias d=$'date +"\e[94m%F %T %Z\e[m"'
 
+g () {
+  if((${#})); then
+    git "$@"
+  else
+    git status
+  fi
+}
+
 alias scp='scp -p'
 alias cp='cp -ia'
 alias mv='mv -i'
@@ -352,8 +360,8 @@ export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quo
 
 #%)
 #%[mode="bash"]
-#%$>bashrc_interactive
+#%$>out/bashrc_interactive
 #%x 1
 #%[mode="zsh"]
-#%$>zshrc_interactive
+#%$>out/zshrc_interactive
 #%x 1

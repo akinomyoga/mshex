@@ -1,7 +1,3 @@
 # generated files
 Makefile
-shrc/bashrc
-shrc/bashrc_interactive
-shrc/zshrc
-shrc/zshrc_interactive
-shrc/libmwg_src.sh
+shrc/out
