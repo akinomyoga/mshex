@@ -43,6 +43,9 @@ PATH="$HOME/bin:$HOME/.mwg/bin:$PATH"
   変更履歴 (ChangeLog)
 -------------------------------------------------------------------------------
 
+2015-02-10
+  * shrc/bash_interactipve.pp (g): added the form `g d\d+ [files]'
+
 2015-02-08
   * shrc/bashrc_interactive.pp, ...:
     全般に高速化。cygwin での bashrc の読込が遅いと思っていたら、bindx の中で行
@@ -61,6 +64,7 @@ PATH="$HOME/bin:$HOME/.mwg/bin:$PATH"
     - shrc/out: 自動的に生成されるファイルはこの中に移動
     - install-copy_script.sh は分かり易い様に make-install_script.sh に改名。
     - shrc/lib: 中身を shrc/ に移動
+  * shrc/bash_interactipve.pp: created g command
   
 2015-01-19
   * bin/refact: 引数にファイルを指定した場合、そのファイルを対象に置換する。
@@ -521,6 +525,7 @@ bash-4.1, ((mwg_bash>=40100))
 bash-4.0, ((mwg_bash>=40000))
   + declare -A
     連想配列
+  + read -t に小数を指定できる
 
 bash-3.1
   + s+=1       30100
@@ -538,10 +543,17 @@ bash-3.0-alpha
 
 bash-2.04
   + read -n
-  + ${!pref*}
+  + ${!pref*} (${!pref@} もこの時?)
+
+bash-2.03
+  + ${FUNCNAME[@]}
+    (caller [int] コマンドは 2.05b 以降)
 
 bash-2.02
   + shopt -s extglob
+
+?
+  * ${arr[@]:offset:length} 少なくとも 3.0 以降では使える様だ
 
 
 ■zsh のプロンプト設定について

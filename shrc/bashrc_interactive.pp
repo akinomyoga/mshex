@@ -39,10 +39,25 @@ alias ..='cd ../'
 alias d=$'date +"\e[94m%F %T %Z\e[m"'
 
 g () {
-  if((${#})); then
-    git "$@"
-  else
+  if(($#==0)); then
     git status
+  elif test "$1" = dist; then
+    local name="${PWD##*/}"
+    test -d dist || mkdir -p dist
+    local archive="dist/$name-$(date +%Y%m%d).tar.xz"
+    git archive --format=tar --prefix="./$name/" HEAD | xz > "$archive"
+  elif [[ "$1" =~ ^d([0-9]*)$ ]]; then
+    local index="${BASH_REMATCH[1]}"
+    shift
+    if test -z "$index"; then
+      git diff -b "$@"
+    elif ((index==0)); then
+      git diff -b HEAD --cached "$@"
+    else
+      git diff -b HEAD~$((index)) HEAD~$((index-1)) "$@"
+    fi
+  else
+    git "$@"
   fi
 }
 
