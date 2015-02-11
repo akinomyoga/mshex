@@ -8,4 +8,7 @@ tac $HOME/.bash_history | {
     lines["x$line"]=1
     echo "$line"
   done
-} | tac
+} | tac | grep -v '^#' > $HOME/1.tmp
+
+mwgbk -m $HOME/.bash_history && \
+  mv $HOME/1.tmp .bash_history
