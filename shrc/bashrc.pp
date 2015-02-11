@@ -45,14 +45,14 @@ if test "$-" != "${-/i/}"; then
 
   test -s $MWGDIR/share/mshex/shrc/bash_tools && . $MWGDIR/share/mshex/shrc/bash_tools
   alias cd=mwg_cdhist.cd
-  mwg_bashrc.bindx 'c'    mwg_cdhist.select
-  mwg_bashrc.bindx '[D' mwg_cdhist.prev
-  mwg_bashrc.bindx '[C' mwg_cdhist.next
+  mwg_bashrc.bind3 M-c    'c'    mwg_cdhist.select
+  mwg_bashrc.bind3 M-up   '[D' mwg_cdhist.prev
+  mwg_bashrc.bind3 M-down '[C' mwg_cdhist.next
   if test "$TERM" == rosaterm -o "$MWG_LOGINTERM" == rosaterm; then
-    mwg_bashrc.bindx '[44;5^' mwg_cdhist.prev # C-,
-    mwg_bashrc.bindx '[46;5^' mwg_cdhist.next # C-.
-    # mwg_bashrc.bindx '[45;5^' mwg_cdhist.prev # C--
-    # mwg_bashrc.bindx '[43;5^' mwg_cdhist.next # C-+
+    mwg_bashrc.bind3 'C-,' '[44;5^' mwg_cdhist.prev # C-,
+    mwg_bashrc.bind3 'C-.' '[46;5^' mwg_cdhist.next # C-.
+    mwg_bashrc.bind3 'C--' '[45;5^' mwg_cdhist.prev # C--
+    mwg_bashrc.bind3 'C-+' '[43;5^' mwg_cdhist.next # C-+
   fi
   # - () { mwg_cdhist.prev; }
   # + () { mwg_cdhist.next; }

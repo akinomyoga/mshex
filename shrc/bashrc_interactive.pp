@@ -204,59 +204,72 @@ mwg_bashrc.bindx() {
   fi
 }
 
+if declare -f ble-bind &>/dev/null; then
+  function mwg_bashrc.bind3 {
+    ble-bind -cf "$1" "$3"
+  }
+else
+  function mwg_bashrc.bind3 {
+    mwg_bashrc.bindx "$2" "$3"
+  }
+fi
+
 if test "$TERM" = rosaterm -o "$MWG_LOGINTERM" = rosaterm; then
-  bind '"[2~":overwrite-mode'             # Ins
+  if ! declare -f ble-bind &>/dev/null; then
+    bind '"[2~":overwrite-mode'             # Ins
 
-  # move-word
-  bind '"[1;5D":backward-word'            # C-Left
-  bind '"[1;5C":forward-word'             # C-Right
-  bind '"[D":shell-backward-word'       # M-Left
-  bind '"[C":shell-forward-word'        # M-Right
-  # kill-word
-  bind '"":backward-kill-word'            # C-Backspace
-  bind '"":unix-word-rubout'            # M-Backspace
-  bind '"[27;2;8~":shell-backward-kill-word' # S-Backspace
-  bind '"[3;5~":kill-word'                # C-Delete
-  bind '"[3;5~":shell-kill-word'          # M-delete
-  # copy-word
-  bind '"":copy-backward-word'          # C-M-Backwspace
-  bind '"[3;5~":copy-forward-word'      # C-M-Delete
+    # move-word
+    bind '"[1;5D":backward-word'            # C-Left
+    bind '"[1;5C":forward-word'             # C-Right
+    bind '"[D":shell-backward-word'       # M-Left
+    bind '"[C":shell-forward-word'        # M-Right
+    # kill-word
+    bind '"":backward-kill-word'            # C-Backspace
+    bind '"":unix-word-rubout'            # M-Backspace
+    bind '"[27;2;8~":shell-backward-kill-word' # S-Backspace
+    bind '"[3;5~":kill-word'                # C-Delete
+    bind '"[3;5~":shell-kill-word'          # M-delete
+    # copy-word
+    bind '"":copy-backward-word'          # C-M-Backwspace
+    bind '"[3;5~":copy-forward-word'      # C-M-Delete
 
-  # region
-  bind '"":kill-region'                   # C-w
-  bind '"w":copy-region-as-kill'          # M-w
+    # region
+    bind '"":kill-region'                   # C-w
+    bind '"w":copy-region-as-kill'          # M-w
 
-  bind '"[20~":undo'                      # F9
-  bind '"[27;5;13~":shell-expand-line'    # C-RET
-  bind '"":history-expand-line'         # M-RET
+    bind '"[20~":undo'                      # F9
+    bind '"[27;5;13~":shell-expand-line'    # C-RET
+    bind '"":history-expand-line'         # M-RET
+  fi
 
+  mwg_bashrc.bind3 'end' '[6~'       'jobs'
+  mwg_bashrc.bind3 'C-0' '[27;5;48~' 'fg %-'
+  mwg_bashrc.bind3 'C-1' '[27;5;49~' 'fg %1'
+  mwg_bashrc.bind3 'C-2' '[27;5;50~' 'fg %2'
+  mwg_bashrc.bind3 'C-3' '[27;5;51~' 'fg %3'
+  mwg_bashrc.bind3 'C-4' '[27;5;52~' 'fg %4'
+  mwg_bashrc.bind3 'C-5' '[27;5;53~' 'fg %5'
+  mwg_bashrc.bind3 'C-6' '[27;5;54~' 'fg %6'
+  mwg_bashrc.bind3 'C-7' '[27;5;55~' 'fg %7'
+  mwg_bashrc.bind3 'C-8' '[27;5;56~' 'fg %8'
+  mwg_bashrc.bind3 'C-9' '[27;5;57~' 'fg %9'
+  # mwg_bashrc.bind3 'M-RET' ''     'stty echo'
 
-  mwg_bashrc.bindx '[6~'       'jobs'
-  mwg_bashrc.bindx '[27;5;48~' 'fg %-'
-  mwg_bashrc.bindx '[27;5;49~' 'fg %1'
-  mwg_bashrc.bindx '[27;5;50~' 'fg %2'
-  mwg_bashrc.bindx '[27;5;51~' 'fg %3'
-  mwg_bashrc.bindx '[27;5;52~' 'fg %4'
-  mwg_bashrc.bindx '[27;5;53~' 'fg %5'
-  mwg_bashrc.bindx '[27;5;54~' 'fg %6'
-  mwg_bashrc.bindx '[27;5;55~' 'fg %7'
-  mwg_bashrc.bindx '[27;5;56~' 'fg %8'
-  mwg_bashrc.bindx '[27;5;57~' 'fg %9'
-  #mwg_bashrc.bindx ''     'stty echo'
-
-  # 古い rosaterm の設定
-  bind '"[8;2^":shell-backward-kill-word'    # S-Backspace
-  bind '"[13;5^":shell-expand-line'       # C-RET
-  mwg_bashrc.bindx '[48;5^' 'fg %-'
-  mwg_bashrc.bindx '[49;5^' 'fg %1'
-  mwg_bashrc.bindx '[50;5^' 'fg %2'
-  mwg_bashrc.bindx '[51;5^' 'fg %3'
-  mwg_bashrc.bindx '[52;5^' 'fg %4'
-  mwg_bashrc.bindx '[53;5^' 'fg %5'
-  mwg_bashrc.bindx '[54;5^' 'fg %6'
-  mwg_bashrc.bindx '[55;5^' 'fg %7'
-  mwg_bashrc.bindx '[56;5^' 'fg %8'
-  mwg_bashrc.bindx '[57;5^' 'fg %9'
+  # 古い rosaterm の設定 (redundant for ble-bind)
+  if ! declare -f ble-bind &>/dev/null; then
+    bind '"[8;2^":shell-backward-kill-word'    # S-Backspace
+    bind '"[13;5^":shell-expand-line'       # C-RET
+    mwg_bashrc.bindx '[48;5^' 'fg %-'
+    mwg_bashrc.bindx '[49;5^' 'fg %1'
+    mwg_bashrc.bindx '[50;5^' 'fg %2'
+    mwg_bashrc.bindx '[51;5^' 'fg %3'
+    mwg_bashrc.bindx '[52;5^' 'fg %4'
+    mwg_bashrc.bindx '[53;5^' 'fg %5'
+    mwg_bashrc.bindx '[54;5^' 'fg %6'
+    mwg_bashrc.bindx '[55;5^' 'fg %7'
+    mwg_bashrc.bindx '[56;5^' 'fg %8'
+    mwg_bashrc.bindx '[57;5^' 'fg %9'
+  fi
 fi
 #%%)
 
