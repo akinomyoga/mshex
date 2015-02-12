@@ -26,7 +26,8 @@ source "${MWGDIR:-$HOME/.mwg}/share/mshex/shrc/menu.sh"
 # cd
 
 if test -z "$mwg_cdhist_level"; then
-  declare -a mwg_cdhist=("$PWD")
+  declare -a mwg_cdhist
+  mwg_cdhist=("$PWD")
   declare -i mwg_cdhist_level=0
   declare -i mwg_cdhist_count=1
 fi
