@@ -41,7 +41,8 @@ if test "$-" != "${-/i/}"; then
     mwg.dict tmp1=mwg_term[fHR] tmp2=mwg_term[sgr0]
     trap "echo \"$tmp1[trap: exit \$?]$tmp2\"" ERR
   }
-  .mwg/bashrc/settrap
+
+  ((_ble_decode_bind_attached)) || .mwg/bashrc/settrap
 
   test -s $MWGDIR/share/mshex/shrc/bash_tools && . $MWGDIR/share/mshex/shrc/bash_tools
   alias cd=mwg_cdhist.cd
