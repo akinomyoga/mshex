@@ -39,6 +39,9 @@ alias ..='cd ../'
 alias d=$'date +"\e[94m%F %T %Z\e[m"'
 
 g () {
+  # 正規表現は変数に入れて使わないと bash-4.0 と bash-3.0 で解釈が異なる
+  local rex_diff='^d([0-9]*)$'
+
   if(($#==0)); then
     git status
   elif test "$1" = dist; then
@@ -46,7 +49,7 @@ g () {
     test -d dist || mkdir -p dist
     local archive="dist/$name-$(date +%Y%m%d).tar.xz"
     git archive --format=tar --prefix="./$name/" HEAD | xz > "$archive"
-  elif [[ "$1" =~ ^d([0-9]*)$ ]]; then
+  elif [[ $1 =~ $rex_diff ]]; then
     local index="${BASH_REMATCH[1]}"
     shift
     if test -z "$index"; then
@@ -242,7 +245,7 @@ if test "$TERM" = rosaterm -o "$MWG_LOGINTERM" = rosaterm; then
     bind '"":history-expand-line'         # M-RET
   fi
 
-  mwg_bashrc.bind3 'end' '[6~'       'jobs'
+  mwg_bashrc.bind3 'next' '[6~' 'jobs'
   mwg_bashrc.bind3 'C-0' '[27;5;48~' 'fg %-'
   mwg_bashrc.bind3 'C-1' '[27;5;49~' 'fg %1'
   mwg_bashrc.bind3 'C-2' '[27;5;50~' 'fg %2'
