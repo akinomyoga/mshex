@@ -521,6 +521,7 @@ bash-4.2, ((mwg_bash>=40200))
 bash-4.1, ((mwg_bash>=40100))
   + printf -v
   + read -N
+  + {var}> fname redirection
 
 bash-4.0, ((mwg_bash>=40000))
   + declare -A

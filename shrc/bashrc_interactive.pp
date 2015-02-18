@@ -5,7 +5,7 @@
 ##
 ## $HOME/.mwg/bashrc
 ##
-## copyright (c) 2010-2013 Koichi MURASE <myoga.murase@gmail.com>
+## copyright (c) 2010-2015 Koichi MURASE <myoga.murase@gmail.com>
 ## 
 ## common .zshrc settings
 ##
@@ -14,7 +14,7 @@
 ##
 ## $HOME/.mwg/bashrc
 ##
-## copyright (c) 2010-2013 Koichi MURASE <myoga.murase@gmail.com>
+## copyright (c) 2010-2015 Koichi MURASE <myoga.murase@gmail.com>
 ## 
 ## common .bashrc settings
 ##
@@ -207,7 +207,7 @@ mwg_bashrc.bindx() {
   fi
 }
 
-if declare -f ble-bind &>/dev/null; then
+if ((_ble_bash)); then
   function mwg_bashrc.bind3 {
     ble-bind -cf "$1" "$3"
   }
@@ -218,7 +218,7 @@ else
 fi
 
 if test "$TERM" = rosaterm -o "$MWG_LOGINTERM" = rosaterm; then
-  if ! declare -f ble-bind &>/dev/null; then
+  if ! ((_ble_bash)); then
     bind '"[2~":overwrite-mode'             # Ins
 
     # move-word
@@ -259,7 +259,7 @@ if test "$TERM" = rosaterm -o "$MWG_LOGINTERM" = rosaterm; then
   # mwg_bashrc.bind3 'M-RET' ''     'stty echo'
 
   # 古い rosaterm の設定 (redundant for ble-bind)
-  if ! declare -f ble-bind &>/dev/null; then
+  if ! ((_ble_bash)); then
     bind '"[8;2^":shell-backward-kill-word'    # S-Backspace
     bind '"[13;5^":shell-expand-line'       # C-RET
     mwg_bashrc.bindx '[48;5^' 'fg %-'
