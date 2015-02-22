@@ -17,9 +17,11 @@ function pat2regex {
   local pat="$1"
   pat="${pat//+/\\+}"
   pat="${pat//./\\.}"
-  pat="${pat//?/.}"
-  pat="${pat//*/.*}"
-  regex="$pat"
+  pat="${pat//'?'/[^/]}"
+  pat="${pat//'**'/.*}"
+  pat="${pat//'*'/[^/]*}"
+  regex="(^|/)$pat(/|$)"
+  # echo dbg: pat2regex $regex >&2
 }
 
 excludesDotFiles=1
