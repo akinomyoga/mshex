@@ -43,6 +43,11 @@ PATH="$HOME/bin:$HOME/.mwg/bin:$PATH"
   変更履歴 (ChangeLog)
 -------------------------------------------------------------------------------
 
+2015-02-23
+  * bin/findsrc: Added `--exclude=' option.
+  * bin/findsrc: reorganized argument processing.
+  * bin/grc: findsrc の引数処理の変更に伴う指定の変更。
+
 2015-02-10
   * shrc/bash_interactipve.pp (g): added the form `g d\d+ [files]'
 

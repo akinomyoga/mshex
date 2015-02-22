@@ -37,6 +37,9 @@ if test "$-" != "${-/i/}"; then
   source $MWGDIR/share/mshex/shrc/bashrc_interactive
 
   function .mwg/bashrc/settrap {
+    # ble には元から同じ機能がある
+    ((_ble_bash)) && return
+
     local tmp1 tmp2
     mwg.dict tmp1=mwg_term[fHR] tmp2=mwg_term[sgr0]
     trap "echo \"$tmp1[trap: exit \$?]$tmp2\"" ERR
