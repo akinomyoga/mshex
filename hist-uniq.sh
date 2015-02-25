@@ -11,4 +11,4 @@ tac $HOME/.bash_history | {
 } | tac | grep -v '^#' > $HOME/1.tmp
 
 mwgbk -m $HOME/.bash_history && \
-  mv $HOME/1.tmp .bash_history
+  mv $HOME/1.tmp $HOME/.bash_history
