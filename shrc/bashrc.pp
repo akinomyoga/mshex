@@ -45,7 +45,7 @@ if test "$-" != "${-/i/}"; then
     trap "echo \"$tmp1[trap: exit \$?]$tmp2\"" ERR
   }
 
-  ((_ble_decode_bind_attached)) || .mwg/bashrc/settrap
+  .mwg/bashrc/settrap
 
   test -s $MWGDIR/share/mshex/shrc/bash_tools && . $MWGDIR/share/mshex/shrc/bash_tools
   alias cd=mwg_cdhist.cd

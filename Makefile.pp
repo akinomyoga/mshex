@@ -16,8 +16,6 @@ install+=%name%
 #%x dir.r|%name%|$(MWGDIR)|
 #%x dir.r|%name%|$(MWGDIR)/bin|
 #%x dir.r|%name%|$(MWGDIR)/share/mshex/shrc|
-##%x dir.r|%name%|$(MWGDIR)/shrc.d|
-##%x dir.r|%name%|$(MWGDIR)/shrc.d/tools|
 
 #------------------------------------------------------------------------------
 # directory shrc
@@ -43,6 +41,10 @@ install+=$(MWGDIR)/%d%
 $(MWGDIR)/%d%: %s%
 	cp -p $< $@
 #%)
+
+compile+=shrc/out
+shrc/out:
+	mkdir -p $@
 
 #%x shrc_pp .r|%in%|bashrc.pp|.r|%out%|out/bashrc|
 #%x shrc_ppd.r|%ref%|out/bashrc|  .r|%out%|out/zshrc|

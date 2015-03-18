@@ -36,7 +36,7 @@ alias c='cd -'
 alias C='cd ../'
 alias ..='cd ../'
 # alias d=$'date +"\e[94m%F %T %Z\e[m \e[32m%x %r\e[m"'
-alias d=$'date +"\e[94m%F %T %Z\e[m"'
+alias d=$'date +"\e[94m%F (%a) %T %Z\e[m"'
 
 g () {
   # 正規表現は変数に入れて使わないと bash-4.0 と bash-3.0 で解釈が異なる
@@ -354,11 +354,11 @@ function mwg.windowtitle {
 #  shell/terminal setting
 
 # history
-export HISTSIZE=50000
+export HISTSIZE=100000
 #%%if mode=="zsh" (
 
 export HISTFILE=$HOME/.zshhistory
-export SAVEHIST=50000
+export SAVEHIST=100000
 setopt HIST_IGNORE_DUPS
 zshaddhistory() {
   local line=${1%%$'\n'}
@@ -368,7 +368,7 @@ zshaddhistory() {
 
 #%%elif mode=="bash"
 
-export HISTFILESIZE=50000
+export HISTFILESIZE=100000
 export HISTIGNORE='?:fg:fg *'
 export HISTCONTROL='ignoredups'
 export LINES COLUMNS

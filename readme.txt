@@ -43,6 +43,10 @@ PATH="$HOME/bin:$HOME/.mwg/bin:$PATH"
   変更履歴 (ChangeLog)
 -------------------------------------------------------------------------------
 
+2015-03-19
+  * shrc/bashrc_interactive.pp: HISTSIZE を 100000 に増加。
+  * shrc/bashrc_interactive.pp: alias d, 曜日を追加。
+
 2015-02-23
   * bin/findsrc: Added `--exclude=' option.
   * bin/findsrc: reorganized argument processing.
