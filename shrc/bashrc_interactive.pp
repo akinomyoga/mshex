@@ -130,14 +130,7 @@ bindkey '' bind_fg
 
 bind_pushd () { pushd -0; } ; zle -N bind_pushd
 bindkey 'c' bind_pushd
-#%%else
-bind -x '"\ez":fg'
-#bind -x '"\ec":pushd -0'
-bind -x '"\el":l'
-bind '"\eL":downcase-word'
-#%%)
 
-#%%if mode=="zsh" (
 if test "$TERM" = rosaterm -o "$MWG_LOGINTERM" = rosaterm; then
   bindkey '[3~' delete-char
   bindkey '[2~' overwrite-mode
@@ -217,8 +210,14 @@ else
   }
 fi
 
+mwg_bashrc.bind3 M-z $'\ez' 'fg'
+# mwg_bashrc.bind3 M-c $'\ec' 'pushd -0'
+mwg_bashrc.bind3 M-l $'\el' l
+
 if test "$TERM" = rosaterm -o "$MWG_LOGINTERM" = rosaterm; then
   if ! ((_ble_bash)); then
+    bind '"\eL":downcase-word'
+
     bind '"[2~":overwrite-mode'             # Ins
 
     # move-word

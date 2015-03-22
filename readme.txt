@@ -43,6 +43,9 @@ PATH="$HOME/bin:$HOME/.mwg/bin:$PATH"
   変更履歴 (ChangeLog)
 -------------------------------------------------------------------------------
 
+2015-03-22
+  * shrc/bashrc_interactive.pp: bugfix, bind -x $'\ez' の類が直接設定されていた。
+
 2015-03-19
   * shrc/bashrc_interactive.pp: HISTSIZE を 100000 に増加。
   * shrc/bashrc_interactive.pp: alias d, 曜日を追加。
