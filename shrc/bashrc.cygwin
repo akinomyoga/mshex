@@ -5,7 +5,8 @@
 #export CYGWIN='server error_start=dumper'
 export CYGWIN='server'
 export MANPATH="$MANPATH${MANPATH:+:}/usr/share/man:/usr/local/man"
-export DISPLAY='localhost:0.0'
+: ${DISPLAY:=localhost:0.0}
+export DISPLAY
 export EXEEXT='.exe'
 
 #------------------------------------------------------------------------------
