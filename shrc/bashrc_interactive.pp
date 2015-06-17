@@ -31,14 +31,39 @@ source "$MWGDIR/share/mshex/shrc/term.sh"
 # aliases
 
 alias emacs='emacs -nw'
-alias m=make
 alias c='cd -'
 alias C='cd ../'
 alias ..='cd ../'
 # alias d=$'date +"\e[94m%F %T %Z\e[m \e[32m%x %r\e[m"'
 alias d=$'date +"\e[94m%F (%a) %T %Z\e[m"'
 
-g () {
+# alias m=make
+function m {
+  local fHere= arg
+  for arg in "$@"; do
+    [[ $arg =~ ^(-C|-f) ]] && fHere=1
+  done
+
+  if [[ $fHere || -f Makefile ]]; then
+    make "$@"
+  else
+    local dir="${PWD%/}"
+    while :; do
+      if [[ -f $dir/Makefile ]]; then
+        make -C "${dir:-/}" "$@"
+        return
+      elif ! [[ $dir == */* ]]; then
+        make "$@"
+        return
+      else
+        dir="${dir%/*}"
+      fi
+    done
+  fi
+}
+
+# alias g=git
+function g {
   # 正規表現は変数に入れて使わないと bash-4.0 と bash-3.0 で解釈が異なる
   local rex_diff='^d([0-9]*)$'
 
