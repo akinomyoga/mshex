@@ -1,12 +1,13 @@
 # -*- mode:makefile-gmake -*-
 
 MWGDIR:=$(HOME)/.mwg
+MWGPP:=ext/mwg_pp.awk
 
 all: compile
 .PHONY: all install dist compile
 
 Makefile: Makefile.pp
-	mwg_pp.awk $< > $@
+	$(MWGPP) $< > $@
 
 #%m dir (
 install+=%name%
@@ -33,7 +34,7 @@ shrc/%out%: shrc/%ref%
 #%m shrc_pp0 (
 compile+=shrc/%out%
 shrc/%out%: shrc/%in%
-	cd shrc && mwg_pp.awk %in% > %out%
+	cd shrc && $(MWGPP) %in% > %out%
 #%)
 
 #%m install (

@@ -1,17 +1,97 @@
+===============================================================================
+ mshex - my shell extensions
+===============================================================================
+
+Copyright (c) 2010-2015 KM,
+All rights reserved.
 
 -------------------------------------------------------------------------------
-  導入方法
+  設定の仕方
 -------------------------------------------------------------------------------
 
-tar xvf mshex.20121001.tar.xz
-cd mshex
-make install
+Run the following commands. The directory ~/.mwg will be created, and the
+scripts and settings are copied into the directory.
 
+    $ tar xvf mshex.20121001.tar.xz
+    $ cd mshex
+    $ make install
 
-# add following lines to bashrc file
+Edit your bashrc file to source the ~/.mwg/bashrc. To use the useful commands
+contained in this package, please add ~/.mwg/bin to the PATH environment
+variable.
 
-. ~/.mwg/bashrc &>/dev/null
-PATH="$HOME/bin:$HOME/.mwg/bin:$PATH"
+    $ emacs ~/.bashrc
+
+    # bashrc
+    . ~/.mwg/bashrc &>/dev/null
+    PATH="$HOME/bin:$HOME/.mwg/bin:$PATH"
+
+-------------------------------------------------------------------------------
+  機能の色々
+-------------------------------------------------------------------------------
+
+~/.mwg/bin:
+
+  コピー&実行
+    crun executable   copy the executable to run
+    crun program.cxx  compile the program.cxx to run
+
+  ファイル暗号化
+    cz file           encrypt the file
+    cz file.cz        decrypt the file
+    czless file.cz    view contents of the encrypted file
+
+  ソースファイル
+    findsrc           find source file names
+    grc               grep patterns from the source files
+    refact            replace tokens in the source files
+    makepp            update Makefile from Makefile.pp
+
+  ファイル操作
+    mwgbk             create backup to file.20150101.ext
+    ren               rename files with regex (ERE)
+    rm_i              safe file removes buffered at ~/.recycle
+    modmod            modify cygwin permissions
+    msync             backuped synchronization
+  
+
+bashrc:
+
+  1文字コマンド
+    c         前のディレクトリ
+    C         一つ上のディレクトリ
+    d         現在の日時を表示
+    m         make (Makefile のあるディレクトリまで遡る)
+    g ...     git "$@"
+    g         git status
+    g d[NUM]  git diff
+    j         jobs
+    f         fg %
+    F         fg %-
+    NUM       fg %NUM
+    w         (組み込み)
+
+  キーバインド
+    M-z       fg
+    C-z       fg
+    M-c       ディレクトリ移動履歴を表示、カーソルキーで選択
+    他        基本機能をいろいろ割り当てなど
+
+  設定
+    履歴・tty・checkwinsize・TRAPERR・LANGなど
+
+  便利?
+    ~/.mwg/share/mshex/shrc/path.sh
+
+    PATH.canonicalize [-v VARNAME] [-F SEP]
+    PATH.prepend      [-v VARNAME] [-F SEP] [-n] PATHS...
+    PATH.append       [-v VARNAME] [-F SEP] [-n] PATHS...
+    PATH.remove       [-v VARNAME] [-F SEP] PATHS...
+    PATH.show         [VARNAME]
+    -v VARNAME  変更する変数名。既定値 PATH
+    -F SEP      パスの区切に使用する文字。既定値 :
+    -n          存在しないパスは追加しない
+
 
 
 -------------------------------------------------------------------------------
@@ -42,6 +122,9 @@ PATH="$HOME/bin:$HOME/.mwg/bin:$PATH"
 -------------------------------------------------------------------------------
   変更履歴 (ChangeLog)
 -------------------------------------------------------------------------------
+
+2015-06-17
+  * shrc/bashrc_interactive.pp: function m for make. alias m を置き換え。
 
 2015-03-22
   * shrc/bashrc_interactive.pp: bugfix, bind -x $'\ez' の類が直接設定されていた。
