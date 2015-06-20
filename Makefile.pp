@@ -1,4 +1,4 @@
-# -*- mode:makefile-gmake -*-
+# -*- mode:makefile-gmake; -*-
 
 MWGDIR:=$(HOME)/.mwg
 MWGPP:=ext/mwg_pp.awk
