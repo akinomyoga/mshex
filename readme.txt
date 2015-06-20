@@ -124,6 +124,7 @@ bashrc:
 -------------------------------------------------------------------------------
 
 2015-06-20
+  * bin/findsrc: c++ header files も列挙する
   * shrc/bashrc_interactive.pp (m): Makefile.pp -> Makefile の生成を行う
   * bin/ren: `-S', `--shell-expand' option で after の値をシェル展開の対象とする。
 
