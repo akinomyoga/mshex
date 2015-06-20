@@ -1,15 +1,30 @@
 #!/bin/bash
 
-if test $# -lt 2; then
+declare fEval=
+declare ren_before ren_after
+while (($#)); do
+  case "$1" in
+  (--eval) fEval=1; shift ;;
+  (*)
+    if [[ ! ${ren_before+x} ]]; then
+      ren_before="$1"
+      shift
+    elif [[ ! ${ren_after+x} ]]; then
+      ren_after="$1"
+      shift
+    else
+      break
+    fi
+  esac
+done
+export ren_before ren_after
+
+if [[ ! ${ren_after+x} ]]; then
   echo '[1;31musage[m: ren before:rex after:txt [files...]' >&2
   exit 1
 fi
 
-export ren_before="$1"
-export ren_after="$2"
-shift 2
-
-test $# -eq 0 && set -- *
+(($#==0)) && set -- *
 
 function mshex.yn {
   local prompt_yn='yes/no'
@@ -64,6 +79,8 @@ while read -r src && read -r dst; do
     echo "[1;31mren[m: collision of the resulting filename '$dst'!" >&2
     continue
   fi
+
+  [[ $fEval ]] && eval "dst=($dst)"
 
   srclist+=("$src")
   dstlist+=("$dst")

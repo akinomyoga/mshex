@@ -44,7 +44,10 @@ function m {
     [[ $arg =~ ^(-C|-f) ]] && fHere=1
   done
 
-  if [[ $fHere || -f Makefile ]]; then
+  if [[ $fHere || -f Makefile || -f Makefile.pp ]]; then
+    if [[ Makefile -ot Makefile.pp ]]; then
+      mwg_pp.awk Makefile.pp > Makefile || return
+    fi
     make "$@"
   else
     local dir="${PWD%/}"
