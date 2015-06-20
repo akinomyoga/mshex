@@ -12,18 +12,6 @@ function add_extensions {
   done
 }
 
-function pat2regex {
-  # (|){}^$ 等は意味を保持する (ファイル名に用いられそうにないから)
-  local pat="$1"
-  pat="${pat//+/\\+}"
-  pat="${pat//./\\.}"
-  pat="${pat//'?'/[^/]}"
-  pat="${pat//'**'/.*}"
-  pat="${pat//'*'/[^/]*}"
-  regex="(^|/)$pat(/|$)"
-  # echo dbg: pat2regex $regex >&2
-}
-
 excludesDotFiles=1
 excludesBackup=1
 excludedPatterns=()
@@ -87,6 +75,19 @@ done
 [[ $typeSh  || -z $typeSpecified ]] && extensions+=(sh src)
 [[ $typeAll ]] && fALL=1 extensions+=(all)
 
+
+function pat2regex {
+  # (|){}^$ 等は意味を保持する (ファイル名に用いられそうにないから)
+  local pat="$1"
+  pat="${pat//+/\\+}"
+  pat="${pat//./\\.}"
+  pat="${pat//'?'/[^/]}"
+  pat="${pat//'**'/.*}"
+  pat="${pat//'*'/[^/]*}"
+  regex="(^|/)$pat(/|$)"
+  # echo dbg: pat2regex $regex >&2
+}
+
 # egrep -v の引数を構築
 function grepv_excludes.construct {
   grepv_excludes=('^$')
@@ -115,8 +116,21 @@ if test -n "$fALL"; then
   find | \egrep -v "$grepv_excludes"
 else
   IFS='|' eval 'rex_extensions="${extensions[*]}"'
+  if [[ $typeC ]]; then
+    local cxx_headers=(
+      cassert cctype cerrno cfenv cfloat cinttypes ciso646 climits clocale
+      cmath csetjmp csignal cstdarg cstdbool cstddef cstdint cstdio cstdlib
+      cstring ctgmath ctime cuchar cwchar cwctype array bitset deque
+      forward_list list map queue set stack unordered_map unordered_set
+      vector atomic condition_variable future mutex thread algorithm chrono
+      codecvt complex exception functional initializer_list iterator limits
+      locale memory new numeric random ratio regex stdexcept string
+      system_error tuple typeindex typeinfo type_traits utility valarray
+    )
+    IFS='|' eval 'rex_extensions+="|${cxx_headers[*]}"'
+  fi
 
   # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
-  find -regextype posix-extended -regex '.+\.('"$rex_extensions"')'| \egrep -v "$grepv_excludes"
+  find -regextype posix-extended -regex '.+\.('"$rex_extensions"')' | \egrep -v "$grepv_excludes"
   # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+'
 fi
