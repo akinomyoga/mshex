@@ -123,6 +123,10 @@ bashrc:
   変更履歴 (ChangeLog)
 -------------------------------------------------------------------------------
 
+2015-06-20
+  * shrc/bashrc_interactive.pp (m): Makefile.pp -> Makefile の生成を行う
+  * bin/ren: `-S', `--shell-expand' option で after の値をシェル展開の対象とする。
+
 2015-06-17
   * shrc/bashrc_interactive.pp: function m for make. alias m を置き換え。
 

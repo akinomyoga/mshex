@@ -4,7 +4,7 @@ declare fEval=
 declare ren_before ren_after
 while (($#)); do
   case "$1" in
-  (--eval) fEval=1; shift ;;
+  (-S|--shell-expand) fEval=1; shift ;;
   (*)
     if [[ ! ${ren_before+x} ]]; then
       ren_before="$1"
