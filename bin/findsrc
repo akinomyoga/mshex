@@ -115,9 +115,10 @@ grepv_excludes.construct
 if test -n "$fALL"; then
   find | \egrep -v "$grepv_excludes"
 else
-  IFS='|' eval 'rex_extensions="${extensions[*]}"'
-  if [[ $typeC ]]; then
-    local cxx_headers=(
+  declare rex
+  IFS='|' eval 'rex=".+\.(${extensions[*]})"'
+  if [[ $typeC || ! $typeSpecified ]]; then
+    declare cxx_headers=(
       cassert cctype cerrno cfenv cfloat cinttypes ciso646 climits clocale
       cmath csetjmp csignal cstdarg cstdbool cstddef cstdint cstdio cstdlib
       cstring ctgmath ctime cuchar cwchar cwctype array bitset deque
@@ -127,10 +128,10 @@ else
       locale memory new numeric random ratio regex stdexcept string
       system_error tuple typeindex typeinfo type_traits utility valarray
     )
-    IFS='|' eval 'rex_extensions+="|${cxx_headers[*]}"'
+    IFS='|' eval 'rex+="|(.*/)?(${cxx_headers[*]})"'
   fi
-
+  
   # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
-  find -regextype posix-extended -type f -and -regex '.+\.('"$rex_extensions"')' | \egrep -v "$grepv_excludes"
+  find -regextype posix-extended -type f -and -regex "$rex" | \egrep -v "$grepv_excludes"
   # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+'
 fi
