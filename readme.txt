@@ -50,9 +50,9 @@ variable.
   ファイル操作
     mwgbk             create backup to file.20150101.ext
     ren               rename files with regex (ERE)
-    rm_i              safe file removes buffered at ~/.recycle
+    rm_i              safe file removes backupped into ~/.recycle
     modmod            modify cygwin permissions
-    msync             backuped synchronization
+    msync             backupped synchronization
   
 
 bashrc:
@@ -122,6 +122,11 @@ bashrc:
 -------------------------------------------------------------------------------
   変更履歴 (ChangeLog)
 -------------------------------------------------------------------------------
+
+2015-06-21
+  * bin/grc: 既定で引数に指定されたファイルを除外しない様に変更。
+  * bin/grc: `--exclude-default' で引数に指定されたファイルを除外する事を指定する。
+  * bin/refact: bugfix, 引数が足りない時のエラーメッセージ&終了ができていなかった。
 
 2015-06-20
   * bin/findsrc: c++ header files も列挙する

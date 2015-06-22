@@ -70,7 +70,7 @@ function usage_exit {
 }
 
 if (($#<2)); then
-  usage exit
+  usage_exit
 fi
 before="$1"
 after="$2"
@@ -79,9 +79,7 @@ shift 2
 # check args
 inputfiles=("$@")
 for f in "${inputfiles[@]}"; do
-  if test ! -s "$f"; then
-    usage exit
-  fi
+  [[ -s $f ]] || usage_exit
 done
 
 # for debug

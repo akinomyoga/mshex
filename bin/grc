@@ -22,6 +22,8 @@ declare -a args_option
 declare -a args_file
 regexp=
 
+declare fDefaultExcludes=
+
 while (($#)); do
   declare arg="$1"
   shift
@@ -69,18 +71,22 @@ EOF
   ('')
     echo "$0: empty argument is invalid" >&2
     exit 1 ;;
+  (--excludes-default)
+    fDefaultExcludes=1 ;;
   (*)
     if [[ $regexp ]]; then
-      EndsWith "$arg" '~' && continue
+      if [[ $fDefaultExcludes ]]; then
+        EndsWith "$arg" '~' && continue
 
-      declare ext
-      GetExtension: ext "$arg"
-      case "$ext" in
-      (.c|.cpp|.cc|.C|.cxx|.h|.hpp|.hxx|.hh|.inl) ;;
-      (.js|.ctx|.css) ;;
-      (*)
-        continue ;;
-      esac
+        declare ext
+        GetExtension: ext "$arg"
+        case "$ext" in
+        (.c|.cpp|.cc|.C|.cxx|.h|.hpp|.hxx|.hh|.inl) ;;
+        (.js|.ctx|.css) ;;
+        (*)
+          continue ;;
+        esac
+      fi
       args_file+=("$arg")
     else
       regexp="$arg"
