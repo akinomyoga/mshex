@@ -77,6 +77,11 @@ function g {
     test -d dist || mkdir -p dist
     local archive="dist/$name-$(date +%Y%m%d).tar.xz"
     git archive --format=tar --prefix="./$name/" HEAD | xz > "$archive"
+  elif [[ $1 == l ]]; then
+    shift
+    ls -ld $(git ls-files "$@")
+  elif [[ $1 == u ]]; then
+    git add -u
   elif [[ $1 =~ $rex_diff ]]; then
     local index="${BASH_REMATCH[1]}"
     shift
