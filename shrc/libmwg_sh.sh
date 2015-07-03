@@ -11,21 +11,6 @@ source_if() { test -e "$1" && source "$@" >/dev/null; }
 
 mkd () { test -d "$1" || mkdir -p "$1"; }
 
-# mwg.Path.GetScriptDirectory
-#   呼び出されたシェルが存在しているディレクトリを取得
-mwg.Path.GetScriptDirectory() {
-  local arg0="$1"
-  local defaultDir="$2"
-  test -h "$arg0" && arg0="$(readlink -f "$arg0")"
-  local dir="${arg0%/*}"
-  if test "$dir" != "$arg0"; then
-    echo -n "$dir"
-  else
-    echo -n "${defaultDir:-$PWD}"
-  fi
-}
-SHDIR="$(mwg.Path.GetScriptDirectory "$0")"
-
 #------------------------------------------------------------------------------
 # PATH : environmental variable
 

@@ -72,7 +72,7 @@ function g {
 
   if(($#==0)); then
     git status
-  elif test "$1" = dist; then
+  elif [[ $1 == dist ]]; then
     local name="${PWD##*/}"
     test -d dist || mkdir -p dist
     local archive="dist/$name-$(date +%Y%m%d).tar.xz"
@@ -82,6 +82,10 @@ function g {
     ls -ld $(git ls-files "$@")
   elif [[ $1 == u ]]; then
     git add -u
+  elif [[ $1 == c ]]; then
+    # stepcounter
+    # from ephemient's answer at http://stackoverflow.com/questions/4822471/count-number-of-lines-in-a-git-repository
+    git diff --stat 4b825dc642cb6eb9a060e54bf8d69288fbee4904
   elif [[ $1 =~ $rex_diff ]]; then
     local index="${BASH_REMATCH[1]}"
     shift
