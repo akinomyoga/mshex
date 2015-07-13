@@ -39,9 +39,9 @@ alias d=$'date +"\e[94m%F (%a) %T %Z\e[m"'
 
 # alias m=make
 function m {
-  local fHere= arg
+  local fHere= arg regex
   for arg in "$@"; do
-    [[ $arg =~ ^(-C|-f) ]] && fHere=1
+    regex='^(-C|-f)' && [[ $arg =~ $regex ]] && fHere=1
   done
 
   if [[ $fHere || -f Makefile || -f Makefile.pp ]]; then
@@ -78,8 +78,7 @@ function g {
     local archive="dist/$name-$(date +%Y%m%d).tar.xz"
     git archive --format=tar --prefix="./$name/" HEAD | xz > "$archive"
   elif [[ $1 == l ]]; then
-    shift
-    ls -ld $(git ls-files "$@")
+    ls -ld $(git ls-files "${@:2}")
   elif [[ $1 == u ]]; then
     git add -u
   elif [[ $1 == c ]]; then
@@ -89,13 +88,20 @@ function g {
   elif [[ $1 =~ $rex_diff ]]; then
     local index="${BASH_REMATCH[1]}"
     shift
-    if test -z "$index"; then
+    if [[ ! $index ]]; then
       git diff -b "$@"
-    elif ((index==0)); then
+    elif ((index<=0)); then
       git diff -b HEAD --cached "$@"
     else
       git diff -b HEAD~$((index)) HEAD~$((index-1)) "$@"
     fi
+  elif [[ $1 == log1 ]]; then
+    # from http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs
+    git log --graph --abbrev-commit --decorate --date=relative \
+        --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(reset)%s%C(reset) %C(ul)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all
+  elif [[ $1 == log2 ]]; then
+    git log --graph --abbrev-commit --decorate \
+        --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(reset)%s%C(reset) %C(ul)- %an%C(reset)' --all
   else
     git "$@"
   fi
