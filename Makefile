@@ -114,6 +114,9 @@ $(MWGDIR)/bin/czless: bin/czless
 install+=$(MWGDIR)/bin/ren
 $(MWGDIR)/bin/ren: bin/ren
 	$(SHELL) make-install_script.sh $< $@
+install+=$(MWGDIR)/bin/ifold
+$(MWGDIR)/bin/ifold: bin/ifold
+	$(SHELL) make-install_script.sh $< $@
 install+=$(MWGDIR)/bin/refact
 $(MWGDIR)/bin/refact: bin/refact
 	$(SHELL) make-install_script.sh $< $@

@@ -1,0 +1,319 @@
+#!/bin/bash
+
+# 既存の fold の不満な点
+#
+#   インデントが正しく処理されない
+#   日本語の処理
+#
+# 機能
+#
+#   インデントの伝播
+#   text-justify
+#
+# ToDo
+#   日本語文字の幅に対応
+#   日本語禁則処理
+#   tab 幅の指定
+#   tab の変換
+#   SGR seq のスキップ
+#   インデント文字の指定
+#   justify: justify, center, right, left
+#   hyphenation?
+#   unicode grapheme clusters?
+#
+# 日本語に対応した類似物に jfold という物がある様だ。
+#
+
+export fSPACES=
+export fINDENT=
+export fWIDTH=80
+export fTextJustify=1
+
+declare fBYTES=
+declare fERROR=
+declare files
+files=()
+
+while (($#)); do
+  declare arg="$1"
+  shift
+  case "$arg" in
+  (-b|--bytes) fBYTES=1 ;;
+  (-s|--spaces) fSPACES=1 ;;
+  (--indent=*)
+    fINDENT=${arg#--indent=} ;;
+  (-i|--indent)
+    fINDENT='[[:blank:]]+' ;;
+  (--width=*) fWIDTH=${arg#--width=} ;;
+  (-w)
+    if (($#>=1)); then
+      fWIDTH="$1"
+      shift
+    else
+      fERROR=1
+      echo 'ifold: the argument to option -w is missing' >&2
+    fi ;;
+  (--text-justify)    fTextJustify=1 ;;
+  (--no-text-justify) fTextJustify=  ;;
+  (--help)
+    source $0 -i -s <<EOF
+usage: ifold [OPTIONS...]
+
+OPTIONS
+
+  -b, --bytes
+  -s, --spaces
+
+  -w, --width=WIDTH
+    Specify the display width by the number of columns. The default is 80 columns.
+
+  -i, --indent
+  --indent=REGEX
+    The option \`-i' specifies that the indentation is to be preserved, i.e., when the original line has indentation at the head, each folded line also has the indentation at the head. The option \`--indent' specifies the pattern of indentation. The default pattern is \`--indent='[[:blank:]]+''.
+
+  --text-justify
+  --no-text-justify
+    These options controls the text justification. If \`--spaces' is specified and the text justification is enabled, the spaces are adjusted to fit the two sides of a line to the display width. The options \`--text-justify' and \`--no-text-justify' enables and disables the text justification, respectively. The text justification is enabled at default.
+
+EOF
+    exit ;;
+  (*)
+    if [[ ! -e $arg ]]; then
+      fERROR=1
+      echo "ifold: the specified file \`$arg' not found" >&2
+    elif [[ -d $arg ]]; then
+      fERROR=1
+      echo "ifold: the specified path \`$arg' is a directory" >&2
+    else
+      files[${#files[@]}]="$arg"
+    fi ;;
+  esac
+done
+
+[[ $fERROR ]] && exit 1
+[[ $fBYTES ]] && export LANG=C
+
+gawk '
+  BEGIN{
+    indentPattern=ENVIRON["fINDENT"];
+    handleSpaces=length(ENVIRON["fSPACES"])>=1;
+    textWidth=ENVIRON["fWIDTH"]-1;
+    if(textWidth<=0)textWidth=79;
+
+    textJustify=ENVIRON["fTextJustify"]!="";
+  }
+
+  function strrepeat(STR,COUNT, ret){
+    ret="";
+    for(;COUNT>0;COUNT=rshift(COUNT,1)){
+      if(and(COUNT,1))ret=ret STR;
+      STR=STR STR;
+    }
+    return ret;
+  }
+
+  #----------------------------------------------------------------------------
+  # line_breaking = hard
+
+  function hard_fold(content,lines,width, nline){
+    nline=0;
+    while(length(content)>width){
+      lines[nline++]=substr(content,1,width);
+      content=substr(content,width+1);
+    }
+    lines[nline++]=content;
+    return nline;
+  }
+
+  #----------------------------------------------------------------------------
+  # line_breaking = spaces
+
+  function construct_line_from_words(words,start,end,padding, _s,_i,_iN,_nsep,_ipad,_ipadPrev){
+    if(start>=end)return "";
+
+    _s=words[start];
+    _iN=end-start;
+    _nsep=_iN-1;
+    _ipadPrev=0;
+    for(_i=1;_i<_iN;_i++){
+      _ipad=int(padding*_i/_nsep+0.5);
+      _s=_s strrepeat(" ",1+_ipad-_ipadPrev) words[start+_i];
+      _ipadPrev=_ipad;
+    }
+    return _s;
+  }
+
+  function spaces_words2lines(lines,nword,words,width, nline,lw,i,j,wlen,ladd,rest,padding){
+    nline=0;
+    lw=0;j=1;
+    for(i=1;i<=nword;i++){
+      wlen=length(words[i]);
+      ladd=(lw?1:0)+wlen;
+      if(lw+ladd<=width){
+        # 次の単語が行に入りきる場合
+        lw+=ladd;
+        continue;
+      }
+
+      # 今までの行を出力
+      if(wlen>width&&(rest=width-lw-(lw?1:0))>0){
+        # 次の単語が1行に収まらない場合
+        # どうせ収まらないなら好きな所で分断してOK。
+        # →今までの行の末尾に追加。
+        lines[nline++]=construct_line_from_words(words,j,i,0) substr(words[i],1,rest);
+        words[i]=substr(words[i],rest+1);
+        wlen-=rest;
+      }else{
+        padding=textJustify?width-lw:0;
+        lines[nline++]=construct_line_from_words(words,j,i,padding);
+      }
+
+      while(wlen>width){
+        # ■最低でも1文字
+        lines[nline++]=substr(words[i],1,width);
+        words[i]=substr(words[i],width+1);
+        wlen-=width;
+      }
+
+      lw=wlen;
+      j=i;
+    }
+
+    lines[nline++]=construct_line_from_words(words,j,i);
+    return nline;
+  }
+
+  function spaces_fold(content,lines,width, nword,words){
+    nword=split(content,words,/ +/);
+    return spaces_words2lines(lines,nword,words,width);
+  }
+
+  #----------------------------------------------------------------------------
+  # line_breaking = east
+
+  function ea_initialize(_gyoto_kinsoku,_gyomatu_kinsoku,_bunri_kinsoku){
+    _gyoto_kinsoku="[）］｝〕〉》」』】〙〗〟’”｠»ゝゞーァィゥェォッャュョヮヵヶぁぃぅぇぉっゃゅょゎゕゖㇰㇱㇲㇳㇴㇵㇶㇷㇸㇹㇺㇻㇼㇽㇾㇿ々〻゠〜～・／：；，、。．？！]";
+    _gyomatu_kinsoku="[([｛〔〈《「『【〘〖〝‘“｟«｀]";
+    _bunri_kinsoku="((\x1b\\[[!-?]*[@-~]|[!-~])+|[〳〴]〵|[—…‥]+|.)";
+    ea_cluster="^[[:blank:]]+|^" _gyomatu_kinsoku "*" _bunri_kinsoku _gyoto_kinsoku "*";
+  }
+  function ea_split(line,clusters, _mlen,_count){
+    _count=0;
+    while(line!=""){
+      match(line,ea_cluster);
+      if(RSTART==1&&RLENGTH>=1)
+        _mlen=RLENGTH;
+      else
+        _mlen=1;
+      clusters[_count++]=substr(line,1,_mlen);
+      line=substr(line,_mlen+1);
+    }
+    return _count;
+  }
+  function ea_width(text){
+    #■CJK文字幅
+    return length(text);
+  }
+  function ea_concat(clusters,start,end,padding, _scount,_ipad,_ipad_prev,_ret,i){
+    _ret="";
+
+    if(padding){
+      _scount=0;
+      for(i=start;i<end;i++)
+        if(clusters[i] ~ /^([[:blank:]]+|.*[：；，、。．？！])$/)_scount++;
+
+      _ipad_prev=0;
+      _si=0;
+    }
+
+    for(i=start;i<end;i++){
+      if(padding&&(clusters[i] ~ /^([[:blank:]]+|.*[：；，、。．？！])$/)){
+        _ipad=int(padding*++_si/_scount+0.5);
+        _ret=_ret clusters[i] strrepeat(" ",_ipad-_ipad_prev);
+        _ipad_prev=_ipad;
+        continue;
+      }
+
+      _ret=_ret clusters[i];
+    }
+    return _ret;
+  }
+  function east_asian_fold(content,lines,width, _lcount,_clusters,_count,c,cw,lw,j,i,rest,l0,l1,padding){
+    _count=ea_split(content,_clusters);
+    lw=0;j=0;nline=0;
+    for(i=0;i<_count;i++){
+      c=_clusters[i];
+
+      # 折り返し時(i>0)、行頭(i==j)の空白は潰す。
+      if(i>0&&i==j&&c ~ /^[[:blank:]]+$/){
+        j++;
+        continue;
+      }
+
+      cw=ea_width(c);
+      rest=width-lw;
+      if(cw<=rest){
+        lw+=cw;
+        continue;
+      }
+
+      if(cw>width&&rest>0){
+        # 次の塊が1行に収まらない場合、
+        # どうせ収まらないなら好きな所で分断してOK
+        # →今までの行の末尾に追加。
+        lines[nline++]=ea_concat(_clusters,j,i) substr(c,1,rest);
+        _clusters[i]=c=substr(c,rest+1);
+        cw-=rest;
+        #■CJK文字幅
+      }else{
+        l0=j;l1=i;padding=rest;
+
+        # 行末の空白は潰す
+        if(j<=l1-1&&_clusters[l1-1] ~ /^[[:blank:]]+$/)
+          rest+=length(_clusters[--l1]);
+
+        if(!textJustify)padding=0;
+
+        padding=textJustify?rest:0;
+        lines[nline++]=ea_concat(_clusters,l0,l1,padding);
+      }
+
+      while(cw>width){
+        # ■最低でも1文字1
+        lines[nline++]=substr(c,1,width);
+        _clusters[i]=c=substr(c,width+1);
+        cw-=width;
+      }
+
+      lw=cw;
+      j=i;
+    }
+
+    lines[nline++]=ea_concat(_clusters,j,i);
+    return nline;
+  }
+
+  #----------------------------------------------------------------------------
+  BEGIN{ea_initialize();}
+
+  {
+    if(length($0)>textWidth){
+      content=$0;
+      sub("^(" indentPattern ")","",content);
+      indent=substr($0,1,length($0)-length(content));
+      contentWidth=textWidth-length(indent);
+
+      if(handleSpaces){
+        # nline=spaces_fold(content,lines,contentWidth);
+        nline=east_asian_fold(content,lines,contentWidth);
+      }else{
+        nline=hard_fold(content,lines,contentWidth);
+      }
+      for(i=0;i<nline;i++)
+        print indent lines[i];
+    }else{
+      print;
+    }
+  }
+
+' "${files[@]}"

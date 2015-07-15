@@ -86,6 +86,7 @@ $(MWGDIR)/bin/%file%: bin/%file%
 #%x bin_file.r|%file%|cz|
 #%x bin_file.r|%file%|czless|
 #%x bin_file.r|%file%|ren|
+#%x bin_file.r|%file%|ifold|
 #%x bin_file.r|%file%|refact|
 
 #------------------------------------------------------------------------------
