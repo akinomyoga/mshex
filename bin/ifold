@@ -8,20 +8,21 @@
 # 機能
 #
 #   インデントの伝播
+#   インデント文字の指定
 #   text-justify
 #   日本語文字の幅
-#
-# ToDo
 #   日本語禁則処理
 #   tab 幅の指定
-#   tab の変換
+#   tab を空白に変換
 #   SGR seq のスキップ
-#   インデント文字の指定
-#   justify: justify, center, right, left
+#
+# ToDo
+#   text-align: center, right, left
 #   hyphenation?
 #   unicode grapheme clusters?
 #
-# 日本語に対応した類似物に jfold という物がある様だ。
+# Note
+#   日本語に対応した類似物に jfold という物がある様だ。
 #
 
 export fSPACES=
@@ -29,6 +30,7 @@ export fINDENT=
 export fWIDTH=80
 export fTextJustify=1
 export fCharWidth=east
+export fTabWidth=8
 
 declare fBYTES=
 declare fERROR=
@@ -54,6 +56,7 @@ while (($#)); do
       fERROR=1
       echo 'ifold: the argument to option -w is missing' >&2
     fi ;;
+  (--tab-width=*) fTabWidth=${arg#--tab-width=} ;;
   (--text-justify)    fTextJustify=1 ;;
   (--no-text-justify) fTextJustify=  ;;
   (--char-width=*)
@@ -68,6 +71,7 @@ while (($#)); do
   (--help)
     source $0 -i -s <<EOF
 usage: ifold [OPTIONS...]
+Indented fold.
 
 OPTIONS
 
@@ -80,9 +84,11 @@ OPTIONS
   --char-width=CW
     This option specifies the scheme to determine character widths. Currently there are two schemes: CW = east or west. The default is \`--char-width=east'. Most characters in unicode has its fixed width 1 or 2. On the other hand, some part of the characters has property \`Ambiguous' for East_Asian_Width where the width depends on contexts. In the scheme \`--char-width=east', all the ambiguous characters are assumed to have width 2, while they are assumed to have width 1 in the scheme \`--char-width=west'.
 
+  --tab-width=N
+
   -i, --indent
   --indent=REGEX
-    The option \`-i' specifies that the indentation is to be preserved, i.e., when the original line has indentation at the head, each folded line also has the indentation at the head. The option \`--indent' specifies the pattern of indentation. The default pattern is \`--indent='[ \t]+''.
+    The option \`-i' specifies that the indentation is to be preserved, i.e., when the original line has indentation at the head, each folded line also has the same indentation. The option \`--indent' specifies the pattern of indentation. The default pattern is \`--indent='[ \t]+''.
 
   --text-justify
   --no-text-justify
@@ -124,6 +130,8 @@ gawk '
       charWidth=CW_WEST;
     else
       charWidth=CW_WEST;
+
+    tabWidth=ENVIRON["fTabWidth"];
   }
 
   function strrepeat(STR,COUNT, ret){
@@ -314,6 +322,73 @@ gawk '
       return c2w_east(code);
   }
 
+  # 制御文字 HT BS CR (と現在の位置) も考慮に入れて文字幅を計算する
+  function c2w_ctrl(c,offset,limit,setIsCommutable,  offset2){
+    if(c ~ /[\t\b\r]/){
+      # isCommutable:
+      #   HT/BS/CR で text-justification が壊れる。
+      #   空白を挿入した時の動作が分からないので text-justification を無効にする。
+      if(c=="\t"){
+        if(setIsCommutable)
+          local_isCommutable=0;
+        if(offset<limit){
+          offset2=(offset+tabWidth-1)/tabWidth*tabWidth;
+          if(offset2>=limit)offset2=limit-1;
+          return offset2-offset;
+        }
+      }else if(c=="\b"){
+        if(offset<=0){
+          if(setIsCommutable)
+            local_isCommutable=0;
+        }else{
+          return -1;
+        }
+      }else if(c=="\r"){
+        if(setIsCommutable)
+          local_isCommutable=0;
+        return -offset;
+      }
+      return 0;
+    }else{
+      return c2w(c);
+    }
+  }
+
+  # 指定した幅に何文字まで入れられるかを計算する
+  function c2w_w2nchar(text,offset,limit,  count){
+    count=0;
+    while(text){
+      if(match(text,/^\x1b\[[ -?]*[@-~]/)>0){
+        count+=RLENGTH;
+        text=substr(text,RLENGTH+1);
+        continue;
+      }else{
+        w=c2w_ctrl(substr(text,1,1),offset,limit,0);
+        if(offset+w>=limit)break;
+        offset+=w;
+        count++;
+        text=substr(text,2);
+      }
+    }
+    return count;
+  }
+
+  # 指定した文字列の幅を計算する
+  function c2w_a2w(text,offset,limit,  arr,iN,i,c,ret,w,offset2){
+    gsub(/\x1b\[[ -?]*[@-~]/,"",text);
+    if(text ~ /^[ -~]+$/)return length(text);
+
+    ret=w;
+    iN=split(text,arr,"");
+    for(i=1;i<=iN;i++){
+      c=arr[i];
+      w=c2w_ctrl(c,offset,limit,1);
+      ret+=w;
+      offset+=w;
+    }
+    return ret;
+  }
+
   #----------------------------------------------------------------------------
   # line_breaking = east
 
@@ -337,39 +412,7 @@ gawk '
     }
     return _count;
   }
-  function ea_width(text,offset,limit,  arr,iN,i,c,ret,w,offset2){
-    gsub(/\x1b\[[ -?]*[@-~]/,"");
-    if(text ~ /^[ -~]+$/)return length(text);
 
-    ret=w;
-    iN=split(text,arr,"");
-    for(i=1;i<=iN;i++){
-      c=arr[i];
-
-      if(c ~ /[\t\b\r]/){
-        #■HT/BS/CR で text-justification が壊れる
-        if(c=="\t"){
-          if(offset<limit){
-            offset2=(offset+tabWidth-1)/tabWidth*tabWidth;
-            if(offset2>=limit)offset2=limit-1;
-            ret+=offset2-offset;
-            offset=offset2;
-          }
-        }else if(c=="\b"){
-          ret--;
-          offset--;
-        }else if(c=="\r"){
-          ret-=offset;
-          offset=0;
-        }
-      }else{
-        w=c2w_east(c);
-        ret+=w;
-        offset+=w;
-      }
-    }
-    return ret;
-  }
   function ea_concat(clusters,start,end,padding, _scount,_ipad,_ipad_prev,_ret,i){
     _ret="";
 
@@ -394,17 +437,19 @@ gawk '
     }
     return _ret;
   }
-  function east_asian_fold(content,lines,width,tabOffset, _lcount,_clusters,_count,c,cw,lw,j,i,rest,l0,l1,padding){
+  function east_asian_fold(content,lines,width,tabOffset, _lcount,_clusters,_count,_limit,c,cw,offset,j,i,rest,l0,l1,padding,nc){
+    _limit=tabOffset+width;
     _count=ea_split(content,_clusters);
-    lw=0;j=0;nline=0;
+    nline=0;
+    offset=tabOffset;j=0;local_isCommutable=1;
     for(i=0;i<_count;i++){
       c=_clusters[i];
 
-      cw=ea_width(c,tabOffset+lw,tabOffset+width);
+      cw=c2w_a2w(c,offset,_limit);
       if(c ~ /^[ \t]+$/)c=strrepeat(" ",cw);
-      rest=width-lw;
+      rest=_limit-offset;
       if(cw<=rest){
-        lw+=cw;
+        offset+=cw;
         continue;
       }
 
@@ -412,10 +457,13 @@ gawk '
         # 次の塊が1行に収まらない場合、
         # どうせ収まらないなら好きな所で分断してOK
         # →今までの行の末尾に追加。
-        lines[nline++]=ea_concat(_clusters,j,i) substr(c,1,rest);
-        _clusters[i]=c=substr(c,rest+1);
-        cw-=rest;
-        #■CJK文字幅
+        nc=c2w_w2nchar(c,offset,_limit);
+        lines[nline++]=ea_concat(_clusters,j,i) substr(c,1,nc);
+
+        # 残り再計算
+        _clusters[i]=c=substr(c,nc+1);
+        offset=tabOffset;local_isCommutable=1;
+        cw=c2w_a2w(c,offset,_limit);
       }else{
         l0=j;l1=i;padding=rest;
 
@@ -423,25 +471,29 @@ gawk '
         if(j<=l1-1&&_clusters[l1-1] ~ /^[ \t]+$/)
           padding+=length(_clusters[--l1]);
 
-        if(!textJustify)padding=0;
+        if(!textJustify||!local_isCommutable)padding=0;
 
         lines[nline++]=ea_concat(_clusters,l0,l1,padding);
       }
 
       while(cw>width){
-        # ■最低でも1文字1
-        lines[nline++]=substr(c,1,width);
-        _clusters[i]=c=substr(c,width+1);
-        cw-=width;
+        nc=c2w_w2nchar(c,offset,_limit);
+        if(nc=-0)nc++; # 最低でも1文字
+        lines[nline++]=substr(c,1,nc);
+
+        # 残り再計算
+        _clusters[i]=c=substr(c,nc+1);
+        offset=tabOffset;local_isCommutable=1;
+        cw=c2w_a2w(c,offset,_limit);
       }
 
-      lw=0;
+      offset=tabOffset;local_isCommutable=1;
       if(_clusters[i] ~ /^[ \t]+$/){
         # 折り返し時、行頭の空白は跳ばす。
         j=i+1;
       }else{
-        cw=ea_width(c,tabOffset+lw,tabOffset+width);
-        lw=cw;
+        cw=c2w_a2w(c,offset,_limit);
+        offset=tabOffset+cw;
         j=i;
       }
     }
@@ -462,7 +514,7 @@ gawk '
       content=$0;
       sub("^(" indentPattern ")","",content);
       indent=substr($0,1,length($0)-length(content));
-      indentWidth=ea_width(indent,0,textWidth);
+      indentWidth=c2w_a2w(indent,0,textWidth);
       contentWidth=textWidth-indentWidth;
 
       if(handleSpaces){
