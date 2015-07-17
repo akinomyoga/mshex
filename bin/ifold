@@ -14,7 +14,8 @@
 #   日本語禁則処理
 #   tab 幅の指定
 #   tab を空白に変換
-#   SGR seq のスキップ
+#   CSI sequence のスキップ
+#   行継続の指定 (--continue, --continue=REGEX)
 #
 # ToDo
 #   text-align: center, right, left
@@ -31,6 +32,7 @@ export fWIDTH=80
 export fTextJustify=1
 export fCharWidth=east
 export fTabWidth=8
+export fContinuation=
 
 declare fBYTES=
 declare fERROR=
@@ -46,7 +48,11 @@ while (($#)); do
   (--indent=*)
     fINDENT=${arg#--indent=} ;;
   (-i|--indent)
-    fINDENT='[ \t]+' ;;
+    : ${fINDENT:='[ \t]+'} ;;
+  (--continue=*)
+    fContinuation=${arg#--continue=} ;;
+  (--continue)
+    : ${fContinuation:='\\'} ;;
   (--width=*) fWIDTH=${arg#--width=} ;;
   (-w)
     if (($#>=1)); then
@@ -69,30 +75,54 @@ while (($#)); do
       echo "ifold: the specified char-width mode, \`--char-width=$arg', unrecognized." >&2
     fi ;;
   (--help)
+    declare bold=$'\e[1m'
+    declare cyan=$'\e[36m'
+    declare sgr0=$'\e[m'
     source $0 -i -s <<EOF
 usage: ifold [OPTIONS...]
 Indented fold.
 
 OPTIONS
 
-  -b, --bytes
-  -s, --spaces
+  ${bold}-b, --bytes${sgr0}
+  ${bold}-s, --spaces${sgr0}
 
-  -w, --width=WIDTH
+  ${bold}-w, --width=${cyan}WIDTH${sgr0}
     Specify the display width by the number of columns. The default is 80 columns.
 
-  --char-width=CW
-    This option specifies the scheme to determine character widths. Currently there are two schemes: CW = east or west. The default is \`--char-width=east'. Most characters in unicode has its fixed width 1 or 2. On the other hand, some part of the characters has property \`Ambiguous' for East_Asian_Width where the width depends on contexts. In the scheme \`--char-width=east', all the ambiguous characters are assumed to have width 2, while they are assumed to have width 1 in the scheme \`--char-width=west'.
+  ${bold}--char-width=${cyan}CW${sgr0}
+    This option specifies the scheme to determine character widths. \
+Currently there are two schemes: ${cyan}CW${sgr0} = ${bold}east${sgr0} or ${bold}west${sgr0}. The default is \`--char-width=east'. \
+Most characters in unicode has its fixed width 1 or 2. \
+On the other hand, some part of the characters has the property \`Ambiguous' for East_Asian_Width where the width depends on contexts. \
+In the scheme \`--char-width=east', all the ambiguous characters are assumed to have width 2, \
+while they are assumed to have width 1 in the scheme \`--char-width=west'.
 
-  --tab-width=N
+  ${bold}--tab-width=${cyan}N${sgr0}
 
-  -i, --indent
-  --indent=REGEX
-    The option \`-i' specifies that the indentation is to be preserved, i.e., when the original line has indentation at the head, each folded line also has the same indentation. The option \`--indent' specifies the pattern of indentation. The default pattern is \`--indent='[ \t]+''.
+  ${bold}--continue${sgr0}
+  ${bold}--continue=${cyan}REGEX${sgr0}
+    The option \`--continue' enables the line continuation by a specific sequence at the end of lines. \
+The default line continuation specifier is '\\'. \
+The option \`--continue=REGEX' enables the line continuation with the pattern REGEX at the end of lines. \
+The option \`--continue=' disables the line continuation. \
+The line continuation is defaultly disabled.
 
-  --text-justify
-  --no-text-justify
-    These options controls the text justification. If \`--spaces' is specified and the text justification is enabled, the spaces are adjusted to fit the two sides of a line to the display width. The options \`--text-justify' and \`--no-text-justify' enables and disables the text justification, respectively. The text justification is enabled at default.
+  ${bold}-i, --indent${sgr0}
+  ${bold}--indent=${cyan}REGEX${sgr0}
+  ${bold}--indent=${sgr0}
+    The option \`-i' specifies that the indentation is to be preserved, \
+i.e., when the original line has indentation at the head, each folded line also has the same indentation. \
+The option \`--indent=REGEX' enables the indent preservation with the indent pattern begin REGEX. \
+The option \`--indent=' disables the indent preservation. \
+The default pattern is \`--indent='[ \t]+''.
+
+  ${bold}--text-justify${sgr0}
+  ${bold}--no-text-justify${sgr0}
+    These options controls the text justification. \
+If \`--spaces' is specified and the text justification is enabled, the spaces are adjusted to fit the two sides of a line to the display width. \
+The options \`--text-justify' and \`--no-text-justify' enables and disables the text justification, respectively. \
+The text justification is enabled at default.
 
 EOF
     exit ;;
@@ -132,6 +162,8 @@ gawk '
       charWidth=CW_WEST;
 
     tabWidth=ENVIRON["fTabWidth"];
+
+    fContinuation=ENVIRON["fContinuation"];
   }
 
   function strrepeat(STR,COUNT, ret){
@@ -222,13 +254,13 @@ gawk '
   #----------------------------------------------------------------------------
   # module c2w ... from ble-edit.sh (ble 2015-07-15)
 
-  function c2wdata_east_push(codes, n,i){
+  function c2w_registerEastRanges(codes, n,i){
     n=split(codes,arr);
     for(i=1;i<=n;i++)
       c2wdata_east[c2wdata_east_count++]=sprintf("%c",int(arr[i]));
   }
 
-  function c2w_initialize(){
+  BEGIN{
     # string values for c2w_basic
     xA0   =sprintf("%c",0xA0   );
     x1100 =sprintf("%c",0x1100 );
@@ -255,22 +287,22 @@ gawk '
     x3FFFE=sprintf("%c",0x3FFFE);
 
     c2wdata_east_count=0;
-    c2wdata_east_push("161 162 164 165 167 169 170 171 174 175 176 181 182 187 188 192 198 199 208 209");
-    c2wdata_east_push("215 217 222 226 230 231 232 235 236 238 240 241 242 244 247 251 252 253 254 255");
-    c2wdata_east_push("257 258 273 274 275 276 283 284 294 296 299 300 305 308 312 313 319 323 324 325");
-    c2wdata_east_push("328 332 333 334 338 340 358 360 363 364 462 463 464 465 466 467 468 469 470 471");
-    c2wdata_east_push("472 473 474 475 476 477 593 594 609 610 708 709 711 712 713 716 717 718 720 721");
-    c2wdata_east_push("728 732 733 734 735 736 913 930 931 938 945 962 963 970 1025 1026 1040 1104 1105 1106");
-    c2wdata_east_push("8208 8209 8211 8215 8216 8218 8220 8222 8224 8227 8228 8232 8240 8241 8242 8244 8245 8246 8251 8252");
-    c2wdata_east_push("8254 8255 8308 8309 8319 8320 8321 8325 8364 8365 8451 8452 8453 8454 8457 8458 8467 8468 8470 8471");
-    c2wdata_east_push("8481 8483 8486 8487 8491 8492 8531 8533 8539 8543 8544 8556 8560 8570 8592 8602 8632 8634 8658 8659");
-    c2wdata_east_push("8660 8661 8679 8680 8704 8705 8706 8708 8711 8713 8715 8716 8719 8720 8721 8722 8725 8726 8730 8731");
-    c2wdata_east_push("8733 8737 8739 8740 8741 8742 8743 8749 8750 8751 8756 8760 8764 8766 8776 8777 8780 8781 8786 8787");
-    c2wdata_east_push("8800 8802 8804 8808 8810 8812 8814 8816 8834 8836 8838 8840 8853 8854 8857 8858 8869 8870 8895 8896");
-    c2wdata_east_push("8978 8979 9312 9450 9451 9548 9552 9588 9600 9616 9618 9622 9632 9634 9635 9642 9650 9652 9654 9656");
-    c2wdata_east_push("9660 9662 9664 9666 9670 9673 9675 9676 9678 9682 9698 9702 9711 9712 9733 9735 9737 9738 9742 9744");
-    c2wdata_east_push("9748 9750 9756 9757 9758 9759 9792 9793 9794 9795 9824 9826 9827 9830 9831 9835 9836 9838 9839 9840");
-    c2wdata_east_push("10045 10046 10102 10112 57344 63744 65533 65534 983040 1048574 1048576 1114110");
+    c2w_registerEastRanges("161 162 164 165 167 169 170 171 174 175 176 181 182 187 188 192 198 199 208 209");
+    c2w_registerEastRanges("215 217 222 226 230 231 232 235 236 238 240 241 242 244 247 251 252 253 254 255");
+    c2w_registerEastRanges("257 258 273 274 275 276 283 284 294 296 299 300 305 308 312 313 319 323 324 325");
+    c2w_registerEastRanges("328 332 333 334 338 340 358 360 363 364 462 463 464 465 466 467 468 469 470 471");
+    c2w_registerEastRanges("472 473 474 475 476 477 593 594 609 610 708 709 711 712 713 716 717 718 720 721");
+    c2w_registerEastRanges("728 732 733 734 735 736 913 930 931 938 945 962 963 970 1025 1026 1040 1104 1105 1106");
+    c2w_registerEastRanges("8208 8209 8211 8215 8216 8218 8220 8222 8224 8227 8228 8232 8240 8241 8242 8244 8245 8246 8251 8252");
+    c2w_registerEastRanges("8254 8255 8308 8309 8319 8320 8321 8325 8364 8365 8451 8452 8453 8454 8457 8458 8467 8468 8470 8471");
+    c2w_registerEastRanges("8481 8483 8486 8487 8491 8492 8531 8533 8539 8543 8544 8556 8560 8570 8592 8602 8632 8634 8658 8659");
+    c2w_registerEastRanges("8660 8661 8679 8680 8704 8705 8706 8708 8711 8713 8715 8716 8719 8720 8721 8722 8725 8726 8730 8731");
+    c2w_registerEastRanges("8733 8737 8739 8740 8741 8742 8743 8749 8750 8751 8756 8760 8764 8766 8776 8777 8780 8781 8786 8787");
+    c2w_registerEastRanges("8800 8802 8804 8808 8810 8812 8814 8816 8834 8836 8838 8840 8853 8854 8857 8858 8869 8870 8895 8896");
+    c2w_registerEastRanges("8978 8979 9312 9450 9451 9548 9552 9588 9600 9616 9618 9622 9632 9634 9635 9642 9650 9652 9654 9656");
+    c2w_registerEastRanges("9660 9662 9664 9666 9670 9673 9675 9676 9678 9682 9698 9702 9711 9712 9733 9735 9737 9738 9742 9744");
+    c2w_registerEastRanges("9748 9750 9756 9757 9758 9759 9792 9793 9794 9795 9824 9826 9827 9830 9831 9835 9836 9838 9839 9840");
+    c2w_registerEastRanges("10045 10046 10102 10112 57344 63744 65533 65534 983040 1048574 1048576 1114110");
   }
 
   function c2w_basic(code){
@@ -505,15 +537,22 @@ gawk '
   #----------------------------------------------------------------------------
 
   BEGIN{
-    c2w_initialize();
     ea_initialize();
   }
 
   {
-    if(length($0)>textWidth){
-      content=$0;
+    line=line $0;
+    if(fContinuation){
+      if(match(line,fContinuation "$")>0){
+        sub(fContinuation "$","",line);
+        next;
+      }
+    }
+
+    if(length(line)>textWidth){
+      content=line;
       sub("^(" indentPattern ")","",content);
-      indent=substr($0,1,length($0)-length(content));
+      indent=substr(line,1,length(line)-length(content));
       indentWidth=c2w_a2w(indent,0,textWidth);
       contentWidth=textWidth-indentWidth;
 
@@ -528,6 +567,7 @@ gawk '
     }else{
       print;
     }
+    line="";
   }
 
 ' "${files[@]}"
