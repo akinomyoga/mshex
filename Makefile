@@ -22,17 +22,17 @@ $(MWGDIR)/share/mshex/shrc:
 #------------------------------------------------------------------------------
 # directory shrc
 
-
-
 compile+=shrc/out
 shrc/out:
 	mkdir -p $@
 
+
+
 compile+=shrc/out/bashrc
-shrc/out/bashrc: shrc/bashrc.pp
+shrc/out/bashrc: shrc/bashrc.pp | shrc/out
 	cd shrc && $(MWGPP) bashrc.pp
 compile+=shrc/out/zshrc
-shrc/out/zshrc: shrc/out/bashrc
+shrc/out/zshrc: shrc/out/bashrc | shrc/out
 	touch $@
 install+=$(MWGDIR)/bashrc
 $(MWGDIR)/bashrc: shrc/out/bashrc
@@ -42,10 +42,10 @@ $(MWGDIR)/zshrc: shrc/out/zshrc
 	cp -p $< $@
 
 compile+=shrc/out/bashrc_interactive
-shrc/out/bashrc_interactive: shrc/bashrc_interactive.pp
+shrc/out/bashrc_interactive: shrc/bashrc_interactive.pp | shrc/out
 	cd shrc && $(MWGPP) bashrc_interactive.pp
 compile+=shrc/out/zshrc_interactive
-shrc/out/zshrc_interactive: shrc/out/bashrc_interactive
+shrc/out/zshrc_interactive: shrc/out/bashrc_interactive | shrc/out
 	touch $@
 install+=$(MWGDIR)/share/mshex/shrc/zshrc_interactive
 $(MWGDIR)/share/mshex/shrc/zshrc_interactive: shrc/out/zshrc_interactive
@@ -75,7 +75,7 @@ $(MWGDIR)/share/mshex/shrc/path.sh: shrc/path.sh
 
 # 以下は互換性の為
 compile+=shrc/out/libmwg_src.sh
-shrc/out/libmwg_src.sh: shrc/libmwg_src.pp
+shrc/out/libmwg_src.sh: shrc/libmwg_src.pp | shrc/out
 	cd shrc && $(MWGPP) libmwg_src.pp > out/libmwg_src.sh
 
 #------------------------------------------------------------------------------

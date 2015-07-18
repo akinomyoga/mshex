@@ -21,19 +21,23 @@ install+=%name%
 #------------------------------------------------------------------------------
 # directory shrc
 
+compile+=shrc/out
+shrc/out:
+	mkdir -p $@
+
 #%m shrc_pp (
 compile+=shrc/%out%
-shrc/%out%: shrc/%in%
+shrc/%out%: shrc/%in% | shrc/out
 	cd shrc && $(MWGPP) %in%
 #%)
 #%m shrc_ppd (
 compile+=shrc/%out%
-shrc/%out%: shrc/%ref%
+shrc/%out%: shrc/%ref% | shrc/out
 	touch $@
 #%)
 #%m shrc_pp0 (
 compile+=shrc/%out%
-shrc/%out%: shrc/%in%
+shrc/%out%: shrc/%in% | shrc/out
 	cd shrc && $(MWGPP) %in% > %out%
 #%)
 
@@ -42,10 +46,6 @@ install+=$(MWGDIR)/%d%
 $(MWGDIR)/%d%: %s%
 	cp -p $< $@
 #%)
-
-compile+=shrc/out
-shrc/out:
-	mkdir -p $@
 
 #%x shrc_pp .r|%in%|bashrc.pp|.r|%out%|out/bashrc|
 #%x shrc_ppd.r|%ref%|out/bashrc|  .r|%out%|out/zshrc|
