@@ -1,7 +1,7 @@
 # -*- mode: makefile-gmake; -*-
 
 MWGDIR:=$(HOME)/.mwg
-MWGPP:=ext/mwg_pp.awk
+MWGPP:=$(PWD)/ext/mwg_pp.awk
 
 all: compile
 .PHONY: all install dist compile
@@ -30,7 +30,7 @@ shrc/out:
 
 compile+=shrc/out/bashrc
 shrc/out/bashrc: shrc/bashrc.pp
-	cd shrc && mwg_pp.awk bashrc.pp
+	cd shrc && $(MWGPP) bashrc.pp
 compile+=shrc/out/zshrc
 shrc/out/zshrc: shrc/out/bashrc
 	touch $@
@@ -43,7 +43,7 @@ $(MWGDIR)/zshrc: shrc/out/zshrc
 
 compile+=shrc/out/bashrc_interactive
 shrc/out/bashrc_interactive: shrc/bashrc_interactive.pp
-	cd shrc && mwg_pp.awk bashrc_interactive.pp
+	cd shrc && $(MWGPP) bashrc_interactive.pp
 compile+=shrc/out/zshrc_interactive
 shrc/out/zshrc_interactive: shrc/out/bashrc_interactive
 	touch $@

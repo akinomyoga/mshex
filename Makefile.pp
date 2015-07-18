@@ -1,7 +1,7 @@
 # -*- mode: makefile-gmake; -*-
 
 MWGDIR:=$(HOME)/.mwg
-MWGPP:=ext/mwg_pp.awk
+MWGPP:=$(PWD)/ext/mwg_pp.awk
 
 all: compile
 .PHONY: all install dist compile
