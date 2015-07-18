@@ -30,14 +30,16 @@
 
 export fSPACES=
 export fINDENT=
-export fWIDTH=80
+export fWIDTH=
 export fTextJustify=1
 export fCharWidth=east
 export fTabWidth=8
 export fContinuation=
+export oIndentType=spaces
 
 declare fBYTES=
 declare fERROR=
+declare fHELP=
 declare files
 files=()
 
@@ -76,13 +78,49 @@ while (($#)); do
       fERROR=1
       echo "ifold: the specified char-width mode, \`--char-width=$arg', unrecognized." >&2
     fi ;;
+  (--indent-type=*)
+    arg=${arg#--indent-type=}
+    declare regex
+    if regex='(spaces|copy)' && [[ arg =~ $regex ]]; then
+      oIndentType="$arg"
+    else
+      fERROR=1
+      echo "ifold: the specified indent-type, \`--indent-type=$arg', unrecognized." >&2
+    fi ;;
   (--help)
-    declare bold=$'\e[1m'
-    declare cyan=$'\e[36m'
-    declare sgr0=$'\e[m'
-    declare ul=$'\e[4m'
-    source $0 -i -s <<EOF
+    fHELP=1 ;;
+  (*)
+    if [[ ! -e $arg ]]; then
+      fERROR=1
+      echo "ifold: the specified file \`$arg' not found" >&2
+    elif [[ -d $arg ]]; then
+      fERROR=1
+      echo "ifold: the specified path \`$arg' is a directory" >&2
+    else
+      files[${#files[@]}]="$arg"
+    fi ;;
+  esac
+done
+
+if [[ ! $fWIDTH ]]; then
+  if [[ -t 1 ]]; then
+    shopt -s checkwinsize
+    fWIDTH=${COLUMNS:-80}
+    fWIDTH=$((fWIDTH<20?20:fWIDTH>120?120:fWIDTH))
+  else
+    fWIDTH=80
+  fi
+fi
+
+function show_help {
+  local bold=$'\e[1m'
+  local cyan=$'\e[36m'
+  local sgr0=$'\e[m'
+  local ul=$'\e[4m'
+
+  source $0 -i -s -w "$fWIDTH" <<EOF
 usage: ifold [OPTIONS...]
+
 Indented fold.
 
 OPTIONS
@@ -114,11 +152,16 @@ The line continuation is defaultly disabled.
   ${bold}-i, --indent${sgr0}
   ${bold}--indent=${cyan}REGEX${sgr0}
   ${bold}--indent=${sgr0}
-    The option \`${ul}-i${sgr0}' specifies that the indentation is to be preserved, \
-i.e., when the original line has indentation at the head, each folded line also has the same indentation. \
+  ${bold}--indent-type=${cyan}TYPE${sgr0}
+    The option \`${ul}-i${sgr0}' specifies that the indent is to be preserved, \
+i.e., when the original line has indent at the head, each folded line also has the same width of indent. \
 The option \`${ul}--indent=${cyan}REGEX${sgr0}' enables the indent preservation with the indent pattern begin ${cyan}REGEX${sgr0}. \
 The option \`${ul}--indent=${sgr0}' disables the indent preservation. \
-The default pattern is \`${ul}--indent='[ \t]+'${sgr0}'.
+The default pattern is \`${ul}--indent='[ \t]+'${sgr0}'. \
+The option \`${ul}--indent-type=${cyan}TYPE${sgr0}' controls the type of the indent of the folded lines. \
+If ${cyan}TYPE${sgr0} = ${ul}copy${sgr0} is specified, the exactly same indent with the original line is copied to the folded lines. \
+If ${cyan}TYPE${sgr0} = ${ul}spaces${sgr0} is specified, the indent is replaced with spaces, and only the width of the original indent is preserved. \
+The default indent type is \`--indent-type=spaces'.
 
   ${bold}--text-justify${sgr0}
   ${bold}--no-text-justify${sgr0}
@@ -128,21 +171,15 @@ The options \`${ul}--text-justify${sgr0}' and \`${ul}--no-text-justify${sgr0}' e
 The text justification is enabled at default.
 
 EOF
-    exit ;;
-  (*)
-    if [[ ! -e $arg ]]; then
-      fERROR=1
-      echo "ifold: the specified file \`$arg' not found" >&2
-    elif [[ -d $arg ]]; then
-      fERROR=1
-      echo "ifold: the specified path \`$arg' is a directory" >&2
-    else
-      files[${#files[@]}]="$arg"
-    fi ;;
-  esac
-done
+}
 
 [[ $fERROR ]] && exit 1
+
+if [[ $fHELP ]]; then
+  show_help
+  exit
+fi
+
 [[ $fBYTES ]] && export LANG=C
 
 gawk '
@@ -154,9 +191,9 @@ gawk '
 
     textJustify=ENVIRON["fTextJustify"]!="";
 
-    charWidth=ENVIRON["fCharWidth"];
     CW_WEST=0;
     CW_EAST=1;
+    charWidth=ENVIRON["fCharWidth"];
     if(charWidth=="east")
       charWidth=CW_EAST;
     else if(charWidth=="west")
@@ -164,11 +201,20 @@ gawk '
     else
       charWidth=CW_WEST;
 
+    IT_SPACES=0;
+    IT_COPY=1;
+    indentType=ENVIRON["oIndentType"];
+    if(indentType=="copy")
+      indentType=IT_COPY;
+    else
+      indentType=IT_SPACES;
+
     tabWidth=ENVIRON["fTabWidth"];
 
     fContinuation=ENVIRON["fContinuation"];
   }
 
+  function max(a,b){return a>b?a:b;}
   function strrepeat(STR,COUNT, ret){
     ret="";
     for(;COUNT>0;COUNT=rshift(COUNT,1)){
@@ -399,7 +445,7 @@ gawk '
         continue;
       }else{
         w=c2w_ctrl(substr(text,1,1),offset,limit,0);
-        if(offset+w>=limit)break;
+        if(offset+w>limit)break;
         offset+=w;
         count++;
         text=substr(text,2);
@@ -504,6 +550,7 @@ gawk '
     return _ret;
   }
   function east_asian_fold(content,lines,width,tabOffset, _lcount,_clusters,_count,_limit,c,cw,offset,j,i,rest,l0,l1,padding,nc){
+    width=max(1,width);
     _limit=tabOffset+width;
     _count=ea_split(content,_clusters);
     nline=0;
@@ -544,7 +591,7 @@ gawk '
 
       while(cw>width){
         nc=c2w_w2nchar(c,offset,_limit);
-        if(nc=-0)nc++; # 最低でも1文字
+        if(nc==0)nc++; # 最低でも1文字
         lines[nline++]=substr(c,1,nc);
 
         # 残り再計算
@@ -583,35 +630,43 @@ gawk '
       }
     }
 
-    if(length(line)>textWidth){
-      content=line;
-      sub("^(" indentPattern ")","",content);
-      indent=substr(line,1,length(line)-length(content));
-      indentWidth=c2w_a2w(indent,0,textWidth);
-      contentWidth=textWidth-indentWidth;
+    content=line;
+    sub("^(" indentPattern ")","",content);
+    indent=substr(line,1,length(line)-length(content));
+    indentWidth=c2w_a2w(indent,0,textWidth);
+    contentWidth=textWidth-indentWidth;
 
-      if(handleSpaces){
-        # nline=spaces_fold(content,lines,contentWidth);
-        nline=east_asian_fold(content,lines,contentWidth,indentWidth);
-      }else{
-        nline=hard_fold(content,lines,contentWidth);
-      }
+    if(handleSpaces){
+      # nline=spaces_fold(content,lines,contentWidth);
+      nline=east_asian_fold(content,lines,contentWidth,indentWidth);
+    }else{
+      nline=hard_fold(content,lines,contentWidth);
+    }
 
-      if(indent!=""&&(line ~ /\x1b\[[0-9:;]*m/)){
-        indentSgr=local_sgr?local_sgr:"\x1b[m";
-        sgr_update(indent);
-        for(i=0;i<nline;i++){
-          print indentSgr indent local_sgr lines[i];
+    flagCheckSgr=(line ~ /\x1b\[[0-9:;]*m/);
+    if(flagCheckSgr){
+      indentSgr=local_sgr?local_sgr:"\x1b[m";
+      sgr_update(indent);
+    }
+
+    # 出力
+    print indent lines[0];
+    if(flagCheckSgr)sgr_update(lines[0]);
+    if(nline>1){
+      if(indentType==IT_SPACES)
+        indent=strrepeat(" ",indentWidth);
+      if(flagCheckSgr){
+        indent=indentSgr indent;
+        for(i=1;i<nline;i++){
+          print indent local_sgr lines[i];
           sgr_update(lines[i]);
         }
       }else{
-        for(i=0;i<nline;i++)
+        for(i=1;i<nline;i++)
           print indent lines[i];
       }
-    }else{
-      print line;
-      sgr_update(line);
     }
+
     line="";
   }
 

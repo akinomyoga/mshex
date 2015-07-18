@@ -1,32 +1,11 @@
 #!/bin/bash
 
-declare fEval= fError=
-declare fOverwriteMode= fBackupSuffix=\~
-declare ren_before ren_after files
-files=()
-while (($#)); do
-  declare arg="$1"
-  shift
-  case "$arg" in
-  (-S|--shell-expand) fEval=1 ;;
-  (-b|--backup)      fOverwriteMode=b ;;
-  (-f|--force)       fOverwriteMode=f ;;
-  (-i|--interactive) fOverwriteMode=i ;;
-  (-n|--no-clobber)  fOverwriteMode=n ;;
-  (--suffix=?*)      fBackupSuffix=${arg#--suffix=} ;;
-  # (-S)
-  #   if (($#)); then
-  #     fBackupSuffix="$1"
-  #     shift
-  #   else
-  #     echo '[1;31mren[m: no argument of the option -S' >&2
-  #     fError=1
-  #   fi ;;
-  (--)
-    files=("${files[@]}" "$@")
-    break ;;
-  (--help)
-    ifold -i -s -w 80 <<EOF
+function show_help {
+  local bold=$'\e[1m'
+  local ul=$'\e[4m'
+  local cyan=$'\e[36m'
+  local sgr0=$'\e[m'
+  ifold -i -s <<EOF
 usage: ren [OPTIONS...] BEFORE AFTER [FILES...]
 
 BEFORE
@@ -35,27 +14,67 @@ BEFORE
 
 AFTER
 
-  Specify replacement result. The specifier \$N in the AFTER will be replaced by the captured text corresponding to N-th \`()' in BEFORE. If the option \`-S' or \`--shell-expand' is specified, shell expansion is applied to the AFTER after finishing the replacement of \$N.
+  Specify replacement result. \
+The specifier ${ul}\$${cyan}N${sgr0} in the AFTER will be replaced by the captured text corresponding to ${cyan}N${sgr0}-th \`${ul}()${sgr0}' in BEFORE. \
+If the option \`${ul}-x${sgr0}' or \`${ul}--shell-expand${sgr0}' is specified, \
+shell expansion is applied to the AFTER after finishing the replacement of ${ul}\$${cyan}N${sgr0}.
 
 OPTIONS
 
-  -S, --shell-expand
+  ${bold}-x, --shell-expand${sgr0}
     apply shell expansion to AFTER.
 
-  --help
+  ${bold}--help${sgr0}
     show this help.
 
-  -b, --backup
-  -f, --force
-  -i, --interactive
-  -n, --no-clobber
-    These options control the treatment of existing files. If multiple options of -b, -f, -i, and -n are specified, the one specified last is used. The option \`-b' specifies that the existing option will be renamed by adding suffix. The suffix is specified by \`--suffix=SUFFIX' option. The default suffix is \`~'. The option \`-f' specifies that the existing files will be overwritten. The option \`-i' specifies that it is asked for each existing file whether the file is to be overwritten. The option \`-n' specifies that the rename is skipped if there is existing files.
+  ${bold}-b, --backup${sgr0}
+  ${bold}-f, --force${sgr0}
+  ${bold}-i, --interactive${sgr0}
+  ${bold}-n, --no-clobber${sgr0}
+    These options control the treatment of existing files. \
+If multiple options of ${ul}-b${sgr0}, ${ul}-f${sgr0}, ${ul}-i${sgr0}, and ${ul}-n${sgr0} are specified, the one specified last is used. \
+The option \`${ul}-b${sgr0}' specifies that the existing option will be renamed by adding suffix. \
+The suffix is specified by \`${ul}--suffix=SUFFIX${sgr0}' option. \
+The default suffix is \`${ul}~${sgr0}'. \
+The option \`${ul}-f${sgr0}' specifies that the existing files will be overwritten. \
+The option \`${ul}-i${sgr0}' specifies that it is asked for each existing file whether the file is to be overwritten. \
+The option \`${ul}-n${sgr0}' specifies that the rename is skipped if there is existing files.
 
-  -S, --suffix=SUFFIX [default ~]
+  ${bold}-S, --suffix=${cyan}SUFFIX${sgr0} [default ${ul}~${sgr0}]
 
-  --
+  ${bold}--${sgr0}
     Specify that the later arguments are treated as file names.
 EOF
+
+}
+
+declare fEval= fError=
+declare fOverwriteMode= fBackupSuffix=\~
+declare ren_before ren_after files
+files=()
+while (($#)); do
+  declare arg="$1"
+  shift
+  case "$arg" in
+  (-x|--shell-expand) fEval=1 ;;
+  (-b|--backup)      fOverwriteMode=b ;;
+  (-f|--force)       fOverwriteMode=f ;;
+  (-i|--interactive) fOverwriteMode=i ;;
+  (-n|--no-clobber)  fOverwriteMode=n ;;
+  (--suffix=?*)      fBackupSuffix=${arg#--suffix=} ;;
+  (-S)
+    if (($#)); then
+      fBackupSuffix="$1"
+      shift
+    else
+      echo '[1;31mren[m: no argument of the option -S' >&2
+      fError=1
+    fi ;;
+  (--)
+    files=("${files[@]}" "$@")
+    break ;;
+  (--help)
+    show_help
     exit ;;
   (*)
     if [[ ! ${ren_before+x} ]]; then
