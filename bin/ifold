@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# 既存の fold の不満な点
+# GNU coreutils fold の不満な点
 #
+#   日本語の処理が全然駄目
 #   インデントが正しく処理されない
-#   日本語の処理
 #
 # 機能
 #
 #   文字幅
-#     日本語文字の幅
+#     日本語文字(UTF-8)の幅
 #     CSI sequence のスキップ
 #   インデントの伝播
 #     インデント文字の指定
@@ -155,13 +155,13 @@ The line continuation is defaultly disabled.
   ${bold}--indent-type=${cyan}TYPE${sgr0}
     The option \`${ul}-i${sgr0}' specifies that the indent is to be preserved, \
 i.e., when the original line has indent at the head, each folded line also has the same width of indent. \
-The option \`${ul}--indent=${cyan}REGEX${sgr0}' enables the indent preservation with the indent pattern begin ${cyan}REGEX${sgr0}. \
+The option \`${ul}--indent=${cyan}REGEX${sgr0}' enables the indent preservation with the indent pattern ${cyan}REGEX${sgr0}. \
 The option \`${ul}--indent=${sgr0}' disables the indent preservation. \
-The default pattern is \`${ul}--indent='[ \t]+'${sgr0}'. \
+The default pattern \`${ul}--indent='[ \t]+'${sgr0}' is used for \`${ul}-i${sgr0}' and \`${ul}--indent${sgr0}' if not specified elsewhere. \
 The option \`${ul}--indent-type=${cyan}TYPE${sgr0}' controls the type of the indent of the folded lines. \
 If ${cyan}TYPE${sgr0} = ${ul}copy${sgr0} is specified, the exactly same indent with the original line is copied to the folded lines. \
 If ${cyan}TYPE${sgr0} = ${ul}spaces${sgr0} is specified, the indent is replaced with spaces, and only the width of the original indent is preserved. \
-The default indent type is \`--indent-type=spaces'.
+The default indent type is \`${ul}--indent-type=spaces${sgr0}'.
 
   ${bold}--text-justify${sgr0}
   ${bold}--no-text-justify${sgr0}

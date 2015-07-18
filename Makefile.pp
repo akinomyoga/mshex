@@ -24,7 +24,7 @@ install+=%name%
 #%m shrc_pp (
 compile+=shrc/%out%
 shrc/%out%: shrc/%in%
-	cd shrc && mwg_pp.awk %in%
+	cd shrc && $(MWGPP) %in%
 #%)
 #%m shrc_ppd (
 compile+=shrc/%out%
