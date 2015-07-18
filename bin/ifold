@@ -7,14 +7,16 @@
 #
 # 機能
 #
+#   文字幅
+#     日本語文字の幅
+#     CSI sequence のスキップ
 #   インデントの伝播
-#   インデント文字の指定
+#     インデント文字の指定
+#     SGR 保存・継続に対応
 #   text-justify
-#   日本語文字の幅
 #   日本語禁則処理
 #   tab 幅の指定
 #   tab を空白に変換
-#   CSI sequence のスキップ
 #   行継続の指定 (--continue, --continue=REGEX)
 #
 # ToDo
@@ -78,6 +80,7 @@ while (($#)); do
     declare bold=$'\e[1m'
     declare cyan=$'\e[36m'
     declare sgr0=$'\e[m'
+    declare ul=$'\e[4m'
     source $0 -i -s <<EOF
 usage: ifold [OPTIONS...]
 Indented fold.
@@ -92,36 +95,36 @@ OPTIONS
 
   ${bold}--char-width=${cyan}CW${sgr0}
     This option specifies the scheme to determine character widths. \
-Currently there are two schemes: ${cyan}CW${sgr0} = ${bold}east${sgr0} or ${bold}west${sgr0}. The default is \`--char-width=east'. \
+Currently there are two schemes: ${cyan}CW${sgr0} = ${ul}east${sgr0} or ${ul}west${sgr0}. The default is \`${ul}--char-width=east${sgr0}'. \
 Most characters in unicode has its fixed width 1 or 2. \
 On the other hand, some part of the characters has the property \`Ambiguous' for East_Asian_Width where the width depends on contexts. \
-In the scheme \`--char-width=east', all the ambiguous characters are assumed to have width 2, \
-while they are assumed to have width 1 in the scheme \`--char-width=west'.
+In the scheme \`${ul}--char-width=east${sgr0}', all the ambiguous characters are assumed to have width 2, \
+while they are assumed to have width 1 in the scheme \`${ul}--char-width=west${sgr0}'.
 
   ${bold}--tab-width=${cyan}N${sgr0}
 
   ${bold}--continue${sgr0}
   ${bold}--continue=${cyan}REGEX${sgr0}
-    The option \`--continue' enables the line continuation by a specific sequence at the end of lines. \
+    The option \`${ul}--continue${sgr0}' enables the line continuation by a specific sequence at the end of lines. \
 The default line continuation specifier is '\\'. \
-The option \`--continue=REGEX' enables the line continuation with the pattern REGEX at the end of lines. \
-The option \`--continue=' disables the line continuation. \
+The option \`${ul}--continue=${cyan}REGEX${sgr0}' enables the line continuation with the pattern ${cyan}REGEX${sgr0} at the end of lines. \
+The option \`${ul}--continue=${sgr0}' disables the line continuation. \
 The line continuation is defaultly disabled.
 
   ${bold}-i, --indent${sgr0}
   ${bold}--indent=${cyan}REGEX${sgr0}
   ${bold}--indent=${sgr0}
-    The option \`-i' specifies that the indentation is to be preserved, \
+    The option \`${ul}-i${sgr0}' specifies that the indentation is to be preserved, \
 i.e., when the original line has indentation at the head, each folded line also has the same indentation. \
-The option \`--indent=REGEX' enables the indent preservation with the indent pattern begin REGEX. \
-The option \`--indent=' disables the indent preservation. \
-The default pattern is \`--indent='[ \t]+''.
+The option \`${ul}--indent=${cyan}REGEX${sgr0}' enables the indent preservation with the indent pattern begin ${cyan}REGEX${sgr0}. \
+The option \`${ul}--indent=${sgr0}' disables the indent preservation. \
+The default pattern is \`${ul}--indent='[ \t]+'${sgr0}'.
 
   ${bold}--text-justify${sgr0}
   ${bold}--no-text-justify${sgr0}
     These options controls the text justification. \
-If \`--spaces' is specified and the text justification is enabled, the spaces are adjusted to fit the two sides of a line to the display width. \
-The options \`--text-justify' and \`--no-text-justify' enables and disables the text justification, respectively. \
+If \`${ul}--spaces${sgr0}' is specified and the text justification is enabled, the spaces are adjusted to fit the two sides of a line to the display width. \
+The options \`${ul}--text-justify${sgr0}' and \`${ul}--no-text-justify${sgr0}' enables and disables the text justification, respectively. \
 The text justification is enabled at default.
 
 EOF
@@ -422,6 +425,37 @@ gawk '
   }
 
   #----------------------------------------------------------------------------
+  # module sgr
+
+  BEGIN{local_sgr="";}
+
+  function sgr_update(a, seq,isset){
+    if(a ~ /\x1b[[0-9;:]*m/){
+      isset=0;
+
+      # load
+      if(local_sgr){
+        isset=1;
+        seq=substr(local_sgr,3,length(local_sgr)-3);
+      }
+
+      # update
+      while(match(a,/\x1b[[0-9;:]*m/)>0){
+        seq=(isset?seq ";":"") substr(a,RSTART+2,RLENGTH-3);
+        a=substr(a,RSTART+RLENGTH);
+        isset=1;
+      }
+
+      # store
+      if(isset){
+        sub(/^.*(^|;)[0;]*(;|$)/,"",seq);
+        if(seq!="")seq="0;" seq;
+        local_sgr="\x1b[" seq "m";
+      }
+    }
+  }
+
+  #----------------------------------------------------------------------------
   # line_breaking = east
 
   function ea_initialize(_gyoto_kinsoku,_gyomatu_kinsoku,_bunri_kinsoku){
@@ -562,10 +596,21 @@ gawk '
       }else{
         nline=hard_fold(content,lines,contentWidth);
       }
-      for(i=0;i<nline;i++)
-        print indent lines[i];
+
+      if(indent!=""&&(line ~ /\x1b\[[0-9:;]*m/)){
+        indentSgr=local_sgr?local_sgr:"\x1b[m";
+        sgr_update(indent);
+        for(i=0;i<nline;i++){
+          print indentSgr indent local_sgr lines[i];
+          sgr_update(lines[i]);
+        }
+      }else{
+        for(i=0;i<nline;i++)
+          print indent lines[i];
+      }
     }else{
-      print;
+      print line;
+      sgr_update(line);
     }
     line="";
   }
