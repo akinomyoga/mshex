@@ -1,7 +1,9 @@
 # -*- mode:sh -*-
 # 過去の実装の一覧
 
+#------------------------------------------------------------------------------
 # gauge .bashrc
+
 mwg.bashrc.addpath() {
   local t="$PATH"
   while test $# -gt 0; do
@@ -29,12 +31,16 @@ function PATH.append {
   eval "export $_var='$_value'"
 }
 
+#------------------------------------------------------------------------------
 # gauge mshex libmwg_sh
+# padparadscha:~/.bashrc
+
 mwg.PATH.add() {
   mwg.PATH.remove "$@"
 
   local name="$1"; shift
   local paths; eval "paths=\${$name}"
+  local p
   for p in "$@"; do
     paths="$p${paths:+:}$paths"
   done
@@ -46,6 +52,7 @@ mwg.PATH.append() {
 
   local name="$1"; shift
   local paths; eval "paths=\${$name}"
+  local p
   for p in "$@"; do
     paths="$paths${paths:+:}$p"
   done
@@ -55,6 +62,7 @@ mwg.PATH.append() {
 mwg.PATH.remove() {
   local name="$1"; shift
   local paths; eval "paths=\${$name}"
+  local p
   for p in "$@"; do
     paths="${paths//:$p:/:}"
     paths="${paths#$p:}"
@@ -69,6 +77,7 @@ mwg.PATH.remove() {
 }
 
 mwg.PATH.show() {
-  local name="${1-PATH}"|sed 's/:/\n/g'
-  eval "echo \"\${$name}\""
+  local name="${1-PATH}"
+  eval "echo \"\${$name}\""|sed 's/:/\n/g'
 }
+#------------------------------------------------------------------------------
