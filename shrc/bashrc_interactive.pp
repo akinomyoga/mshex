@@ -97,11 +97,12 @@ function g {
     fi
   elif [[ $1 == log1 ]]; then
     # from http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs
-    git log --graph --abbrev-commit --decorate --date=relative \
-        --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(reset)%s%C(reset) %C(ul)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all
+    local format='%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(reset)%s%C(reset) %C(ul)- %an%C(reset)%C(bold yellow)%d%C(reset)'
+    git log --graph --abbrev-commit --decorate --date=relative --format=format:"$format" --all | ifold -s -w "$COLUMNS" | less -R
+
   elif [[ $1 == log2 ]]; then
-    git log --graph --abbrev-commit --decorate \
-        --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(reset)%s%C(reset) %C(ul)- %an%C(reset)' --all
+    local format='%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(reset)%s%C(reset) %C(ul)- %an%C(reset)'
+    git log --graph --abbrev-commit --decorate --format=format:"$format" --all | ifold -s -w "$COLUMNS" | less -R
   else
     git "$@"
   fi
