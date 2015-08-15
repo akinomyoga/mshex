@@ -98,13 +98,14 @@ function g {
   elif [[ $1 == log[12] ]]; then
     # from http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs
     local esc="(\[[ -?]*[@-~])"
-    local indent="([[:space:]*|\/]|$esc)* $esc*[[:alnum:]]+$esc* - $esc*\([^()]+\)$esc* "
     if [[ $1 == log1 ]]; then
       local format='%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(reset)%s%C(reset) %C(ul)- %an%C(reset)%C(bold yellow)%d%C(reset)'
+      local indent="([[:space:]*|\/]|$esc)* $esc*[[:alnum:]]+$esc* - $esc*\([^()]+\)$esc* "
       git log --graph --abbrev-commit --decorate --date=relative --format=format:"$format" --all |
         ifold -s -w "$COLUMNS" --indent="$indent"
     else
       local format='%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(reset)%s%C(reset) %C(ul)- %an%C(reset)'
+      local indent="([[:space:]*|\/]|$esc)*"
       git log --graph --abbrev-commit --decorate --format=format:"$format" --all |
         ifold -s -w "$COLUMNS" --indent="$indent"
     fi
