@@ -96,7 +96,7 @@ else
     local value="$3"
     local script='
       local i
-      for((i=0;i<${#__mwg_hash__HNAME__key[@]};i++)); do
+      for ((i=0;i<${#__mwg_hash__HNAME__key[@]};i++)); do
         if test "${__mwg_hash__HNAME__key[$i]}" == "$key"; then
           __mwg_hash__HNAME__val[$i]="$value"
           break
@@ -116,7 +116,7 @@ else
     local key="$2"
     local script='
       local i
-      for((i=0;i<${#__mwg_hash__HNAME__key[@]};i++)); do
+      for ((i=0;i<${#__mwg_hash__HNAME__key[@]};i++)); do
         if test "${__mwg_hash__HNAME__key[$i]}" == "$key"; then
           echo "${__mwg_hash__HNAME__val[$i]}"
           break
@@ -132,7 +132,7 @@ else
     local key="$3"
     local script='
       local i
-      for((i=0;i<${#__mwg_hash__HNAME__key[@]};i++)); do
+      for ((i=0;i<${#__mwg_hash__HNAME__key[@]};i++)); do
         if test "${__mwg_hash__HNAME__key[$i]}" == "$key"; then
           VNAME="${__mwg_hash__HNAME__val[$i]}"
           break

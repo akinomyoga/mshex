@@ -63,18 +63,18 @@ function PATH._readArguments {
       _PATH_sep="${2:2}"
       shift 1 ;;
     (-n)
-      _PATH_flags+=n ;;
+      _PATH_flags="${_PATH_flags}n" ;;
     (--help)
       echo "usage: $_PATH_cmdname [-v VARNAME] [-F SEP] [-n] PATHS..."
-      _PATH_flags+=x
+      _PATH_flags="${_PATH_flags}x"
       return ;;
     (-*)
       echo "$_PATH_cmdname: unknown option" >&2
       echo "usage: $_PATH_cmdname [-v VARNAME] [-F SEP] [-n] PATHS..." >&2
-      _PATH_flags+=e
+      _PATH_flags="${_PATH_flags}e"
       return ;;
     (*)
-      IFS="$_PATH_sep" eval "_PATH_paths+=(\$1)"
+      IFS="$_PATH_sep" eval "_PATH_paths=(\"\${_PATH_paths[@]}\" \$1)"
       shift ;;
     esac
   done
@@ -88,8 +88,8 @@ function PATH._canonicalizeImpl {
   for path in $_PATH_value; do
     test -z "$path" && continue
     test "${chk/$_PATH_sep$path$_PATH_sep/}" != "$chk" && continue
-    chk+="$_PATH_sep$path$_PATH_sep"
-    ret+="$_PATH_sep$path"
+    chk="$chk$_PATH_sep$path$_PATH_sep"
+    ret="$ret$_PATH_sep$path"
   done
   _PATH_value="${ret:1}"
 }
@@ -137,7 +137,7 @@ function PATH.prepend {
   local _PATH_path _PATH_cpath=
   for _PATH_path in "${_PATH_paths[@]}"; do
     test -z "${_PATH_flags/*n*/}" -a ! -e "$_PATH_path" && continue
-    _PATH_cpath+="$_PATH_path$_PATH_sep"
+    _PATH_cpath="$_PATH_cpath$_PATH_path$_PATH_sep"
   done
   _PATH_value="$_PATH_cpath$_PATH_value"
 
@@ -155,7 +155,7 @@ function PATH.append {
   local _PATH_path
   for _PATH_path in "${_PATH_paths[@]}"; do
     test -z "${_PATH_flags/*n*/}" -a ! -e "$_PATH_path" && continue
-    _PATH_value+="$_PATH_sep$_PATH_path"
+    _PATH_value="$_PATH_value$_PATH_sep$_PATH_path"
   done
 
   PATH._canonicalizeImpl

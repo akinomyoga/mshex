@@ -48,7 +48,7 @@ fi
 
 function mwg_menu.show {
   local mwg_menu_stdout i
-  for((i=0;i<mwg_menu_count;i++));do
+  for ((i=0;i<mwg_menu_count;i++));do
     if test $i -eq $mwg_menu_index; then
       mwg_menu/printf "$mwg_menu_item_fmt1" $i "${mwg_menu_options[$i]}"
     else
@@ -118,13 +118,13 @@ function mwg_menu/stdout/redraw {
   local i
 
   mwg_menu/printf ""
-  if((beg<mwg_menu_index)); then
+  if ((beg<mwg_menu_index)); then
     mwg_menu/printf "$tmf_cuu" $((mwg_menu_index-beg))
-  elif((beg>mwg_menu_index)); then
+  elif ((beg>mwg_menu_index)); then
     mwg_menu/printf "$tmf_cud" $((beg-mwg_menu_index))
   fi
 
-  for((i=beg;i<end;i++));do
+  for ((i=beg;i<end;i++));do
     if test $i -eq $mwg_menu_index; then
       mwg_menu/printf "$tm_el$mwg_menu_item_fmt1" $i "${mwg_menu_options[$i]}"
     else
@@ -132,9 +132,9 @@ function mwg_menu/stdout/redraw {
     fi
   done
 
-  if((end<mwg_menu_index)); then
+  if ((end<mwg_menu_index)); then
     mwg_menu/printf "$tmf_cud" $((mwg_menu_index-end))
-  elif((end>mwg_menu_index)); then
+  elif ((end>mwg_menu_index)); then
     mwg_menu/printf "$tmf_cuu" $((end-mwg_menu_index))
   fi
   mwg_menu/fflush
@@ -167,10 +167,10 @@ function mwg_menu/exch {
     "${mwg_menu_options[index]}"
     "${mwg_menu_options[index-1]}"
     "${mwg_menu_options[@]:index+1}")
-  if((index==mwg_menu_index)); then
+  if ((index==mwg_menu_index)); then
     let mwg_menu_index--
     mwg_menu/printf "$tmf_cuu" 1
-  elif((index-1==mwg_menu_index)); then
+  elif ((index-1==mwg_menu_index)); then
     let mwg_menu_index++
     mwg_menu/printf "$tmf_cud" 1
   fi
@@ -227,7 +227,7 @@ function mwg_menu/impl {
       a_index=
       mwg_menu.down >&2;;
     ([0-9])
-      a_index+=$key
+      a_index="$a_index$key"
       if test ${#a_index} -ge ${#mwg_menu_max_index}; then
         mwg_menu.goto ${a_index} >&2
         a_index=
