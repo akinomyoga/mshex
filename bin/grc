@@ -58,13 +58,13 @@ EOF
   (-x)
     findsrc_args+=("$arg" "$1")
     shift 1 ;;
-  (-a|-b|-x?*|--exclude=*)
+  (-[abAB]|--exclude=*|--type=*|--exntesion=*)
     findsrc_args+=("$arg") ;;
   (-t) # findsrc type
-    findsrc_args+=("$1")
+    findsrc_args+=("$arg" "$1")
     shift 1 ;;
   (-t*) # findsrc type
-    findsrc_args+=("${arg:2}") ;;
+    findsrc_args+=(-t "${arg:2}") ;;
   (-*)
     echo "$0: unknown option ($arg)" >&2
     exit 1 ;;
@@ -104,5 +104,5 @@ if ((${#args_file[@]}==0)); then
 fi
 
 if ((${#args_file[@]}>=1)); then
-  egrep $color_option -n -H "${args_option[@]}" "$regexp" "${args_file[@]}"
+  grep -E $color_option -n -H "${args_option[@]}" "$regexp" "${args_file[@]}"
 fi

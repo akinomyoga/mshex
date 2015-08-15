@@ -1,53 +1,166 @@
 #!/bin/bash
 
-fNoExtension=
+#--------------------------------------
+# utils
+
+# from ble.sh
+_ble_bash=$((BASH_VERSINFO[0]*10000+BASH_VERSINFO[1]*100+BASH_VERSINFO[2]))
+if ((_ble_bash>=30200)); then
+  function ble/util/isfunction {
+    builtin declare -F "$1" &>/dev/null
+  }
+else
+  function ble/util/isfunction {
+    [[ $(type -t "$1" 2>/dev/null) == function ]]
+  }
+fi
+
+function pat2regex {
+  # (|){}^$ 等は意味を保持する (ファイル名に用いられそうにないから)
+  local pat="$1"
+  pat="${pat//+/\\+}"
+  pat="${pat//./\\.}"
+  pat="${pat//'?'/[^/]}"
+  pat="${pat//'**'/.*}"
+  pat="${pat//'*'/[^/]*}"
+  regex="$pat"
+  # echo dbg: pat2regex $regex >&2
+}
+
+#--------------------------------------
+# options
+
+fArgumentError=
+
+# find
+fALL=
+findRegex=()
+fNoExtension= # not implemented
 extensions=()
+
+# excludes
 excludesDotFiles=1
 excludesBackup=1
 excludedPatterns=()
 
+# types
 typeSpecified=
-typeC=
-typeJs=
-typeF=
-typeEl=
-typeSh=
-typeAll=
 
 function add_extensions {
-  [[ "$1" =~ ^:|::|:$ ]] && fNoExtension=1
+  while (($#)); do
+    local arg="$1"; shift
+    local rex='^:|::|:$|^$'
+    [[ "$arg" =~ $rex ]] && fNoExtension=1
 
-  IFS=: eval 'local arr=($1) ext'
-  for ext in "${arr[@]}"; do
-    test -n "$ext" && extensions+=("${ext#.}")
+    IFS=: eval 'local arr=($arg) ext'
+    for ext in "${arr[@]}"; do
+      [[ $ext ]] && extensions+=("${ext#.}")
+    done
   done
 }
 
+function option/check-optarg1 {
+  if (($#==0)); then
+    fArgumentError=1
+    echo "${tiotle:-findsrc}: missing option argument for option -$c." >&2
+    return 1
+  fi
+}
+
+function option/type {
+  option/check-optarg1 "$@" || return 1
+
+  local type="$1"
+  if ble/util/isfunction "option/type:$type"; then
+    typeSpecified=1
+    "option/type:$type"
+  else
+    fArgumentError=1
+    echo "${title:-findsrc}: unknown type = '$type'."
+  fi
+}
+
+function option/type:c {
+  add_extensions c:h:inl:cpp:cxx:hpp:hxx
+  local cxx_headers=(
+    cassert cctype cerrno cfenv cfloat cinttypes ciso646 climits clocale
+    cmath csetjmp csignal cstdarg cstdbool cstddef cstdint cstdio cstdlib
+    cstring ctgmath ctime cuchar cwchar cwctype array bitset deque
+    forward_list list map queue set stack unordered_map unordered_set
+    vector atomic condition_variable future mutex thread algorithm chrono
+    codecvt complex exception functional initializer_list iterator limits
+    locale memory new numeric random ratio regex stdexcept string
+    system_error tuple typeindex typeinfo type_traits utility valarray
+  )
+  local rex
+  IFS='|' eval 'rex="(.*/|^)(${cxx_headers[*]})"'
+  findRegex+=("$rex")
+}
+function option/type:c++ { option/type:c; }
+function option/type:js  { add_extensions js:ctx:css; }
+function option/type:f   { add_extensions f:inc; }
+function option/type:el  { add_extensions el; }
+function option/type:sh  { add_extensions sh:src; }
+function option/type:plain { :; }
+function option/type:all { fALL=1; }
+
 function read_arguments {
   while (($#)); do
-    local arg="$1"
+    local arg="$1" option="$1"
     shift
     case "$arg" in
-    (-x)  add_extensions "$1"; shift 1 ;;
-    (-x*) add_extensions "${arg:2}" ;;
-    (-a) # do not exclude dotfiles
-      excludesDotFiles= ;;
-    (-b) # do not exclude backups
-      excludesBackup=   ;;
-    (--exclude=*)
-      excludedPatterns+=("${arg#--exclude=}") ;;
-    (-*)
-      echo "${title:-findsrc}: uknown option ($1)" >&2
-      exit 2 ;;
-    (c|'c++') typeSpecified=1 typeC=1 ;;
-    (js)      typeSpecified=1 typeJs=1 ;;
-    (f)       typeSpecified=1 typeF=1 ;;
-    (el)      typeSpecified=1 typeEl=1 ;;
-    (sh)      typeSpecified=1 typeSh=1 ;;
-    (all)     typeSpecified=1 typeAll=1 ;;
+    (-[^-]*)
+      local i iN="${#arg}"
+      for ((i=1;i<iN;i++)); do
+        local c="${arg:i:1}"
+        local option="-$c"
+        case "$option" in
+        (-t) option/type "$@"; shift ;;
+        (-x) add_extensions "$1"; shift ;;
+        (-a) excludesDotFiles=  ;;
+        (-A) excludesDotFiles=1 ;;
+        (-b) excludesBackup=    ;;
+        (-B) excludesBackup=1   ;;
+        (-*)
+          echo "${title:-findsrc}: unknown option ($option)" >&2
+          fArgumentError=1 ;;
+        esac
+      done
+      ;;
+    (--help)
+      ifold -s -i -w 80 <<EOF
+findsrc [options...] [type...]
+
+OPTIONS
+
+  --help
+
+  -t, --type=TYPE
+        c c++ js f el sh plain all
+
+  -x, --extension=EXTENSIONS
+        Specify the extension to be included. \
+Multiple extensions separated by colons can be specified.
+
+  --exclude=PATTERN
+
+  -A    exclude dotfiles (default).
+  -a    include dotfiles.
+  -B    exclude backup files (default).
+  -b    include backup files.
+
+EOF
+      exit 0 ;;
+    (--type=*)      option/type "${arg#--type=}" ;;
+    (--extension=*) add_extensions "${arg#*=}" ;;
+    (--exclude=*)   excludedPatterns+=("${arg#--exclude=}") ;;
+    (-|--*)
+      echo "${title:-findsrc}: unknown option ($option)" >&2
+      fArgumentError=1 ;;
     (*)
-      echo "${title:-findsrc}: unrecognized type '$1'" >&2
-      exit 1 ;;
+      local regex
+      pat2regex "$arg"
+      findRegex+=("(.*/)?$regex") ;;
     esac
   done
 }
@@ -55,7 +168,7 @@ function read_arguments {
 function read_arguments_from_dotfile {
   local dir="$PWD"
   while
-    local foption="$dir/.src"
+    local foption="$dir/.srcoption"
     [[ ! -f "$foption" ]]
   do
     [[ ! $dir ]] && return
@@ -74,70 +187,56 @@ function read_arguments_from_dotfile {
 read_arguments_from_dotfile
 read_arguments "$@"
 
-[[ $typeC   || -z $typeSpecified ]] && extensions+=(c h inl cpp cxx hpp hxx)
-[[ $typeJs  || -z $typeSpecified ]] && extensions+=(js ctx css)
-[[ $typeF   || -z $typeSpecified ]] && extensions+=(f inc)
-[[ $typeEl  || -z $typeSpecified ]] && extensions+=(el)
-[[ $typeSh  || -z $typeSpecified ]] && extensions+=(sh src)
-[[ $typeAll ]] && fALL=1 extensions+=(all)
+[[ $fArgumentError ]] && exit 1
 
-
-function pat2regex {
-  # (|){}^$ 等は意味を保持する (ファイル名に用いられそうにないから)
-  local pat="$1"
-  pat="${pat//+/\\+}"
-  pat="${pat//./\\.}"
-  pat="${pat//'?'/[^/]}"
-  pat="${pat//'**'/.*}"
-  pat="${pat//'*'/[^/]*}"
-  regex="(^|/)$pat(/|$)"
-  # echo dbg: pat2regex $regex >&2
-}
+if [[ ! $typeSpecified ]]; then
+  option/type:c
+  option/type:js
+  option/type:f
+  option/type:el
+  option/type:sh
+fi
 
 # egrep -v の引数を構築
-function grepv_excludes.construct {
-  grepv_excludes=('^$')
+function rex_grep.construct {
+  rex_grep=('^$')
 
   if [[ $excludesBackup ]]; then
-    grepv_excludes+=('/backup/|\.[[:digit:]]{8}($|\.\w+)')
-    [[ $fALL ]] && grepv_excludes+=('~$')
+    rex_grep+=('/backup/|\.[[:digit:]]{8}($|\.\w+)|~$')
+    [[ $fALL ]] && rex_grep+=('~$')
   fi
 
   if [[ $excludesDotFiles ]]; then
-    grepv_excludes+=('/\.[^/]')
+    rex_grep+=('/\.[^/]')
   fi
 
   for ((i=0;i<${#excludedPatterns[*]};i++)); do
     local regex
     pat2regex "${excludedPatterns[i]}"
-    grepv_excludes+=("$regex")
+    rex_grep+=("(^|/)$regex(/|$)")
   done
 
-  IFS='|' eval 'grepv_excludes="${grepv_excludes[*]}"'
+  IFS='|' eval 'rex_grep="${rex_grep[*]}"'
 }
-grepv_excludes.construct
+rex_grep.construct
 
 # 実行
-if test -n "$fALL"; then
-  find | \egrep -v "$grepv_excludes"
+if [[ $fALL ]]; then
+  find | \grep -Ev "$rex_grep"
 else
   declare rex
-  IFS='|' eval 'rex=".+\.(${extensions[*]})"'
-  if [[ $typeC || ! $typeSpecified ]]; then
-    declare cxx_headers=(
-      cassert cctype cerrno cfenv cfloat cinttypes ciso646 climits clocale
-      cmath csetjmp csignal cstdarg cstdbool cstddef cstdint cstdio cstdlib
-      cstring ctgmath ctime cuchar cwchar cwctype array bitset deque
-      forward_list list map queue set stack unordered_map unordered_set
-      vector atomic condition_variable future mutex thread algorithm chrono
-      codecvt complex exception functional initializer_list iterator limits
-      locale memory new numeric random ratio regex stdexcept string
-      system_error tuple typeindex typeinfo type_traits utility valarray
-    )
-    IFS='|' eval 'rex+="|(.*/)?(${cxx_headers[*]})"'
-  fi
+  IFS='|' eval 'rex=".*[^/]\.(${extensions[*]})"'
+  findRegex+=("$rex")
+
+  [[ $fNoExtension ]] && findRegex+=("(.*/)?[^/.]+")
+
+  declare rex_find
+  IFS='|' eval 'rex_find="${findRegex[*]}"'
+
+  # echo "rex_find=$rex_find" >&2
+  # echo "rex_grep=$rex_grep" >&2
   
   # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
-  find -regextype posix-extended -type f -and -regex "$rex" | \egrep -v "$grepv_excludes"
+  find -regextype posix-extended -type f -and -regex "$rex_find" | \grep -Ev "$rex_grep"
   # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+'
 fi
