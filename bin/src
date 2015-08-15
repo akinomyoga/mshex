@@ -1,0 +1,8 @@
+#!/bin/bash
+
+case "$1" in
+(find) findsrc "${@:2}" ;;
+(wc) wc $(findsrc "${@:2}") ;;
+(grep) grc "${@:2}" ;;
+(*) exit 2 ;;
+esac

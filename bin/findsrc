@@ -2,16 +2,6 @@
 
 fNoExtension=
 extensions=()
-
-function add_extensions {
-  [[ "$1" =~ ^:|::|:$ ]] && fNoExtension=1
-
-  IFS=: eval 'local arr=($1) ext'
-  for ext in "${arr[@]}"; do
-    test -n "$ext" && extensions+=("${ext#.}")
-  done
-}
-
 excludesDotFiles=1
 excludesBackup=1
 excludedPatterns=()
@@ -24,49 +14,65 @@ typeEl=
 typeSh=
 typeAll=
 
-while (($#)); do
-  case "$1" in
-  (-x)
-    add_extensions "$2"
-    shift 2 ;;
-  (-x*)
-    add_extensions "${1:2}"
-    shift ;;
-  (-a) # do not exclude dotfiles
-    excludesDotFiles=
-    shift ;;
-  (-b) # do not exclude backups
-    excludesBackup=
-    shift ;;
-  (--exclude=*)
-    excludedPatterns+=("${1#--exclude=}")
-    shift ;;
-  (-*)
-    echo "findsrc: uknown option ($1)" >&2
-    exit 2 ;;
-  (c|'c++')
-    typeSpecified=1 typeC=1
-    shift ;;
-  (js)
-    typeSpecified=1 typeJs=1
-    shift ;;
-  (f)
-    typeSpecified=1 typeF=1
-    shift ;;
-  (el)
-    typeSpecified=1 typeEl=1
-    shift ;;
-  (sh)
-    typeSpecified=1 typeSh=1
-    shift ;;
-  (all)
-    typeSpecified=1 typeAll=1
-    shift ;;
-  (*)
-    echo "findsrc: unrecognized type '$1'" >&2
-    exit 1 ;;
-  esac
-done
+function add_extensions {
+  [[ "$1" =~ ^:|::|:$ ]] && fNoExtension=1
+
+  IFS=: eval 'local arr=($1) ext'
+  for ext in "${arr[@]}"; do
+    test -n "$ext" && extensions+=("${ext#.}")
+  done
+}
+
+function read_arguments {
+  while (($#)); do
+    local arg="$1"
+    shift
+    case "$arg" in
+    (-x)  add_extensions "$1"; shift 1 ;;
+    (-x*) add_extensions "${arg:2}" ;;
+    (-a) # do not exclude dotfiles
+      excludesDotFiles= ;;
+    (-b) # do not exclude backups
+      excludesBackup=   ;;
+    (--exclude=*)
+      excludedPatterns+=("${arg#--exclude=}") ;;
+    (-*)
+      echo "${title:-findsrc}: uknown option ($1)" >&2
+      exit 2 ;;
+    (c|'c++') typeSpecified=1 typeC=1 ;;
+    (js)      typeSpecified=1 typeJs=1 ;;
+    (f)       typeSpecified=1 typeF=1 ;;
+    (el)      typeSpecified=1 typeEl=1 ;;
+    (sh)      typeSpecified=1 typeSh=1 ;;
+    (all)     typeSpecified=1 typeAll=1 ;;
+    (*)
+      echo "${title:-findsrc}: unrecognized type '$1'" >&2
+      exit 1 ;;
+    esac
+  done
+}
+
+function read_arguments_from_dotfile {
+  local dir="$PWD"
+  while
+    local foption="$dir/.src"
+    [[ ! -f "$foption" ]]
+  do
+    [[ ! $dir ]] && return
+    dir="${dir%/*}"
+  done
+
+  local title line rex='(^|[ 	])#.+$' iline=0
+  while IFS= read -r line || [[ $line ]]; do
+    ((iline++))
+    [[ $line =~ $rex ]] &&
+      line=${line::${#line}-${#BASH_REMATCH}}
+    title="$foption:$iline" read_arguments $line
+  done < "$foption"
+}
+
+read_arguments_from_dotfile
+read_arguments "$@"
 
 [[ $typeC   || -z $typeSpecified ]] && extensions+=(c h inl cpp cxx hpp hxx)
 [[ $typeJs  || -z $typeSpecified ]] && extensions+=(js ctx css)

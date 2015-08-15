@@ -99,6 +99,9 @@ $(MWGDIR)/bin/rm_i: bin/rm_i
 install+=$(MWGDIR)/bin/~mv
 $(MWGDIR)/bin/~mv: bin/~mv
 	$(SHELL) make-install_script.sh $< $@
+install+=$(MWGDIR)/bin/src
+$(MWGDIR)/bin/src: bin/src
+	$(SHELL) make-install_script.sh $< $@
 install+=$(MWGDIR)/bin/findsrc
 $(MWGDIR)/bin/findsrc: bin/findsrc
 	$(SHELL) make-install_script.sh $< $@

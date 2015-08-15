@@ -81,6 +81,7 @@ $(MWGDIR)/bin/%file%: bin/%file%
 #%x bin_file.r|%file%|msync|
 #%x bin_file.r|%file%|rm_i|
 #%x bin_file.r|%file%|~mv|
+#%x bin_file.r|%file%|src|
 #%x bin_file.r|%file%|findsrc|
 #%x bin_file.r|%file%|grc|
 #%x bin_file.r|%file%|cz|
