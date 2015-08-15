@@ -236,7 +236,7 @@ fi
 function mwg_term/.readkey-impl {
   local s= c
   while mwg_term/.read-char c; do
-    s+="$c"
+    s="$s$c"
 
     local key skey m=0
     mwg.dict 'keys=(!mwg_term_keymap[@])'

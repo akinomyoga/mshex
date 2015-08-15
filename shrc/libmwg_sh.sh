@@ -70,7 +70,7 @@ mwg.String.Uppercase.__get() {
 
     local text="$*" i
     return=
-    for((i=0;i<${#text};i++));do
+    for ((i=0;i<${#text};i++));do
       local c="${text:$i:1}"
       local index_tmp="${mwg_String_table_lalpha%%$c*}"
       local index=${#index_tmp}
@@ -91,7 +91,7 @@ mwg.String.Lowercase.__get() {
 
     local text="$*" i
     return=
-    for((i=0;i<${#text};i++));do
+    for ((i=0;i<${#text};i++));do
       local c="${text:$i:1}"
       local index_tmp="${mwg_String_table_ualpha%%$c*}"
       local index=${#index_tmp}
@@ -170,7 +170,7 @@ mwg.String.HexEncode.__get() {
   local code=
 
   local i
-  for((i=0;i<${#text};i++));do
+  for ((i=0;i<${#text};i++));do
     mwg.Char.ToHexCode.__get "${text:$i:1}"
     code="$code$return"
   done
@@ -191,17 +191,17 @@ mwg.String.Base64Encode.__get() {
 
   unset buff[*]
   local -a buff=()
-  for((i=0;i<${#text};i+=3)); do
+  for ((i=0;i<${#text};i+=3)); do
     local cook="${text:$i:3}"
 
     let s=0
-    for((j=0;j<3;j++));do
+    for ((j=0;j<3;j++));do
       mwg.Char.ToCharCode.__get "${cook:$j:1}"
       let s=s*256+return
     done
 
     local quartet=
-    for((j=3;j>=0;j--));do
+    for ((j=3;j>=0;j--));do
       if test $j -gt ${#cook}; then
         quartet="=$quartet"
       else
