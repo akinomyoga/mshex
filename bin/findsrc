@@ -46,7 +46,7 @@ excludedPatterns=()
 # types
 typeSpecified=
 
-function add_extensions {
+function option/extension {
   while (($#)); do
     local arg="$1"; shift
     local rex='^:|::|:$|^$'
@@ -81,7 +81,7 @@ function option/type {
 }
 
 function option/type:c {
-  add_extensions c:h:inl:cpp:cxx:hpp:hxx
+  option/extension c:h:inl:cpp:cxx:hpp:hxx
   local cxx_headers=(
     cassert cctype cerrno cfenv cfloat cinttypes ciso646 climits clocale
     cmath csetjmp csignal cstdarg cstdbool cstddef cstdint cstdio cstdlib
@@ -97,10 +97,10 @@ function option/type:c {
   findRegex+=("$rex")
 }
 function option/type:c++ { option/type:c; }
-function option/type:js  { add_extensions js:ctx:css; }
-function option/type:f   { add_extensions f:inc; }
-function option/type:el  { add_extensions el; }
-function option/type:sh  { add_extensions sh:src; }
+function option/type:js  { option/extension js:ctx:css; }
+function option/type:f   { option/extension f:inc; }
+function option/type:el  { option/extension el; }
+function option/type:sh  { option/extension sh:src; }
 function option/type:plain { :; }
 function option/type:all { fALL=1; }
 
@@ -116,7 +116,7 @@ function read_arguments {
         local option="-$c"
         case "$option" in
         (-t) option/type "$@"; shift ;;
-        (-x) add_extensions "$1"; shift ;;
+        (-x) option/extension "$1"; shift ;;
         (-a) excludesDotFiles=  ;;
         (-A) excludesDotFiles=1 ;;
         (-b) excludesBackup=    ;;
@@ -151,9 +151,9 @@ Multiple extensions separated by colons can be specified.
 
 EOF
       exit 0 ;;
-    (--type=*)      option/type "${arg#--type=}" ;;
-    (--extension=*) add_extensions "${arg#*=}" ;;
-    (--exclude=*)   excludedPatterns+=("${arg#--exclude=}") ;;
+    (--type=*)      option/type "${arg#*=}" ;;
+    (--extension=*) option/extension "${arg#*=}" ;;
+    (--exclude=*)   excludedPatterns+=("${arg#*=}") ;;
     (-|--*)
       echo "${title:-findsrc}: unknown option ($option)" >&2
       fArgumentError=1 ;;
