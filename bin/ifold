@@ -37,6 +37,9 @@ export fTabWidth=8
 export fContinuation=
 export oIndentType=spaces
 
+export oPager=
+oPager='less -FR'
+
 declare fBYTES=
 declare fERROR=
 declare fHELP=
@@ -118,7 +121,7 @@ function show_help {
   local sgr0=$'\e[m'
   local ul=$'\e[4m'
 
-  source $0 -i -s -w "$fWIDTH" <<EOF
+  source "$0" -i -s -w "$fWIDTH" <<EOF
 usage: ifold [OPTIONS...]
 
 Indented fold.
@@ -182,7 +185,8 @@ fi
 
 [[ $fBYTES ]] && export LANG=C
 
-gawk '
+function ifold_core {
+  gawk '
   BEGIN{
     indentPattern=ENVIRON["fINDENT"];
     handleSpaces=length(ENVIRON["fSPACES"])>=1;
@@ -616,6 +620,41 @@ gawk '
   }
 
   #----------------------------------------------------------------------------
+  # function output_line(line){print line;}
+
+  BEGIN{
+    output_cached_mode=0;
+    if(ENVIRON["fUsePager"])output_cached_mode=1;
+
+    if(output_cached_mode){
+      output_nline=ENVIRON["LINES"];
+      if(!output_nline)output_nline=60;
+      output_iline=0;
+      output_cache="";
+    }
+  }
+  function output_line(line){
+    if(output_cached_mode){
+      output_iline++;
+      if(output_iline<output_nline){
+        output_cache=output_cache line "\n";
+        return;
+      }else if(output_iline==output_nline){
+        print "ifold_mode=2";
+        printf("%s",output_cache);
+      }
+    }
+
+    print line;
+  }
+  END{
+    if(output_cached_mode&&output_iline<output_nline){
+      print "ifold_mode=1";
+      printf("%s",output_cache);
+    }
+  }
+
+  #----------------------------------------------------------------------------
 
   BEGIN{
     ea_initialize();
@@ -650,7 +689,7 @@ gawk '
     }
 
     # 出力
-    print indent lines[0];
+    output_line(indent lines[0]);
     if(flagCheckSgr)sgr_update(lines[0]);
     if(nline>1){
       if(indentType==IT_SPACES)
@@ -658,16 +697,43 @@ gawk '
       if(flagCheckSgr){
         indent=indentSgr indent;
         for(i=1;i<nline;i++){
-          print indent local_sgr lines[i];
+          output_line(indent local_sgr lines[i]);
           sgr_update(lines[i]);
         }
       }else{
         for(i=1;i<nline;i++)
-          print indent lines[i];
+          output_line(indent lines[i]);
       }
     }
 
     line="";
   }
 
-' "${files[@]}"
+  ' "${files[@]}"
+}
+
+if [[ -t 1 && $LINES && $oPager ]]; then
+  fUsePager=1 ifold_core | {
+    declare line use_less=
+    if IFS= read -r line || [[ $line ]]; then
+      if [[ $line == ifold_mode=1 ]]; then
+        use_less=
+      elif [[ $line == ifold_mode=2 ]]; then
+        use_less=1
+      else
+        use_less=
+        printf '%s\n' "$line"
+      fi
+    fi
+
+    if [[ $use_less ]]; then
+      $oPager
+    else
+      while IFS= read -r line || [[ $line ]]; do
+        printf '%s\n' "$line"
+      done
+    fi
+  }
+else
+  ifold_core
+fi
