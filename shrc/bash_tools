@@ -22,6 +22,12 @@ mwg_term.register_key rmso rmso '[m'
 
 source "${MWGDIR:-$HOME/.mwg}/share/mshex/shrc/menu.sh"
 
+if ((mwg_bash>=30100)); then
+  function mwg/array#append { eval "$1+=(\"\${@:2}\")"; }
+else
+  function mwg/array#append { eval "$1=(\"\${$1[@]}\" \"\${@:2}\")"; }
+fi
+
 #------------------------------------------------------------------------------
 # cd
 
@@ -176,12 +182,12 @@ mwg_cdhist.cd() {
     (-f) fForce=1 ;;
     (-)
       dst="$OLDPWD"
-      args+=("$1") ;;
+      mwg/array#append args "$1" ;;
     (-*)
-      args+=("$1") ;;
+      mwg/array#append args "$1" ;;
     (*)
       : ${dst:=$1}
-      args+=("$1") ;;
+      mwg/array#append args "$1" ;;
     esac
     shift
   done

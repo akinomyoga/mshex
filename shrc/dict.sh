@@ -36,7 +36,7 @@
 ((__mwg_mshex_dict__PragmaOnce>=1)) && return
 __mwg_mshex_dict__PragmaOnce=1
 
-if [ -n "$ZSH_VERSION" ] || [ "$mwg_bash" -ge 40000 ]; then
+if [[ $ZSH_VERSION || $mwg_bash -ge 40000 ]]; then
   mwg_dict_declare=(-A DICTNAME)
   function mwg.dict/.new {
     local declare="$1"
@@ -82,7 +82,7 @@ if [ -n "$ZSH_VERSION" ] || [ "$mwg_bash" -ge 40000 ]; then
   #   done
   # }
 else
-  mwg_dict_declare=(-A __mwg_hash__DICTNAME__key __mwg_hash__DICTNAME__val)
+  mwg_dict_declare=(-a __mwg_hash__DICTNAME__key __mwg_hash__DICTNAME__val)
   function mwg.dict/.new {
     local declare="$1"
     local hname="$2"

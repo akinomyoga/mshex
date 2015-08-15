@@ -1,2 +1,2 @@
 # findsrc options
---exclude=shrc/out
+--exclude=shrc/out --extension=:pp
