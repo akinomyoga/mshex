@@ -171,15 +171,15 @@ function read_arguments_from_dotfile {
     local foption="$dir/.srcoption"
     [[ ! -f "$foption" ]]
   do
-    [[ ! $dir ]] && return
+    [[ ! $dir || $dir == "${dir%/*}" ]] && return
     dir="${dir%/*}"
   done
 
   local title line rex='(^|[ 	])#.+$' iline=0 args=
   while IFS= read -r line || [[ $line ]]; do
     ((iline++))
-    [[ $line =~ $rex ]] &&
-      line=${line::${#line}-${#BASH_REMATCH}}
+    [[ $line =~ $rex ]] && line=${line::${#line}-${#BASH_REMATCH}}
+    [[ ! ${line//[ 	]} ]] && continue
     eval "args=($line)"
     title="$foption:$iline" read_arguments "${args[@]}"
   done < "$foption"
