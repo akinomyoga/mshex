@@ -64,6 +64,8 @@ tac "$target" | {
   done
 } | tac | grep -v '^#' > "$HOME/1.tmp"
 
+mwgbk -m "$target" && mv "$HOME/1.tmp" "$target"
+
 if [[ $check_syntax && -s "$HOME/2.tmp" ]]; then
   cat bash_history.invalid >> "$HOME/.bash_history.invalid"
 fi
