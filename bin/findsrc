@@ -175,12 +175,13 @@ function read_arguments_from_dotfile {
     dir="${dir%/*}"
   done
 
-  local title line rex='(^|[ 	])#.+$' iline=0
+  local title line rex='(^|[ 	])#.+$' iline=0 args=
   while IFS= read -r line || [[ $line ]]; do
     ((iline++))
     [[ $line =~ $rex ]] &&
       line=${line::${#line}-${#BASH_REMATCH}}
-    title="$foption:$iline" read_arguments $line
+    eval "args=($line)"
+    title="$foption:$iline" read_arguments "${args[@]}"
   done < "$foption"
 }
 
