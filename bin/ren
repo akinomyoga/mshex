@@ -6,23 +6,23 @@ function show_help {
   local cyan=$'\e[36m'
   local sgr0=$'\e[m'
   ifold -i -s <<EOF
-usage: ren [OPTIONS...] BEFORE AFTER [FILES...]
+usage: ren [${cyan}OPTIONS${sgr0}...] ${cyan}BEFORE${sgr0} ${cyan}AFTER${sgr0} [${cyan}FILES${sgr0}...]
 
-BEFORE
+${bold}${cyan}BEFORE${sgr0}
 
   Specify replacement target with the extended regex (POSIX ERE).
 
-AFTER
+${bold}${cyan}AFTER${sgr0}
 
   Specify replacement result. \
-The specifier ${ul}\$${cyan}N${sgr0} in the AFTER will be replaced by the captured text corresponding to ${cyan}N${sgr0}-th \`${ul}()${sgr0}' in BEFORE. \
+The specifier ${ul}\$${cyan}N${sgr0} in the ${cyan}AFTER${sgr0} will be replaced by the captured text corresponding to ${cyan}N${sgr0}'th \`${ul}()${sgr0}' in ${cyan}BEFORE${sgr0}. \
 If the option \`${ul}-x${sgr0}' or \`${ul}--shell-expand${sgr0}' is specified, \
-shell expansion is applied to the AFTER after finishing the replacement of ${ul}\$${cyan}N${sgr0}.
+shell expansion is applied to the ${cyan}AFTER${sgr0} after finishing the replacement of ${ul}\$${cyan}N${sgr0}.
 
-OPTIONS
+${bold}OPTIONS${sgr0}
 
   ${bold}-x, --shell-expand${sgr0}
-    apply shell expansion to AFTER.
+    apply shell expansion to ${cyan}AFTER${sgr0}.
 
   ${bold}--help${sgr0}
     show this help.
@@ -38,7 +38,7 @@ The suffix is specified by \`${ul}--suffix=SUFFIX${sgr0}' option. \
 The default suffix is \`${ul}~${sgr0}'. \
 The option \`${ul}-f${sgr0}' specifies that the existing files will be overwritten. \
 The option \`${ul}-i${sgr0}' specifies that it is asked for each existing file whether the file is to be overwritten. \
-The option \`${ul}-n${sgr0}' specifies that the rename is skipped if there is existing files.
+The option \`${ul}-n${sgr0}' specifies that the rename is skipped if there already an existing file.
 
   ${bold}-S, --suffix=${cyan}SUFFIX${sgr0} [default ${ul}~${sgr0}]
 

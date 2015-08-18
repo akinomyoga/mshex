@@ -83,7 +83,10 @@ mwgbk_file () {
     exit 1
   fi
 
-  local filebk="${file%'~'}"
+  local filebk="${file%'~'}" rex_dotfile='^(.*/)?\.([^/]+)$'
+  if [[ $filebk =~ $rex_dotfile ]]; then
+    filebk="${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
+  fi
   local bkdir="$(get_backup_directory "$file")"
   if test -n "$bkdir"; then
     filebk="$bkdir/${filebk##*/}"

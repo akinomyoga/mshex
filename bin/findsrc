@@ -62,7 +62,7 @@ function option/extension {
 function option/check-optarg1 {
   if (($#==0)); then
     fArgumentError=1
-    echo "${tiotle:-findsrc}: missing option argument for option -$c." >&2
+    echo "${title:-findsrc}: missing option argument for option -$c." >&2
     return 1
   fi
 }
