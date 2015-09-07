@@ -97,7 +97,7 @@ function option/type:c {
   findRegex+=("$rex")
 }
 function option/type:c++ { option/type:c; }
-function option/type:js  { option/extension js:ctx:css; }
+function option/type:js  { option/extension js:css; }
 function option/type:f   { option/extension f:inc; }
 function option/type:el  { option/extension el; }
 function option/type:sh  { option/extension sh:src; }

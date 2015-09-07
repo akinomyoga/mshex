@@ -95,10 +95,10 @@ function g {
     else
       git diff -b HEAD~$((index)) HEAD~$((index-1)) "$@"
     fi
-  elif [[ $1 == log[12] ]]; then
+  elif [[ $1 == log[12] || $1 == t ]]; then
     # from http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs
     local esc="(\[[ -?]*[@-~])"
-    if [[ $1 == log1 ]]; then
+    if [[ $1 == log1 || $1 == t ]]; then
       local format='%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(reset)%s%C(reset) %C(ul)- %an%C(reset)%C(bold yellow)%d%C(reset)'
       local indent="([[:space:]*|\/]|$esc)* $esc*[[:alnum:]]+$esc* - $esc*\([^()]+\)$esc* "
       git log --graph --abbrev-commit --decorate --date=relative --format=format:"$format" --all |
