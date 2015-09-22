@@ -38,6 +38,9 @@ alias ..='cd ../'
 alias d=$'date +"\e[94m%F (%a) %T %Z\e[m"'
 
 # alias m=make
+function m/sub:t {
+  sed -n '/^\.PHONY:/ { s/\.PHONY:[[:space:]]*\|[[:space:]]$//g ; s/[[:space:]]\{1,\}/\n/g ; p }' "$1" | sort -u
+}
 function m {
   local fHere= arg regex
   for arg in "$@"; do
@@ -48,14 +51,23 @@ function m {
     if [[ Makefile -ot Makefile.pp ]]; then
       mwg_pp.awk Makefile.pp > Makefile || return
     fi
-    make "$@"
+
+    if [[ -f Makefile && $1 == ? ]] && declare -f m/"sub:$1" >/dev/null ; then
+      m/"sub:$1" Makefile "${@:2}"
+    else
+      make "$@"
+    fi
   else
     local dir="${PWD%/}"
     while :; do
       if [[ -f $dir/Makefile ]]; then
-        make -C "${dir:-/}" "$@"
+        if [[ $1 == ? ]] && declare -f m/"sub:$1" >/dev/null; then
+          m/"sub:$1" "$dir/Makefile" "${@:2}"
+        else
+          make -C "${dir:-/}" "$@"
+        fi
         return
-      elif ! [[ $dir == */* ]]; then
+      elif [[ $dir != */* ]]; then
         make "$@"
         return
       else
