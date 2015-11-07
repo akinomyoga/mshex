@@ -93,8 +93,8 @@ $(MWGDIR)/bin/mwgbk: bin/mwgbk
 install+=$(MWGDIR)/bin/msync
 $(MWGDIR)/bin/msync: bin/msync
 	$(SHELL) make-install_script.sh $< $@
-install+=$(MWGDIR)/bin/rm_i
-$(MWGDIR)/bin/rm_i: bin/rm_i
+install+=$(MWGDIR)/bin/remove
+$(MWGDIR)/bin/remove: bin/remove
 	$(SHELL) make-install_script.sh $< $@
 install+=$(MWGDIR)/bin/~mv
 $(MWGDIR)/bin/~mv: bin/~mv

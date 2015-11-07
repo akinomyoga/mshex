@@ -1,0 +1,122 @@
+#!/bin/bash
+
+
+#------------------------------------------------------------------------------
+# read options
+fR=
+fI=
+fF=
+fV=
+fS=
+
+fError=
+files=()
+
+while (($#)); do
+  declare arg="$1" i
+  shift
+  case "$arg" in
+  (--*)
+    fError=1
+    echo "remove: unrecognized option \'$arg\'." >&2 ;;
+  (-?*)
+    for ((i=1;i<${#arg};i++)); do
+      case "${arg:i:1}" in
+      (r) fR=1  ;;
+      (i) fI=1  ;;
+      (f) fF=1  ;;
+      (v) fV=-v ;;
+      (s) fS=1  ;;
+      (*)
+        fError=1
+        echo "remove: unrecognized option \`-${arg:i:1}'" >&2 ;;
+      esac
+    done ;;
+  (*)
+    files[${#files[@]}]="$arg" ;;
+  esac
+done
+
+if ((${#files[@]}==0)); then
+  echo "remove: no files to remove are specified" >&2
+  exit 1
+fi
+
+#------------------------------------------------------------------------------
+# checking files
+if [[ ! $fR || ! $fF ]]; then
+  declare file
+  for file in "${files[@]}"; do
+    if [[ ! $fF && ! ( -e $file || -h $file ) ]]; then
+      echo "remove: '$file' does not exist!" >&2
+      exit 1
+    elif [[ ! $fR && -d $file && ! -h $file ]]; then
+      echo "remove: '$file' is directory! (use -r option to remove directory)" >&2
+      exit 1
+    fi
+  done
+fi
+
+[[ $fError ]] && exit 1
+
+#------------------------------------------------------------------------------
+# create backup directory
+mkd () { test -d "$1" || mkdir -p "$1"; }
+dir="$HOME/.recycle"
+now="$(date +%Y%m%d-%H%M%S)"
+
+delete_waiting_files () {
+  test -d "$dir/wait" || return
+  
+  local -a gomigomi
+  for file in "$dir"/wait/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]*; do
+    local date="${file#$dir/wait/}"
+    date="${date:0:8}"
+    if test "$((date+100))" -lt "${now:0:8}"; then
+      gomigomi+=("$file")
+    fi
+  done
+
+  if test "${#gomigomi}" -gt 0; then
+    mkd "$dir/gomi"
+    mv $fV "${gomigomi[@]}" "$dir/gomi/"
+  fi
+}
+
+delete_waiting_files
+
+destination="$dir/wait"
+test -n "$fS" && destination="$dir"
+mkd "$destination"
+
+path_separator_pattern='[/\\]'
+function escape_filename {
+  if [[ $1 == -v ]]; then
+    eval "
+      $2=\"\$3\"
+      $2=\"\${$2//%/%%}\"
+      $2=\"\${$2//\$path_separator_pattern/%-}\"
+    "
+  else
+    local _value
+    escape_filename -v _value "$1"
+    echo "$_value"
+  fi
+}
+
+if (($#==1)); then
+  src="${1%/}"
+  escape_filename -v esc "$PWD/$src"
+  dst="$destination/$now-$esc"
+  while [[ -e $dst ]]; do dst="$dst+"; done
+  mv $fV "$src" "$dst"
+else
+  escape_filename -v esc "$PWD"
+  dst="$destination/$now@$esc"
+  while [[ -e $dst ]]; do dst="$dst+"; done
+  mkdir "$dst"
+  for file in "${files[@]}"; do
+    escape_filename -v esc "$file"
+    mv $fV "$file" "$dst/$esc"
+  done
+fi
