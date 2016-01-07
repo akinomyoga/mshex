@@ -98,14 +98,22 @@ function g {
     # from ephemient's answer at http://stackoverflow.com/questions/4822471/count-number-of-lines-in-a-git-repository
     git diff --stat 4b825dc642cb6eb9a060e54bf8d69288fbee4904
   elif [[ $1 =~ $rex_diff ]]; then
-    local index="${BASH_REMATCH[1]}"
     shift
-    if [[ ! $index ]]; then
-      git diff -b "$@"
-    elif ((index<=0)); then
-      git diff -b HEAD --cached "$@"
+    local index="${BASH_REMATCH[1]}"
+
+    local -a diff_options=()
+    if [[ $index ]]; then
+      if ((index<=0)); then
+        diff_options=(HEAD --cached)
+      else
+        diff_options=(HEAD~$((index)) HEAD~$((index-1)))
+      fi
+    fi
+
+    if [[ -t 1 ]] && type nkf &>/dev/null; then
+      git diff -b --color "${diff_options[@]}" "$@" | nkf | less -RF
     else
-      git diff -b HEAD~$((index)) HEAD~$((index-1)) "$@"
+      git diff -b "${diff_options[@]}" "$@"
     fi
   elif [[ $1 == log[12] || $1 == t ]]; then
     # from http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs
