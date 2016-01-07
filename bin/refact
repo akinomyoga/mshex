@@ -36,54 +36,89 @@ function mshex.yn {
 #------------------------------------------------------------------------------
 # read arguments
 
-grc_options=(--color)
-fB=
-while test $# -gt 0 -a "x${1::1}" == x-; do
-  case "$1" in
-  (-B)
-    fB=1
-    shift ;;
-  (-Wg,?*)
-    IFS=, eval 'grc_options+=(${1:4})'
-    shift ;;
-  (--help)
-    cat <<EOF
-usage: refact [options...] extended_regex after
-
-OPTIONS
-  -B        do not set the word-boundary condition
-  -Wg,<options for grc separated with comma>
-            set options for grc
-  --help    show this help
-
-EOF
-    exit 0 ;;
-  *)
-    echo "refact: unknown option ($1)" >&2
-    exit 1 ;;
-  esac
-done
-
 function usage_exit {
   echo "usage: refact [options...] beforeExtendedRegex afterText [files...]" >&2
   exit 1
 }
+function print_help {
+  ifold <<EOF
+usage: refact [options...] extended_regex after
 
-if (($#<2)); then
-  usage_exit
-fi
-before="$1"
-after="$2"
-shift 2
+OPTIONS
 
-# check args
-inputfiles=("$@")
-for f in "${inputfiles[@]}"; do
-  [[ -s $f ]] || usage_exit
+  --help        show this help
+
+  -b, --word-boundary
+  -B, --no-word-boundary
+        set or reset the word-boundary condition.
+        boundary is not set by default.
+
+  -F, --fixed-strings
+
+  -Wg,GRCOPTIONS
+        set options for grc
+        GRCOPTIONS is the options for grc separated with comma.
+
+EOF
+}
+
+grc_options=(--color)
+inputfiles=()
+
+regex_type=E
+
+fB=
+
+flagDone=
+flagError=
+before= flagBeforeSpecified=
+after=  flagAfterSpecified=
+while (($#)); do
+  declare arg="$1"; shift
+  case "$arg" in
+  (-b|--word-boundary)      fB=1 ;;
+  (-B|--no-word-boundary)   fB= ;;
+  (-F|--fixed-strings) regex_type=F ;;
+  (-Wg,?*)
+    IFS=, eval 'grc_options+=(${1:4})' ;;
+  (--help)
+    print_help; flagDone=1 ;;
+  (-*)
+    echo "refact: unknown option ($1)." >&2
+    flagError=1 ;;
+  (*)
+    if [[ ! $flagBeforeSpecified ]]; then
+      before=$arg
+      flagBeforeSpecified=1
+    elif [[ ! $flagAfterSpecified ]]; then
+      after=$arg
+      flagAfterSpecified=1
+    else
+      if [[ -f $arg ]]; then
+        if [[ -e $arg ]]; then
+          echo "refact: the specified path \`$arg' is not a regular file." >&2
+        else
+          echo "refact: the specified file \`$arg' does not exist." >&2
+        fi
+        flagError=1
+      fi
+      inputfiles[${#inputfiles[@]}]=$arg
+    fi
+    ;;
+  esac
 done
 
+[[ $flagDone ]] && exit 0
+
+[[ $flagBeforeSpecified && $flagAfterSpecified ]] || flagError=1
+
+if [[ $flagError ]]; then
+  usage_exit
+  exit "$flagError"
+fi
+
 # for debug
-# fB=1
+# fB=
 # before=Check
 # after=_check
 
@@ -93,17 +128,65 @@ done
 # 拡張正規表現文字クラスの文字順序
 export LC_COLLATE=C
 
-if test -z "$fB"; then
-  bpat="$before"
-  [[ "$bpat" =~ ^[_[:alnum:]] ]] && bpat='\b'"$bpat"
-  [[ "$bpat" =~ [_[:alnum:]]$ ]] && bpat="$bpat"'\b'
+bpat="$before"
+apat="$after"
 
-  apat="$after"
-  [[ "$apat" =~ ^[_[:alnum:]] ]] && apat='\b'"$apat"
-  [[ "$apat" =~ [_[:alnum:]]$ ]] && apat="$apat"'\b'
-else
-  bpat="$before"
-  apat="$after"
+# escape characters having special meanings in ERE.
+function escape_regexchars {
+  ret="$1"
+  if [[ $ret == *['][\/^$.*+?{}()|']* ]]; then
+    b=\] a='\]'; ret=${ret//"$b"/"$a"}
+    b=\[ a='\['; ret=${ret//"$b"/"$a"}
+    b=\\ a='\\'; ret=${ret//"$b"/"$a"}
+    # b=\/ a='\/'; ret=${ret//"$b"/"$a"} # 後でエスケープされる
+    b=\^ a='\^'; ret=${ret//"$b"/"$a"}
+    b=\$ a='\$'; ret=${ret//"$b"/"$a"}
+    b=\. a='\.'; ret=${ret//"$b"/"$a"}
+    b=\* a='\*'; ret=${ret//"$b"/"$a"}
+    b=\+ a='\+'; ret=${ret//"$b"/"$a"}
+    b=\? a='\?'; ret=${ret//"$b"/"$a"}
+    b=\{ a='\{'; ret=${ret//"$b"/"$a"}
+    b=\} a='\}'; ret=${ret//"$b"/"$a"}
+    b=\( a='\('; ret=${ret//"$b"/"$a"}
+    b=\) a='\)'; ret=${ret//"$b"/"$a"}
+    b=\| a='\|'; ret=${ret//"$b"/"$a"}
+  fi
+}
+
+function escape_regexchars_in_replacement {
+  # 置換部分に含まれうる特別な文字: \1..\2\r\n\f\t\v\b\a &
+  ret="$1"
+  if [[ $ret == *['][\/^$.*+?{}()|']* ]]; then
+    b=\] a='\]'; ret=${ret//"$b"/"$a"}
+    b=\[ a='\['; ret=${ret//"$b"/"$a"}
+    # b=\\ a='\\'; ret=${ret//"$b"/"$a"}
+    # b=\/ a='\/'; ret=${ret//"$b"/"$a"} # 後でエスケープされる
+    b=\^ a='\^'; ret=${ret//"$b"/"$a"}
+    b=\$ a='\$'; ret=${ret//"$b"/"$a"}
+    b=\. a='\.'; ret=${ret//"$b"/"$a"}
+    b=\* a='\*'; ret=${ret//"$b"/"$a"}
+    b=\+ a='\+'; ret=${ret//"$b"/"$a"}
+    b=\? a='\?'; ret=${ret//"$b"/"$a"}
+    b=\{ a='\{'; ret=${ret//"$b"/"$a"}
+    b=\} a='\}'; ret=${ret//"$b"/"$a"}
+    b=\( a='\('; ret=${ret//"$b"/"$a"}
+    b=\) a='\)'; ret=${ret//"$b"/"$a"}
+    b=\| a='\|'; ret=${ret//"$b"/"$a"}
+  fi
+}
+
+if [[ $regex_type == F ]]; then
+  declare ret
+  escape_regexchars "$bpat"
+  bpat="$ret"
+fi
+
+if [[ $fB ]]; then
+  [[ $bpat =~ ^[_[:alnum:]] ]] && bpat='\b'"$bpat"
+  [[ $bpat =~ [_[:alnum:]]$ ]] && bpat="$bpat"'\b'
+
+  [[ $apat =~ ^[_[:alnum:]] ]] && apat='\b'"$apat"
+  [[ $apat =~ [_[:alnum:]]$ ]] && apat="$apat"'\b'
 fi
 
 sl=/
@@ -128,7 +211,7 @@ function enumerate_matches.i2 {
   function search_target_files {
     # fd1 に一致ファイル一覧を出力
     # fd5 に一致箇所のレポートを出力
-    
+
     exec 6>&1
     grc --color "${grc_options[@]}" "$bpat" "${inputfiles[@]}" | gawk '
       {
@@ -156,7 +239,7 @@ function enumerate_matches.i2 {
        }
     " 1>&5
   }
-  
+
   IFS=$'\n' eval 'result=($(search_target_files))'
 
   local file
@@ -173,7 +256,10 @@ if test "${#target_files[@]}" -le 0; then
   exit 2
 fi
 echo ------- collision? --------
-grc "${grc_options[@]}" "$apat" "${inputfiles[@]}"
+declare ret
+escape_regexchars_in_replacement "$after"
+apat_coll="$ret"
+grc "${grc_options[@]}" "$apat_coll" "${inputfiles[@]}"
 echo ---------------------------
 
 #------------------------------------------------------------------------------
