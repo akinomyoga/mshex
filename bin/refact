@@ -94,7 +94,7 @@ while (($#)); do
       after=$arg
       flagAfterSpecified=1
     else
-      if [[ -f $arg ]]; then
+      if [[ ! -f $arg ]]; then
         if [[ -e $arg ]]; then
           echo "refact: the specified path \`$arg' is not a regular file." >&2
         else
