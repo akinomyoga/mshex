@@ -83,7 +83,7 @@ function g {
   local rex_diff='^d([0-9]*)$'
 
   if(($#==0)); then
-    git status
+    git -c color.status=always status | less -FSRX
   elif [[ $1 == dist ]]; then
     local name="${PWD##*/}"
     test -d dist || mkdir -p dist
@@ -115,10 +115,10 @@ function g {
     else
       git diff -b "${diff_options[@]}" "$@"
     fi
-  elif [[ $1 == log[12] || $1 == t ]]; then
+  elif [[ $1 == [tT] ]]; then
     # from http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs
     local esc="(\[[ -?]*[@-~])"
-    if [[ $1 == log1 || $1 == t ]]; then
+    if [[ $1 == t ]]; then
       local format='%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(reset)%s%C(reset) %C(ul)- %an%C(reset)%C(bold yellow)%d%C(reset)'
       local indent="([[:space:]*|\/]|$esc)* $esc*[[:alnum:]]+$esc* - $esc*\([^()]+\)$esc* "
       git log --graph --abbrev-commit --decorate --date=relative --format=format:"$format" --all --date-order |
