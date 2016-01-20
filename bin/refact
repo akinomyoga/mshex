@@ -80,11 +80,11 @@ while (($#)); do
   (-B|--no-word-boundary)   fB= ;;
   (-F|--fixed-strings) regex_type=F ;;
   (-Wg,?*)
-    IFS=, eval 'grc_options+=(${1:4})' ;;
+    IFS=, eval 'grc_options+=(${arg:4})' ;;
   (--help)
     print_help; flagDone=1 ;;
   (-*)
-    echo "refact: unknown option ($1)." >&2
+    echo "refact: unknown option ($arg)." >&2
     flagError=1 ;;
   (*)
     if [[ ! $flagBeforeSpecified ]]; then
@@ -212,6 +212,14 @@ function enumerate_matches.i2 {
     # fd1 に一致ファイル一覧を出力
     # fd5 に一致箇所のレポートを出力
 
+    local sgr_rls='\x1b[48;5;225m'
+    local sgr_rws='\x1b[1;48;5;217m'
+    local sgr_rwe='\x1b[22;48;5;225m'
+    local sgr_als='\x1b[48;5;193m'
+    local sgr_aws='\x1b[1;48;5;155m'
+    local sgr_awe='\x1b[22;48;5;193m'
+    local tab='\x1b[37m< TAB \/>\x1b[39m'
+
     exec 6>&1
     grc --color "${grc_options[@]}" "$bpat" "${inputfiles[@]}" | gawk '
       {
@@ -228,15 +236,27 @@ function enumerate_matches.i2 {
         print $0;
       }
     ' | sed -r "
-       /^>>> /!{
-         h
-         s/^/-/
-         p
-         g
-         s/\[[ -?]*[@-~]//g
-         s/${bpat_escaped}/${after_escaped}/g
-         s/^/+/
-       }
+       /^>>> /{s/^>>> (.*)/\x1b[1m+++ \1\x1b[m/;p;d;}
+
+       # h = header \n content
+       s/\x1b\[[ -?]*[@-~]//g
+       s/^(([^:]+|:+[0-9]*[^:0-9])*):+([0-9]+):(.*)$/\x1b[36m\3:\x1b[m\n\4/
+       ta;s/^/\n/;:a
+       h
+
+       # p header - modify(content)
+       g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_rws&$sgr_rwe/g;
+       s/.*/$sgr_rls&\x1b[m/;s/\t/$tab/g
+       G;s/\n([^\n]*)$//;s/^(.*)\n([^\n]*)$/\2-\1/;p
+
+       # p header + modify(content)
+       g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_aws${after_escaped}$sgr_awe/g;
+       s/.*/$sgr_als&\x1b[m/;s/\n/\x1b[m&$sgr_als$sgr_aws/g;s/\t/$tab/g
+       :D
+         G;s/\n([^\n]*)$//;s/^(.*)\n([^\n]*)$/\2+\1/;P
+       tW;:W;s/^[^\n]*\n//;tD
+
+       d
     " 1>&5
   }
 
@@ -265,7 +285,7 @@ echo ---------------------------
 #------------------------------------------------------------------------------
 # execute replace
 
-mshex.yn -n "execute replace? " || exit 0
+mshex.yn -n "execute replace? " || exit 3
 
 sedx="s/${bpat_escaped}/${after_escaped}/g"
 sed -r -i "$sedx" "${target_files[@]}"
