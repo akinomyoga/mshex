@@ -33,6 +33,18 @@ function mshex.yn {
   done
 }
 
+shopt -s extglob
+
+GSED=sed
+isGNUSed=1
+if [[ $OSTYPE == @(darwin*|bsd*|solaris*) ]]; then
+  if type gsed; then
+    GSED=gsed
+  else
+    isGNUSed=
+  fi
+fi
+
 #------------------------------------------------------------------------------
 # read arguments
 
@@ -235,13 +247,14 @@ function enumerate_matches.i2 {
         }
         print $0;
       }
-    ' | sed -r "
+    ' | $GSED -r "
        /^>>> /{s/^>>> (.*)/\x1b[1m+++ \1\x1b[m/;p;d;}
 
        # h = header \n content
        s/\x1b\[[ -?]*[@-~]//g
-       s/^(([^:]+|:+[0-9]*[^:0-9])*):+([0-9]+):(.*)$/\x1b[36m\3:\x1b[m\n\4/
-       ta;s/^/\n/;:a
+       s/^(([^:]+|:+[0-9]*[^:0-9])*):+([0-9]+):(.*)$/\x1b[36m    \3:\x1b[m \n\4/
+       s/ +([ 0-9]{5}:)/\1/
+       /\n/!s/^/\n/
        h
 
        # p header - modify(content)
@@ -250,13 +263,13 @@ function enumerate_matches.i2 {
        G;s/\n([^\n]*)$//;s/^(.*)\n([^\n]*)$/\2-\1/;p
 
        # p header + modify(content)
-       g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_aws${after_escaped}$sgr_awe/g;
+       g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_aws${after_escaped}$sgr_awe/g
        s/.*/$sgr_als&\x1b[m/;s/\n/\x1b[m&$sgr_als$sgr_aws/g;s/\t/$tab/g
-       :D
+       :L
          G;s/\n([^\n]*)$//;s/^(.*)\n([^\n]*)$/\2+\1/;P
-       tW;:W;s/^[^\n]*\n//;tD
-
-       d
+         /\n/!d
+         s/^[^\n]*\n//
+       bL
     " 1>&5
   }
 
@@ -288,6 +301,12 @@ echo ---------------------------
 mshex.yn -n "execute replace? " || exit 3
 
 sedx="s/${bpat_escaped}/${after_escaped}/g"
-sed -r -i "$sedx" "${target_files[@]}"
+if [[ $isGNUSed ]]; then
+  # GNU sed
+  $GSED -r -i "$sedx" "${target_files[@]}"
+else
+  # BSD sed
+  sed -E -i '' "$sedx" "${target_files[@]}"
+fi
 
 #------------------------------------------------------------------------------
