@@ -1,9 +1,20 @@
 #!/bin/bash
 
-EndsWith() {
-  [[ $1 = *"$2" ]]
-  # test "${1%$2}" != "$1"
-}
+_ble_bash=$((BASH_VERSINFO[0]*10000+BASH_VERSINFO[1]*100+BASH_VERSINFO[2]))
+if ((_ble_bash>=30100)); then
+  function array#push { eval "$1+=(\"\${@:2}\")"; }
+else
+  function array#push/impl {
+    eval "$1[\${#$1[@]}]=\"\$2\""
+  }
+  function array#push {
+    local v
+    for v in "${@:2}"; do
+      array#push/impl "$1" "$v"
+    done
+  }
+fi
+
 GetExtension:() {
   local _slash=/
   local v="$1"; shift
@@ -37,34 +48,37 @@ options
   -C NUMBER
   --color
 
+grep options
+  -U, --binary
+
 findsrc options:
-  -x EXTENSIONS
+  -x, --extension=EXTENSIONS
   -a
   -b
-  -t SRCTYPE
+  -t, --type=SRCTYPE
   --exclude=PATTERN
 EOF
     exit
     ;;
   (-C)
-    args_option[${#args_option[@]}]='-C'
-    args_option[${#args_option[@]}]="$1"
+    array#push args_option -C "$1"
     shift 1 ;;
   (-C?*)
-    args_option[${#args_option[@]}]='-C'
-    args_option[${#args_option[@]}]="${arg:2}" ;;
+    array#push args_option -C "${arg:2}" ;;
+  (-U|--binary)
+    array#push args_option "$arg" ;;
   (--color)
     color_option=--color=always ;;
   (-x)
-    findsrc_args+=("$arg" "$1")
+    array#push findsrc_args "$arg" "$1"
     shift 1 ;;
   (-[abAB]|--exclude=*|--type=*|--exntesion=*)
-    findsrc_args+=("$arg") ;;
+    array#push findsrc_args "$arg" ;;
   (-t) # findsrc type
-    findsrc_args+=("$arg" "$1")
+    array#push findsrc_args "$arg" "$1"
     shift 1 ;;
   (-t*) # findsrc type
-    findsrc_args+=(-t "${arg:2}") ;;
+    array#push findsrc_args -t "${arg:2}" ;;
   (-*)
     echo "$0: unknown option ($arg)" >&2
     exit 1 ;;
@@ -76,7 +90,7 @@ EOF
   (*)
     if [[ $regexp ]]; then
       if [[ $fDefaultExcludes ]]; then
-        EndsWith "$arg" '~' && continue
+        [[ $arg == *'~' ]] && continue
 
         declare ext
         GetExtension: ext "$arg"

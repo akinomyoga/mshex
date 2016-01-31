@@ -74,7 +74,7 @@ OPTIONS
 EOF
 }
 
-grc_options=(--color)
+grc_options=(--color -U)
 inputfiles=()
 
 regex_type=E
@@ -231,6 +231,7 @@ function enumerate_matches.i2 {
     local sgr_aws='\x1b[1;48;5;155m'
     local sgr_awe='\x1b[22;48;5;193m'
     local tab='\x1b[37m< TAB \/>\x1b[39m'
+    local cr='\x1b[7m^M\x1b[27m'
 
     exec 6>&1
     grc --color "${grc_options[@]}" "$bpat" "${inputfiles[@]}" | gawk '
@@ -259,12 +260,14 @@ function enumerate_matches.i2 {
 
        # p header - modify(content)
        g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_rws&$sgr_rwe/g;
-       s/.*/$sgr_rls&\x1b[m/;s/\t/$tab/g
+       s/.*/$sgr_rls&\x1b[m/;
+       s/\t/$tab/g;s/\r/$cr/g
        G;s/\n([^\n]*)$//;s/^(.*)\n([^\n]*)$/\2-\1/;p
 
        # p header + modify(content)
        g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_aws${after_escaped}$sgr_awe/g
-       s/.*/$sgr_als&\x1b[m/;s/\n/\x1b[m&$sgr_als$sgr_aws/g;s/\t/$tab/g
+       s/.*/$sgr_als&\x1b[m/;s/\n/\x1b[m&$sgr_als$sgr_aws/g;
+       s/\t/$tab/g;s/\r/$cr/g
        :L
          G;s/\n([^\n]*)$//;s/^(.*)\n([^\n]*)$/\2+\1/;P
          /\n/!d
