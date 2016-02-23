@@ -138,6 +138,8 @@ quote="'\"'\"'"
 while read -r src && read -r dst; do
   test ! -e "$src" && continue
 
+  [[ $fEval ]] && IFS= GLOBIGNORE=\* eval "dst=($dst)"
+
   if
     for((j=0;j<${#dstlist[*]};j++)); do
       [[ "$dst" = "${dstlist[j]}" ]] && break
@@ -170,8 +172,6 @@ while read -r src && read -r dst; do
       continue ;;
     esac
   fi
-
-  [[ $fEval ]] && IFS= GLOBIGNORE=\* eval "dst=($dst)"
 
   srclist+=("$src")
   dstlist+=("$dst")
