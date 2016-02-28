@@ -1,8 +1,35 @@
 #!/bin/bash
 
-case "$1" in
-(find) findsrc "${@:2}" ;;
-(wc) wc $(findsrc "${@:2}") ;;
-(grep) grc "${@:2}" ;;
-(*) exit 2 ;;
-esac
+function dispatch:find {
+  findsrc "$@"
+}
+function dispatch:wc {
+  wc $(findsrc "$@")
+}
+function dispatch:grep {
+  grc "$@"
+}
+function dispatch:--help {
+  cat <<EOF
+src subcommand arguments
+
+SUBCOMMAND
+
+  find
+
+  wc
+
+  grep
+
+  --help
+
+EOF
+}
+
+
+if declare -f dispatch:"$1" &>/dev/null; then
+  dispatch:"$1" "${@:2}"
+else
+  echo "src: unrecognized subcommand '$1'" >&2
+  exit 2
+fi
