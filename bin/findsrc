@@ -223,7 +223,7 @@ rex_grep.construct
 
 # 実行
 if [[ $fALL ]]; then
-  find | \grep -Ev "$rex_grep"
+  find | \grep -Ev "$rex_grep" | sort
 else
   declare rex
   IFS='|' eval 'rex=".*[^/]\.(${extensions[*]})"'
@@ -238,6 +238,6 @@ else
   # echo "rex_grep=$rex_grep" >&2
   
   # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
-  find -regextype posix-extended -type f -and -regex "$rex_find" | \grep -Ev "$rex_grep"
-  # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+'
+  find -regextype posix-extended -type f -and -regex "$rex_find" | \grep -Ev "$rex_grep" | sort
+  # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+' | sort
 fi
