@@ -111,7 +111,7 @@ function g {
     fi
 
     if [[ -t 1 ]] && type nkf &>/dev/null; then
-      git diff -b --color "${diff_options[@]}" "$@" | nkf | less -FSRX
+      git diff -b --color "${diff_options[@]}" "$@" | nkf -x | less -FSRX
     else
       git diff -b "${diff_options[@]}" "$@"
     fi
