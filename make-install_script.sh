@@ -29,7 +29,7 @@ fi
 if test -n "$sedrules"; then
   sed '1{s:/bin/bash:'"${bash_path//:/\\:}"':}' "$src" > "$dst"
 
-  # touch -r reference file に対応していない場合もある
+  # ToDo: touch -r reference file に対応していない場合もある
   touch -r "$src" "$dst" 2>/dev/null
 
   chmod 755 "$dst"

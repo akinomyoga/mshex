@@ -25,24 +25,23 @@ install+=%name%
 #------------------------------------------------------------------------------
 # directory shrc
 
-compile+=shrc/out
-shrc/out:
+out/shrc out/bin:
 	mkdir -p $@
 
 #%m shrc_pp (
-compile+=shrc/%out%
-shrc/%out%: shrc/%in% | shrc/out
+compile+=out/shrc/%out%
+out/shrc/%out%: shrc/%in% | out/shrc
 	cd shrc && $(MWGPP) %in%
 #%)
 #%m shrc_ppd (
-compile+=shrc/%out%
-shrc/%out%: shrc/%ref% | shrc/out
+compile+=out/shrc/%out%
+out/shrc/%out%: out/shrc/%ref% | out/shrc
 	touch $@
 #%)
 #%m shrc_pp0 (
-compile+=shrc/%out%
-shrc/%out%: shrc/%in% | shrc/out
-	cd shrc && $(MWGPP) %in% > %out%
+compile+=out/shrc/%out%
+out/shrc/%out%: shrc/%in% | out/shrc
+	$(MWGPP) shrc/%in% > out/shrc/%out%
 #%)
 
 #%m install (
@@ -51,15 +50,15 @@ $(MWGDIR)/%d%: %s%
 	cp -p $< $@
 #%)
 
-#%x shrc_pp .r|%in%|bashrc.pp|.r|%out%|out/bashrc|
-#%x shrc_ppd.r|%ref%|out/bashrc|  .r|%out%|out/zshrc|
-#%x install.r|%s%|shrc/out/bashrc|  .r|%d%|bashrc|
-#%x install.r|%s%|shrc/out/zshrc|   .r|%d%|zshrc|
+#%x shrc_pp .r|%in%|bashrc.pp|.r|%out%|bashrc|
+#%x shrc_ppd.r|%ref%|bashrc|  .r|%out%|zshrc|
+#%x install.r|%s%|out/shrc/bashrc|  .r|%d%|bashrc|
+#%x install.r|%s%|out/shrc/zshrc|   .r|%d%|zshrc|
 
-#%x shrc_pp .r|%in%|bashrc_interactive.pp|.r|%out%|out/bashrc_interactive|
-#%x shrc_ppd.r|%ref%|out/bashrc_interactive|  .r|%out%|out/zshrc_interactive|
-#%x install.r|%s%|shrc/out/zshrc_interactive|   .r|%d%|share/mshex/shrc/zshrc_interactive|
-#%x install.r|%s%|shrc/out/bashrc_interactive|  .r|%d%|share/mshex/shrc/bashrc_interactive|
+#%x shrc_pp .r|%in%|bashrc_interactive.pp|.r|%out%|bashrc_interactive|
+#%x shrc_ppd.r|%ref%|bashrc_interactive|  .r|%out%|zshrc_interactive|
+#%x install.r|%s%|out/shrc/zshrc_interactive|   .r|%d%|share/mshex/shrc/zshrc_interactive|
+#%x install.r|%s%|out/shrc/bashrc_interactive|  .r|%d%|share/mshex/shrc/bashrc_interactive|
 
 #%x install.r|%s%|shrc/bashrc.cygwin|.r|%d%|bashrc.cygwin|
 #%x install.r|%s%|shrc/bash_tools|.r|%d%|share/mshex/shrc/bash_tools|
@@ -69,7 +68,7 @@ $(MWGDIR)/%d%: %s%
 #%x install.r|%s%|shrc/path.sh|.r|%d%|share/mshex/shrc/path.sh|
 
 # 以下は互換性の為
-#%x shrc_pp0 .r|%in%|libmwg_src.pp|.r|%out%|out/libmwg_src.sh|
+#%x shrc_pp0 .r|%in%|libmwg_src.pp|.r|%out%|libmwg_src.sh|
 
 #------------------------------------------------------------------------------
 # directory bin
@@ -79,11 +78,20 @@ install+=$(MWGDIR)/bin/%file%
 $(MWGDIR)/bin/%file%: bin/%file%
 	$(SHELL) make-install_script.sh $< $@
 #%)
+#%m bin_pp
+compile+=out/bin/%file%
+install+=$(MWGDIR)/bin/%file%
+$(MWGDIR)/bin/%file%: out/bin/%file%
+	$(SHELL) make-install_script.sh $< $@
+out/bin/%file%: bin/%file% | out/bin
+	$(MWGPP) $< > $@ && chmod +x $@
+#%end
+
 #%x bin_file.r|%file%|modmod|
 #%x bin_file.r|%file%|makepp|
 #%x bin_file.r|%file%|mwgbk|
 #%x bin_file.r|%file%|msync|
-#%x bin_file.r|%file%|remove|
+#%x bin_pp.r|%file%|remove|
 #%x bin_file.r|%file%|~mv|
 #%x bin_file.r|%file%|src|
 #%x bin_file.r|%file%|findsrc|

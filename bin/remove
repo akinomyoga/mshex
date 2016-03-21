@@ -1,5 +1,32 @@
 #!/bin/bash
 
+# >>>>> yn.sh
+#%include "../functions/yn.sh"
+# <<<<< yn.sh
+
+function show-help {
+  ifold <<EOF
+usage: remove [options] file...
+
+OPTIONS
+
+  -?, --help
+        show this help
+
+  -r, --recursive
+
+  -i, --interactive[=always]
+        prompt before every removal
+  -I, --interactive=once
+        list removed files and prompt once.
+
+  -f, --force
+  -v, --verbose
+
+  -s
+
+EOF
+}
 
 #------------------------------------------------------------------------------
 # read options
@@ -16,20 +43,29 @@ while (($#)); do
   declare arg="$1" i
   shift
   case "$arg" in
+  (--recursive)     fR=1 ;;
+  (--force)         fF=1 ;;
+  (--verbose)       fV=1 ;;
+  (--interactive)   fI=always ;;
+  (--interactive=*) fI=${arg#--interactive=}
+                    : ${fI:=always}
+                    [[ $fI == none ]] && fI=
+                    ;;
   (--*)
     fError=1
-    echo "remove: unrecognized option \'$arg\'." >&2 ;;
+    echo "mshex/remove: unrecognized option \'$arg\'." >&2 ;;
   (-?*)
     for ((i=1;i<${#arg};i++)); do
       case "${arg:i:1}" in
+      (i) fI=always ;;
+      (I) fI=once   ;;
       (r) fR=1  ;;
-      (i) fI=1  ;;
       (f) fF=1  ;;
       (v) fV=-v ;;
       (s) fS=1  ;;
       (*)
         fError=1
-        echo "remove: unrecognized option \`-${arg:i:1}'" >&2 ;;
+        echo "mshex/remove: unrecognized option \`-${arg:i:1}'" >&2 ;;
       esac
     done ;;
   (*)
@@ -38,7 +74,7 @@ while (($#)); do
 done
 
 if ((${#files[@]}==0)); then
-  echo "remove: no files to remove are specified" >&2
+  echo "mshex/remove: no files to remove are specified" >&2
   exit 1
 fi
 
@@ -48,10 +84,10 @@ if [[ ! $fR || ! $fF ]]; then
   declare file
   for file in "${files[@]}"; do
     if [[ ! $fF && ! ( -e $file || -h $file ) ]]; then
-      echo "remove: '$file' does not exist!" >&2
+      echo "mshex/remove: '$file' does not exist!" >&2
       exit 1
     elif [[ ! $fR && -d $file && ! -h $file ]]; then
-      echo "remove: '$file' is directory! (use -r option to remove directory)" >&2
+      echo "mshex/remove: '$file' is directory! (use -r option to remove directory)" >&2
       exit 1
     fi
   done
@@ -66,18 +102,18 @@ dir="$HOME/.recycle"
 now="$(date +%Y%m%d-%H%M%S)"
 
 delete_waiting_files () {
-  test -d "$dir/wait" || return
-  
-  local -a gomigomi
+  [[ -d $dir/wait ]] || return
+
+  local -a gomigomi=()
   for file in "$dir"/wait/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]*; do
     local date="${file#$dir/wait/}"
     date="${date:0:8}"
-    if test "$((date+100))" -lt "${now:0:8}"; then
-      gomigomi+=("$file")
+    if ((date+100<${now::8})); then
+      gomigomi[${#gomigomi[@]}]="$file"
     fi
   done
 
-  if test "${#gomigomi}" -gt 0; then
+  if ((${#gomigomi[@]}>0)); then
     mkd "$dir/gomi"
     mv $fV "${gomigomi[@]}" "$dir/gomi/"
   fi
@@ -86,7 +122,7 @@ delete_waiting_files () {
 delete_waiting_files
 
 destination="$dir/wait"
-test -n "$fS" && destination="$dir"
+[[ $fS ]] && destination="$dir"
 mkd "$destination"
 
 path_separator_pattern='[/\\]'
@@ -104,19 +140,78 @@ function escape_filename {
   fi
 }
 
-if (($#==1)); then
-  src="${1%/}"
-  escape_filename -v esc "$PWD/$src"
-  dst="$destination/$now-$esc"
-  while [[ -e $dst ]]; do dst="$dst+"; done
-  mv $fV "$src" "$dst"
-else
-  escape_filename -v esc "$PWD"
-  dst="$destination/$now@$esc"
-  while [[ -e $dst ]]; do dst="$dst+"; done
-  mkdir "$dst"
-  for file in "${files[@]}"; do
-    escape_filename -v esc "$file"
-    mv $fV "$file" "$dst/$esc"
-  done
+
+if [[ $fI == once ]]; then
+  {
+    echo '-- filelist --'
+    find -- "${files[@]%/}"
+  } | less -XSF
+
+  mshex.yn -n "mshex/remove: remove the above files?" || exit 2
+  fI=
 fi
+
+function interactive_confirm_file {
+  local file="$1"
+  [[ ! $fI ]] && return 0
+
+  local ft='an unknown-type file'
+  if [[ -d $file ]]; then
+    ft='a directory'
+  elif [[ -p $file ]]; then
+    ft='a named pipe'
+  elif [[ -b $file ]]; then
+    ft='a block device'
+  elif [[ -s $file ]]; then
+    ft='a socket'
+  elif [[ -h $file ]]; then
+    ft='a symbolic link'
+  elif [[ -f $file ]]; then
+    if [[ ! -s $file ]]; then
+      ft='an empty file'
+    elif [[ -x $file ]]; then
+      ft='an executable file'
+    else
+      ft='a regular file'
+    fi
+  fi
+
+  mshex.yn "mshex/remove: $ft '$file'?"
+}
+
+## @var[in] destination
+## @var[in] now
+## @var[in] files[]
+function remove_impl {
+  if ((${#files[@]}==1)); then
+    local src="${files[0]%/}" dst esc
+    interactive_confirm_file "$src" || return
+    escape_filename -v esc "$PWD/$src"
+    dst="$destination/$now-$esc"
+    while [[ -e $dst ]]; do dst="$dst+"; done
+    mv $fV -- "$src" "$dst"
+  elif ((${#files[@]}>=2)); then
+    local dst esc
+
+    # prepare dst directory
+    escape_filename -v esc "$PWD"
+    dst="$destination/$now@$esc"
+    while [[ -e $dst ]]; do dst="$dst+"; done
+    mkdir "$dst"
+
+    local file
+    local -a raws=()
+    for file in "${files[@]}"; do
+      interactive_confirm_file "$file" || continue
+      escape_filename -v esc "$file"
+      if [[ $esc != "$file" ]]; then
+        mv $fV -- "$file" "$dst/$esc"
+      else
+        raws[${#raws[@]}]="$file"
+      fi
+    done
+    ((${#raws[@]})) && mv $fV -- "${raws[@]}" "$dst"/
+  fi
+}
+
+remove_impl

@@ -26,36 +26,35 @@ $(MWGDIR)/share/mshex/shrc:
 #------------------------------------------------------------------------------
 # directory shrc
 
-compile+=shrc/out
-shrc/out:
+out/shrc out/bin:
 	mkdir -p $@
 
 
 
-compile+=shrc/out/bashrc
-shrc/out/bashrc: shrc/bashrc.pp | shrc/out
+compile+=out/shrc/bashrc
+out/shrc/bashrc: shrc/bashrc.pp | out/shrc
 	cd shrc && $(MWGPP) bashrc.pp
-compile+=shrc/out/zshrc
-shrc/out/zshrc: shrc/out/bashrc | shrc/out
+compile+=out/shrc/zshrc
+out/shrc/zshrc: out/shrc/bashrc | out/shrc
 	touch $@
 install+=$(MWGDIR)/bashrc
-$(MWGDIR)/bashrc: shrc/out/bashrc
+$(MWGDIR)/bashrc: out/shrc/bashrc
 	cp -p $< $@
 install+=$(MWGDIR)/zshrc
-$(MWGDIR)/zshrc: shrc/out/zshrc
+$(MWGDIR)/zshrc: out/shrc/zshrc
 	cp -p $< $@
 
-compile+=shrc/out/bashrc_interactive
-shrc/out/bashrc_interactive: shrc/bashrc_interactive.pp | shrc/out
+compile+=out/shrc/bashrc_interactive
+out/shrc/bashrc_interactive: shrc/bashrc_interactive.pp | out/shrc
 	cd shrc && $(MWGPP) bashrc_interactive.pp
-compile+=shrc/out/zshrc_interactive
-shrc/out/zshrc_interactive: shrc/out/bashrc_interactive | shrc/out
+compile+=out/shrc/zshrc_interactive
+out/shrc/zshrc_interactive: out/shrc/bashrc_interactive | out/shrc
 	touch $@
 install+=$(MWGDIR)/share/mshex/shrc/zshrc_interactive
-$(MWGDIR)/share/mshex/shrc/zshrc_interactive: shrc/out/zshrc_interactive
+$(MWGDIR)/share/mshex/shrc/zshrc_interactive: out/shrc/zshrc_interactive
 	cp -p $< $@
 install+=$(MWGDIR)/share/mshex/shrc/bashrc_interactive
-$(MWGDIR)/share/mshex/shrc/bashrc_interactive: shrc/out/bashrc_interactive
+$(MWGDIR)/share/mshex/shrc/bashrc_interactive: out/shrc/bashrc_interactive
 	cp -p $< $@
 
 install+=$(MWGDIR)/bashrc.cygwin
@@ -78,12 +77,13 @@ $(MWGDIR)/share/mshex/shrc/path.sh: shrc/path.sh
 	cp -p $< $@
 
 # 以下は互換性の為
-compile+=shrc/out/libmwg_src.sh
-shrc/out/libmwg_src.sh: shrc/libmwg_src.pp | shrc/out
-	cd shrc && $(MWGPP) libmwg_src.pp > out/libmwg_src.sh
+compile+=out/shrc/libmwg_src.sh
+out/shrc/libmwg_src.sh: shrc/libmwg_src.pp | out/shrc
+	$(MWGPP) shrc/libmwg_src.pp > out/shrc/libmwg_src.sh
 
 #------------------------------------------------------------------------------
 # directory bin
+
 
 install+=$(MWGDIR)/bin/modmod
 $(MWGDIR)/bin/modmod: bin/modmod
@@ -97,9 +97,12 @@ $(MWGDIR)/bin/mwgbk: bin/mwgbk
 install+=$(MWGDIR)/bin/msync
 $(MWGDIR)/bin/msync: bin/msync
 	$(SHELL) make-install_script.sh $< $@
+compile+=out/bin/remove
 install+=$(MWGDIR)/bin/remove
-$(MWGDIR)/bin/remove: bin/remove
+$(MWGDIR)/bin/remove: out/bin/remove
 	$(SHELL) make-install_script.sh $< $@
+out/bin/remove: bin/remove | out/bin
+	$(MWGPP) $< > $@ && chmod +x $@
 install+=$(MWGDIR)/bin/~mv
 $(MWGDIR)/bin/~mv: bin/~mv
 	$(SHELL) make-install_script.sh $< $@
