@@ -1,8 +1,53 @@
 #!/bin/bash
 
+# settings
+
+dir="$HOME/.recycle"
+
+#------------------------------------------------------------------------------
+# utils
+
+shopt -s nullglob
+
 # >>>>> yn.sh
 #%include "../functions/yn.sh"
 # <<<<< yn.sh
+
+function upvar { unset "$1" && eval "$1=\"\$2\""; }
+
+path_separator_pattern='[/\\]'
+function escape_filename {
+  if [[ $1 == -v ]]; then
+    eval "
+      $2=\"\$3\"
+      $2=\"\${$2//%/%25}\"
+      $2=\"\${$2//\$path_separator_pattern/%2F}\"
+    "
+  else
+    local _value
+    escape_filename -v _value "$1"
+    echo "$_value"
+  fi
+}
+function unescape_filename {
+  local var=
+  if [[ $1 == -v ]]; then
+    var="$2"
+    shift 2
+  fi
+
+  local value="$1"
+  value="${value//%2F/'/'}"
+  value="${value//%25/%}"
+
+  if [[ $var ]]; then
+    local "$var" && upvar "$var" "$value"
+  else
+    echo "$value"
+  fi
+}
+
+#------------------------------------------------------------------------------
 
 function show-help {
   ifold <<EOF
@@ -28,6 +73,42 @@ OPTIONS
 EOF
 }
 
+function subcommand:list-garbages {
+  [[ -d $dir/wait ]] || return
+  local entry
+  local date time rtime file wdir
+  for entry in $dir/wait/*; do
+    [[ -e $entry ]] || continue
+    entry="${entry#"$dir/wait/"}"
+
+    if [[ $entry == ????????-??????-* ]]; then
+      date="${entry::8}"
+      time="${entry:9:6}"
+      file="${entry:16}"
+
+      rtime="${date::4}-${date:4:2}-${date:6} ${time::2}:${time:2:2}:${time:4}"
+      unescape_filename -v file "$file"
+      echo "$rtime $file"
+    elif [[ $entry == ????????-??????@* ]]; then
+      date="${entry::8}"
+      time="${entry:9:6}"
+      wdir="${entry:16}"
+
+      rtime="${date::4}-${date:4:2}-${date:6} ${time::2}:${time:2:2}:${time:4}"
+      unescape_filename -v wdir "$wdir"
+
+      echo "$rtime $wdir"
+      for file in "$dir/wait/$entry"/*; do
+        file="${file#"$dir/wait/$entry"/}"
+        unescape_filename -v file "$file"
+        echo "${rtime//?/ }  \__ $file"
+      done
+    else
+      echo unknown entry
+    fi
+  done
+}
+
 #------------------------------------------------------------------------------
 # read options
 fR=
@@ -36,6 +117,8 @@ fF=
 fV=
 fS=
 
+fDone=
+fHelp=
 fError=
 files=()
 
@@ -43,6 +126,7 @@ while (($#)); do
   declare arg="$1" i
   shift
   case "$arg" in
+  (--help)          fHelp=1 ;;
   (--recursive)     fR=1 ;;
   (--force)         fF=1 ;;
   (--verbose)       fV=1 ;;
@@ -53,7 +137,7 @@ while (($#)); do
                     ;;
   (--*)
     fError=1
-    echo "mshex/remove: unrecognized option \'$arg\'." >&2 ;;
+    echo "mshex/remove: unrecognized option \`$arg'." >&2 ;;
   (-?*)
     for ((i=1;i<${#arg};i++)); do
       case "${arg:i:1}" in
@@ -63,6 +147,8 @@ while (($#)); do
       (f) fF=1  ;;
       (v) fV=-v ;;
       (s) fS=1  ;;
+      (l) subcommand:list-garbages
+          fDone="$?" ;;
       (*)
         fError=1
         echo "mshex/remove: unrecognized option \`-${arg:i:1}'" >&2 ;;
@@ -73,12 +159,19 @@ while (($#)); do
   esac
 done
 
+if [[ $fHelp ]]; then
+  show-help
+  [[ ! $fError ]]
+  exit
+fi
+
+[[ $fDone ]] && exit "$fDone"
+
 if ((${#files[@]}==0)); then
   echo "mshex/remove: no files to remove are specified" >&2
   exit 1
 fi
 
-#------------------------------------------------------------------------------
 # checking files
 if [[ ! $fR || ! $fF ]]; then
   declare file
@@ -98,7 +191,6 @@ fi
 #------------------------------------------------------------------------------
 # create backup directory
 mkd () { test -d "$1" || mkdir -p "$1"; }
-dir="$HOME/.recycle"
 now="$(date +%Y%m%d-%H%M%S)"
 
 delete_waiting_files () {
@@ -124,22 +216,6 @@ delete_waiting_files
 destination="$dir/wait"
 [[ $fS ]] && destination="$dir"
 mkd "$destination"
-
-path_separator_pattern='[/\\]'
-function escape_filename {
-  if [[ $1 == -v ]]; then
-    eval "
-      $2=\"\$3\"
-      $2=\"\${$2//%/%%}\"
-      $2=\"\${$2//\$path_separator_pattern/%-}\"
-    "
-  else
-    local _value
-    escape_filename -v _value "$1"
-    echo "$_value"
-  fi
-}
-
 
 if [[ $fI == once ]]; then
   {
