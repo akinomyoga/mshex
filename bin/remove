@@ -78,10 +78,69 @@ OPTIONS
 EOF
 }
 
+a_dir=$'\e[94m'
+a_link=$'\e[96m'
+a_pipe=$'\e[40;94m'
+a_sock=$'\e[40;96m'
+a_char=$'\e[40;97m'
+a_block=$'\e[40;93m'
+a_exec=$'\e[92m'
+a_stick=$'\e[32;41m'
+a_file=$'\e[m'
+E_miss=$'\e[91m'
+E_ovwrt=$'\e[1;30m'
+sgr0=$'\e[m'
+
+function subcommand:list-garbages/color-filename {
+  if [[ -t 1 ]]; then
+    if [[ -d $gfile ]]; then
+      _file="$a_dir$file$sgr0"
+    elif [[ -h $gfile ]]; then
+      _file="$a_link$file$sgr0"
+    elif [[ -p $gfile ]]; then
+      _file="$a_pipe$file$sgr0"
+    elif [[ -S $gfile ]]; then
+      _file="$a_sock$file$sgr0"
+    elif [[ -b $gfile ]]; then
+      _file="$a_block$file$sgr0"
+    elif [[ -x $gfile ]]; then
+      if [[ -k $gfile ]]; then
+        _file="$a_stick$file$sgr0"
+      else
+        _file="$a_exec$file$sgr0"
+      fi
+    else
+      _file="$a_file$file$sgr0"
+    fi
+  fi
+}
+
+function subcommand:list-garbages/color-directory {
+  if [[ -t 1 ]]; then
+    if [[ -d $wdir ]]; then
+      _wdir="$a_dir$wdir$sgr0"
+    else
+      _wdir="$E_miss$wdir$sgr0"
+    fi
+  fi
+}
+
+function subcommand:list-garbages/check-newfile {
+  if [[ -e $1 ]]; then
+    if [[ -t 1 ]]; then
+      _file="$_file $E_ovwrt*$sgr0"
+    else
+      _file="$_file *"
+    fi
+  fi
+}
+
 function subcommand:list-garbages {
   [[ -d $dir/wait ]] || return
   local entry
-  local date time rtime file wdir
+  local date time gfile wdir
+  local rtime file opath
+  local _wdir _file
   for entry in $dir/wait/*; do
     [[ -e $entry ]] || continue
     entry="${entry#"$dir/wait/"}"
@@ -89,24 +148,32 @@ function subcommand:list-garbages {
     if [[ $entry == ????????-??????-* ]]; then
       date="${entry::8}"
       time="${entry:9:6}"
+      gfile="$dir/wait/$entry"
       file="${entry:16}"
+      unescape_filename -v file "$file"
 
       rtime="${date::4}-${date:4:2}-${date:6} ${time::2}:${time:2:2}:${time:4}"
-      unescape_filename -v file "$file"
-      echo "$rtime $file"
+      subcommand:list-garbages/color-filename
+      subcommand:list-garbages/check-newfile "$file"
+      echo "$rtime $_file"
     elif [[ $entry == ????????-??????@* ]]; then
       date="${entry::8}"
       time="${entry:9:6}"
       wdir="${entry:16}"
-
-      rtime="${date::4}-${date:4:2}-${date:6} ${time::2}:${time:2:2}:${time:4}"
       unescape_filename -v wdir "$wdir"
 
-      echo "$rtime $wdir"
-      for file in "$dir/wait/$entry"/*; do
-        file="${file#"$dir/wait/$entry"/}"
+      rtime="${date::4}-${date:4:2}-${date:6} ${time::2}:${time:2:2}:${time:4}"
+      subcommand:list-garbages/color-directory
+      echo "$rtime $_wdir"
+
+      for gfile in "$dir/wait/$entry"/{*,.*}; do
+        file="${gfile#"$dir/wait/$entry"/}"
+        [[ $file == . || $file == .. ]] && continue
         unescape_filename -v file "$file"
-        echo "${rtime//?/ }  \__ $file"
+
+        subcommand:list-garbages/color-filename
+        subcommand:list-garbages/check-newfile "$wdir/$file"
+        echo "${rtime//?/ }  \__ $_file"
       done
     else
       echo unknown entry
