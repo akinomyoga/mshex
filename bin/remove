@@ -4,6 +4,9 @@
 
 dir="$HOME/.recycle"
 
+: ${VISUAL:=less}
+[[ ${VISUAL##*/} == less ]] && VISUAL=("$VISUAL" -XSF)
+
 #------------------------------------------------------------------------------
 # utils
 
@@ -54,26 +57,58 @@ function unescape_filename {
 
 #------------------------------------------------------------------------------
 
-function show-help {
-  ifold <<EOF
-usage: remove [options] file...
+function subcommand:error {
+  return 1
+}
 
-OPTIONS
+function subcommand:help {
+  local bold cyan red sgr0 ul
+  if [[ $iscolor ]]; then
+    bold=$'\e[1m'
+    cyan=$'\e[36m'
+    red=$'\e[91m'
+    sgr39=$'\e[39m'
+    sgr0=$'\e[m'
+    ul=$'\e[4m'
+  fi
 
-  -?, --help
+  ifold -s -i <<EOF
+usage: ${bold}remove${sgr0} ${red}[${cyan}OPTIONS${red}]${sgr0} ${cyan}FILE${sgr0}...
+
+  remove files in a safe way.
+
+${bold}FILE${sgr0}
+
+  Specify files and directories to remove. To remove directories, the \`${ul}-r${sgr0}' option is required. \
+The removed files and directories are saved in ${ul}\$HOME/.recycle/wait${sgr0}.
+
+${bold}OPTIONS${sgr0}
+
+  ${bold}-l, --list-garbages${sgr0}
+
+  ${bold}    --color${red}[${sgr39}=always${red}]${sgr0}
+  ${bold}    --color=auto${sgr0}
+  ${bold}    --color=none${sgr0}
+        specify the color mode of the output. \
+When \`${ul}always${sgr0}' is specified, the output is always colored using terminal control sequences. \
+When \`${ul}auto${sgr0}' is specified, the output is colored if it is connected to terminal. When \`${ul}none${sgr0}' is specified, the output is not colored. \
+If the value is omitted as \`${ul}--color${sgr0}', the color mode becomes \`${ul}always${sgr0}'. \
+The default color mode is \`${ul}auto${sgr0}'.
+
+  ${bold}-?, --help${sgr0}
         show this help
 
-  -r, --recursive
+  ${bold}-r, --recursive${sgr0}
 
-  -i, --interactive[=always]
+  ${bold}-i, --interactive${red}[${sgr39}=always${red}]${sgr0}
         prompt before every removal
-  -I, --interactive=once
+  ${bold}-I, --interactive=once${sgr0}
         list removed files and prompt once.
 
-  -f, --force
-  -v, --verbose
+  ${bold}-f, --force${sgr0}
+  ${bold}-v, --verbose${sgr0}
 
-  -s
+  ${bold}-s${sgr0}
 
 EOF
 }
@@ -92,7 +127,8 @@ E_ovwrt=$'\e[1;30m'
 sgr0=$'\e[m'
 
 function subcommand:list-garbages/color-filename {
-  if [[ -t 1 ]]; then
+  _file="$file"
+  if [[ $iscolor ]]; then
     if [[ -d $gfile ]]; then
       _file="$a_dir$file$sgr0"
     elif [[ -h $gfile ]]; then
@@ -116,7 +152,8 @@ function subcommand:list-garbages/color-filename {
 }
 
 function subcommand:list-garbages/color-directory {
-  if [[ -t 1 ]]; then
+  _wdir="$wdir"
+  if [[ $iscolor ]]; then
     if [[ -d $wdir ]]; then
       _wdir="$a_dir$wdir$sgr0"
     else
@@ -127,7 +164,7 @@ function subcommand:list-garbages/color-directory {
 
 function subcommand:list-garbages/check-newfile {
   if [[ -e $1 ]]; then
-    if [[ -t 1 ]]; then
+    if [[ $iscolor ]]; then
       _file="$_file $E_ovwrt*$sgr0"
     else
       _file="$_file *"
@@ -161,6 +198,7 @@ function subcommand:list-garbages {
       time="${entry:9:6}"
       wdir="${entry:16}"
       unescape_filename -v wdir "$wdir"
+      [[ -d $wdir ]] && local wdir_exists=1
 
       rtime="${date::4}-${date:4:2}-${date:6} ${time::2}:${time:2:2}:${time:4}"
       subcommand:list-garbages/color-directory
@@ -172,13 +210,13 @@ function subcommand:list-garbages {
         unescape_filename -v file "$file"
 
         subcommand:list-garbages/color-filename
-        subcommand:list-garbages/check-newfile "$wdir/$file"
+        [[ $wdir_exists ]] && subcommand:list-garbages/check-newfile "$wdir/$file"
         echo "${rtime//?/ }  \__ $_file"
       done
     else
       echo unknown entry
     fi
-  done
+  done | less -SFXR
 }
 
 #------------------------------------------------------------------------------
@@ -189,8 +227,18 @@ fF=
 fV=
 fS=
 
-fDone=
-fHelp=
+fColor=auto
+
+subcommand=
+function subcommand.set {
+  if [[ $subcommand ]]; then
+    echo "mshex/remove:(arg:$arg -> $subcommand): multiple subcommands are specified." >&2
+    subcommand=error
+  else
+    subcommand="$1"
+  fi
+}
+
 fError=
 files=()
 
@@ -198,29 +246,33 @@ while (($#)); do
   declare arg="$1" i
   shift
   case "$arg" in
-  (--help)          fHelp=1 ;;
+  (--help)          subcommand.set help ;;
   (--recursive)     fR=1 ;;
   (--force)         fF=1 ;;
   (--verbose)       fV=1 ;;
   (--interactive)   fI=always ;;
-  (--interactive=*) fI=${arg#--interactive=}
+  (--interactive=*) fI=${arg#*=}
                     : ${fI:=always}
                     [[ $fI == none ]] && fI=
                     ;;
+  (--color)         fColor=always ;;
+  (--color=*)       fColor=${arg#*=}
+                    : ${fColor:=always} ;;
+  (--list-garbages) subcommand.set list-garbages ;;
   (--*)
     fError=1
     echo "mshex/remove: unrecognized option \`$arg'." >&2 ;;
   (-?*)
     for ((i=1;i<${#arg};i++)); do
       case "${arg:i:1}" in
+      ('?') subcommand.set help ;;
       (i) fI=always ;;
       (I) fI=once   ;;
       (r) fR=1  ;;
       (f) fF=1  ;;
       (v) fV=-v ;;
       (s) fS=1  ;;
-      (l) subcommand:list-garbages
-          fDone="$?" ;;
+      (l) subcommand.set list-garbages ;;
       (*)
         fError=1
         echo "mshex/remove: unrecognized option \`-${arg:i:1}'" >&2 ;;
@@ -231,13 +283,17 @@ while (($#)); do
   esac
 done
 
-if [[ $fHelp ]]; then
-  show-help
-  [[ ! $fError ]]
-  exit
+[[ $fError ]] && exit 1
+
+iscolor=
+if [[ $fColor == always || $fColor == auto && -t 1 ]]; then
+  iscolor=1
 fi
 
-[[ $fDone ]] && exit "$fDone"
+if [[ $subcommand ]]; then
+  [[ ! $fError ]] && subcommand:"$subcommand" "${files[@]}"
+  exit
+fi
 
 if ((${#files[@]}==0)); then
   echo "mshex/remove: no files to remove are specified" >&2
@@ -257,8 +313,6 @@ if [[ ! $fR || ! $fF ]]; then
     fi
   done
 fi
-
-[[ $fError ]] && exit 1
 
 #------------------------------------------------------------------------------
 # create backup directory
@@ -293,7 +347,7 @@ if [[ $fI == once ]]; then
   {
     echo '-- filelist --'
     find -- "${files[@]%/}"
-  } | less -XSF
+  } | "${VISUAL[@]}"
 
   mshex.yn -n "mshex/remove: remove the above files?" || exit 2
   fI=
