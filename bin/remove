@@ -17,18 +17,23 @@ function upvar { unset "$1" && eval "$1=\"\$2\""; }
 
 path_separator_pattern='[/\\]'
 function escape_filename {
+  local var=
   if [[ $1 == -v ]]; then
-    eval "
-      $2=\"\$3\"
-      $2=\"\${$2//%/%25}\"
-      $2=\"\${$2//\$path_separator_pattern/%2F}\"
-    "
+    var="$2"
+    shift 2
+  fi
+
+  local value="$1"
+  value="${value//%/%25}"
+  value="${value//$path_separator_pattern/%2F}"
+
+  if [[ $var ]]; then
+    local "$var" && upvar "$var" "$value"
   else
-    local _value
-    escape_filename -v _value "$1"
-    echo "$_value"
+    echo "$value"
   fi
 }
+
 function unescape_filename {
   local var=
   if [[ $1 == -v ]]; then

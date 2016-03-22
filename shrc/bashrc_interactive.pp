@@ -460,8 +460,8 @@ export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quo
 
 #%)
 #%[mode="bash"]
-#%$>out/bashrc_interactive
+#%$>../out/shrc/bashrc_interactive
 #%x 1
 #%[mode="zsh"]
-#%$>out/zshrc_interactive
+#%$>../out/shrc/zshrc_interactive
 #%x 1
