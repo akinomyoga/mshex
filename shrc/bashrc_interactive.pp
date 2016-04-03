@@ -5,7 +5,7 @@
 ##
 ## $HOME/.mwg/bashrc
 ##
-## copyright (c) 2010-2015 Koichi MURASE <myoga.murase@gmail.com>
+## copyright (c) 2010-2016 Koichi MURASE <myoga.murase@gmail.com>
 ## 
 ## common .zshrc settings
 ##
@@ -14,7 +14,7 @@
 ##
 ## $HOME/.mwg/bashrc
 ##
-## copyright (c) 2010-2015 Koichi MURASE <myoga.murase@gmail.com>
+## copyright (c) 2010-2016 Koichi MURASE <myoga.murase@gmail.com>
 ## 
 ## common .bashrc settings
 ##
@@ -78,6 +78,25 @@ function m {
 }
 
 # alias g=git
+
+function g/check-commit-arguments {
+  while (($#)); do
+    local arg="$1"; shift
+    local msg=
+    case "$arg" in
+    (-m)  msg="$1"; shift ;;
+    (-m*) msg="${arg:2}"  ;;
+    esac
+
+    if [[ $msg == COMMIT || $msg != *' '* && -f $msg ]]; then
+      #  誤って g commit -F file を g commit -m file とする事が頻発なのでチェックする。
+      echo "mshex/g: The commit message is too simple, and there is a file with that name. Did you mean \`-F $msg' (but not \`-m $msg')?" >&2
+      return 1
+    fi
+  done
+
+  return
+}
 function g {
   # 正規表現は変数に入れて使わないと bash-4.0 と bash-3.0 で解釈が異なる
   local rex_diff='^d([0-9]*)$'
@@ -129,6 +148,8 @@ function g {
       git log --graph --abbrev-commit --decorate --format=format:"$format" --all --date-order |
         ifold -s -w "$COLUMNS" --indent="$indent"
     fi
+  elif [[ $1 == commit ]]; then
+    g/check-commit-arguments && git "$@"
   else
     git "$@"
   fi
