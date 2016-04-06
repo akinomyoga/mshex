@@ -91,7 +91,7 @@ else
 fi
 
 
-if type source-highlight; then
+if type source-highlight &>/dev/null; then
   function v/less-highlight { source-highlight -o STDOUT -f esc256-light_background --style-file=my.style "$@" | less -SRFX; }
 else
   function v/less-highlight { less -SRFX; }
