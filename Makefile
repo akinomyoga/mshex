@@ -75,6 +75,9 @@ $(MWGDIR)/share/mshex/shrc/menu.sh: shrc/menu.sh
 install+=$(MWGDIR)/share/mshex/shrc/path.sh
 $(MWGDIR)/share/mshex/shrc/path.sh: shrc/path.sh
 	cp -p $< $@
+install+=$(MWGDIR)/share/mshex/shrc/x86.lang
+$(MWGDIR)/share/mshex/shrc/x86.lang: shrc/x86.lang
+	cp -p $< $@
 
 # 以下は互換性の為
 compile+=out/shrc/libmwg_src.sh

@@ -34,8 +34,75 @@ alias emacs='emacs -nw'
 alias c='cd -'
 alias C='cd ../'
 alias ..='cd ../'
-# alias d=$'date +"\e[94m%F %T %Z\e[m \e[32m%x %r\e[m"'
-alias d=$'date +"\e[94m%F (%a) %T %Z\e[m"'
+
+alias scp='scp -p'
+alias cp='cp -ia'
+alias mv='mv -i'
+alias rm='rm -i'
+alias rmi='rm_i'
+alias grep='grep --color=auto'
+alias ls='ls --color=auto -G'
+
+alias s='stty echo -nl'
+
+#-------------------------------------------------------------------------------
+# jobs
+
+alias j='jobs'
+alias f='fg'
+alias F='fg %-'
+alias 1='fg %1'
+alias 2='fg %2'
+alias 3='fg %3'
+alias 4='fg %4'
+alias 5='fg %5'
+alias 6='fg %6'
+alias 7='fg %7'
+alias 8='fg %8'
+alias 9='fg %9'
+alias 10='fg %10'
+alias 11='fg %11'
+alias 12='fg %12'
+alias 13='fg %13'
+alias 14='fg %14'
+alias 15='fg %15'
+alias 16='fg %16'
+alias 17='fg %17'
+alias 18='fg %18'
+alias 19='fg %19'
+alias 20='fg %20'
+alias 21='fg %21'
+alias 22='fg %22'
+alias 23='fg %23'
+alias 24='fg %24'
+alias 25='fg %25'
+alias 26='fg %26'
+alias 27='fg %27'
+alias 28='fg %28'
+alias 29='fg %29'
+
+#-------------------------------------------------------------------------------
+# alias functions
+
+if ((mwg_bash>=40200)); then
+  function d { printf $'%(\e[94m%F (%a) %T %Z\e[m \e[90m(%x %r)\e[m %Y%m%d-%H%M%S)T\n\n' -1; cal; }
+else
+  function d { date +$'\e[94m%F (%a) %T %Z\e[m\n%Y%m%d-%H%M%S'; echo; cal; }
+fi
+
+
+if type source-highlight; then
+  function v/less-highlight { source-highlight -o STDOUT -f esc256-light_background --style-file=my.style "$@" | less -SRFX; }
+else
+  function v/less-highlight { less -SRFX; }
+fi
+
+function v {
+  if (($#==1)) && [[ ( $1 == *.o || $1 == *.obj || $1 == *.exe ) && -f $1 ]]; then
+    #objdump -CDM intel "$1" | v/less-highlight -s asm
+    objdump -CDM intel "$1" | v/less-highlight --lang-def=$HOME/.mwg/share/mshex/shrc/x86.lang
+  fi
+}
 
 # alias m=make
 function m/sub:t {
@@ -155,51 +222,7 @@ function g {
   fi
 }
 
-alias scp='scp -p'
-alias cp='cp -ia'
-alias mv='mv -i'
-alias rm='rm -i'
-alias rmi='rm_i'
-alias grep='grep --color=auto'
-alias ls='ls --color=auto -G'
-
-alias s='stty echo -nl'
-
-#-------------------------------------------------------------------------------
-# jobs
-alias j='jobs'
-alias f='fg'
-alias F='fg %-'
-alias 1='fg %1'
-alias 2='fg %2'
-alias 3='fg %3'
-alias 4='fg %4'
-alias 5='fg %5'
-alias 6='fg %6'
-alias 7='fg %7'
-alias 8='fg %8'
-alias 9='fg %9'
-alias 10='fg %10'
-alias 11='fg %11'
-alias 12='fg %12'
-alias 13='fg %13'
-alias 14='fg %14'
-alias 15='fg %15'
-alias 16='fg %16'
-alias 17='fg %17'
-alias 18='fg %18'
-alias 19='fg %19'
-alias 20='fg %20'
-alias 21='fg %21'
-alias 22='fg %22'
-alias 23='fg %23'
-alias 24='fg %24'
-alias 25='fg %25'
-alias 26='fg %26'
-alias 27='fg %27'
-alias 28='fg %28'
-alias 29='fg %29'
-
+#------------------------------------------------------------------------------
 #%%if mode=="zsh" (
 bind_fg () {
   echo -n $'\e['"${COLUMNS:-80}"'D\e[2K'

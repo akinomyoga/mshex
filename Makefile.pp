@@ -66,6 +66,7 @@ $(MWGDIR)/%d%: %s%
 #%x install.r|%s%|shrc/term.sh|.r|%d%|share/mshex/shrc/term.sh|
 #%x install.r|%s%|shrc/menu.sh|.r|%d%|share/mshex/shrc/menu.sh|
 #%x install.r|%s%|shrc/path.sh|.r|%d%|share/mshex/shrc/path.sh|
+#%x install.r|%s%|shrc/x86.lang|.r|%d%|share/mshex/shrc/x86.lang|
 
 # 以下は互換性の為
 #%x shrc_pp0 .r|%in%|libmwg_src.pp|.r|%out%|libmwg_src.sh|

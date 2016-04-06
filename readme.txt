@@ -622,6 +622,7 @@ bash-4.2, ((mwg_bash>=40200))
   + test -v var
     これについては test -n "${var+set}" で代用できる
   + $'\uXXXX'
+  + printf '%()T' -1
 
 bash-4.1, ((mwg_bash>=40100))
   + printf -v

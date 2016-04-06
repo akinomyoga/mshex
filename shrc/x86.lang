@@ -1,0 +1,162 @@
+# source-highlight language definition file for objdump -M intel
+
+# source-highlight の正規表現は謎が多い。
+#
+# - 先ず空白が入ると駄目になるので [[:blank:]] と表現しなければ駄目。
+# - 更に ([[:blank]]+)((?:[[:blank:]][[:xdigit:]]{2})+) は一致しないので、
+#   ([[:blank]]+)((?:[[:xdigit:]]{2}[[:blank:]])*[[:xdigit:]]{2}) 等と書かなければならない。
+# - 更に nonsensitive にしても [...] 内部については大文字小文字の無視をしてくれない。
+#
+
+(normal,symbol,normal,comment) = `(^[[:blank:]]+)([[:xdigit:]]+)(:[[:blank:]]+)((?:[[:xdigit:]]{2}[[:blank:]])*[[:xdigit:]]{2}\>)`
+
+#------------------------------------------------------------------------------
+# list of mnemonics taken from agh.text.color.js (2016-04-06)
+
+# メモリ移動
+keyword = `\<(?:MOV(?:[DQ]|NTQ|S[SXBWD]?|ZX|(?:[AUHL]|HL|LH|MSK|NT)PS)?)\>`,
+`\<MOV(?:MSKPD|[AUHL]PD|SD|DQ[AU])\>`,
+`\<(?:SHUFP[SD]|UNPCK[HL]P[SD])\>`
+
+# 基本演算
+keyword = `\<(?:(?:ADD|MUL|DIV|SUB)(?:[SP][SD])?|(?:MAX|MIN|SQRT)[PS][SD])\>`,
+`\<(?:(?:AND|OR|XOR)(?:P[SD])?|ANDN?P[SD])\>`
+
+# 比較演算
+keyword = `\<(?:CMP(?:[PS]S|XCHG(?:8B)?|S[BWD])?)\>`,
+`\<(?:CMPN?(?:EQ|[LG][TE])[SP]D|CMP(?:UN)?ORD[SP]D|U?COMIS[SD])\>`
+
+# 変換
+keyword = `\<(?:CVT(?:PI2PS|PS2PI|SI2SS|SS2SI))\>`,
+`\<(?:CVT(?:PD2P[SI]|P[SI]2PD|SD2S[SI]|S[SI]2SD|DQ2P[SD]|P[SD]2DQ))\>`,
+`\<(?:CVTT(?:S[SD]2SI|P[SD]2PI|P[SD]2DQ))\>`
+
+# # SSE2 Integer Intrinsic は未だ■
+
+# Pentium II
+# http://developer.intel.com/design/pentiumii/manuals/243191.htm
+keyword = `\<(?:AA[ADMS]|ADC|ARPL|BOUND|BS[FR])\>`,
+`\<(?:BSWAP|BT[CRS]?|CALL|CBW|CDQ|CLC|CLD|CLI|CLTS|CMC)\>`,
+`\<(?:CMOVN?(?:[ABGL]E?|[CE]))\>`,
+`\<(?:CPUID)\>`,
+`\<(?:CWD|CDQ|CWDE|DA[AS]|DEC|EMMS|ENTER)\>`,
+`\<(?:F2XM1|FABS|FADDP?|FIADD|FBLD|FBSTP|FCHS|FN?CLEX)\>`,
+`\<(?:FCMOVN?(?:B|E|BE|U)|FCOMP?P?|FU?COMIP?|FCOS|FDECSTP)\>`,
+`\<(?:FDIVP?|FIDIV|FDIVRP?|FIDIVR|FFREE|FICOMP?|FILD|FINCSTP)\>`,
+`\<(?:FN?INIT|FISTP?|FLD(?:1|L2T|L2E|PI|LG2|LN2|Z|CW|ENV)?)\>`,
+`\<(?:FMULP?|FIMUL|FNOP|FP(?:ATAN|REM|REM1|TAN)|FRNDINT|FRSTOR)\>`,
+`\<(?:FN?SAVE|FSCALE|FSIN|FSINCOS|FSQRT|FSTP?)\>`,
+`\<(?:FN?ST(?:CW|ENV|SW)|FSUBR?P?|FISUBR?|FTST|FUCOMP?P?|FWAIT)\>`,
+`\<(?:FX(?:AM|CH|RSTOR|SAVE|TRACT)|FYL2X(?:P1)?|HLT|IDIV|IMUL)\>`,
+`\<(?:IN|INC|INS[BWD]?|INTO?|INV(?:D|LPG)|IRETD?)\>`,
+`\<(?:JN?(?:[ABGL]E?|[CEOPSZ])|JP[EO]|JE?CXZ|JMP|LAHF|LAR)\>`,
+`\<(?:LDMXCSR|L[DEFGS]DS|LEA|LEAVE|L[GIL]DT|LMSW|LOCK)\>`,
+`\<(?:LODS[BWD]?|LOOP(?:N?[EZ])?|LSL|LTR|MASKMOVQ)\>`,
+`\<(?:NEG|NOP|NOT|OUT|OUTS[BWD]?)\>`,
+`\<(?:PACK(?:SSWB|SSDW|USWB)|PADD(?:[BWD]|U?S[BW])|PANDN?|PAVG[BW])\>`,
+`\<(?:PCMP(?:EQ|GT)[BWD]|PEXTRW|PINSRW|PMADDWD|PMAX(?:SW|UB))\>`,
+`\<(?:PMIN(?:SW|UB)|PMOVMSKB|PMUL(?:HU|H|L)W|POP(?:[AF]D?)?|POR)\>`,
+`\<(?:PREFETCH|PSADBW|PSHUFW|PSLL[WDQ]|PSRA[WD]|PSUB[BWD])\>`,
+`\<(?:PSUBU?S[BW]|PUNPCK[HL](?:BW|WD|DQ)|PUSH(?:[AF]D?)?|PXOR)\>`,
+`\<(?:R[CO][LR]|RCP[PS]S|RD(?:MSR|PMC|TSC)|REP(?:N?[EZ])?|RET)\>`,
+`\<(?:RSM|RSQRT[PS]S|SAHF|SA[LR]|SBB|SCAS[BWD]?)\>`,
+`\<(?:SETN?(?:[ABGL]E?|[CEOPSZ])|SETP[EO]|S[GIL]DT|SH[LR]D?)\>`,
+`\<(?:SFENCE|SMSW|ST[CDI]|STMXCSR|STOS)\>`,
+`\<(?:STR|SYS(?:ENTER|EXIT)|TEST|UD2)\>`,
+`\<(?:VER[RW]|F?WAIT|WBINVD|WRMSR|XADD|XCHG)\>`,
+`\<(?:XLATB?)\>`
+
+# 不明?
+keyword = `\<(?:OpdSz|OPDSZ|ESC|RETF)\>`
+
+#------------------------------------------------------------------------------
+# source-highlight の nonsensitive はまるで駄目だという事が判明したので、
+# 手で小文字の version を作る事にする。
+# source-highlight の nonsensitive は [...] の中については効かない。
+
+# メモリ移動
+keyword = `\<(?:mov(?:[dq]|ntq|s[sxbwd]?|zx|(?:[auhl]|hl|lh|msk|nt)ps)?)\>`,
+`\<mov(?:mskpd|[auhl]pd|sd|dq[au])\>`,
+`\<(?:shufp[sd]|unpck[hl]p[sd])\>`
+
+# 基本演算
+keyword = `\<(?:(?:add|mul|div|sub)(?:[sp][sd])?|(?:max|min|sqrt)[ps][sd])\>`,
+`\<(?:(?:and|or|xor)(?:p[sd])?|andn?p[sd])\>`
+
+# 比較演算
+keyword = `\<(?:cmp(?:[ps]s|xchg(?:8b)?|s[bwd])?)\>`,
+`\<(?:cmpn?(?:eq|[lg][te])[sp]d|cmp(?:un)?ord[sp]d|u?comis[sd])\>`
+
+# 変換
+keyword = `\<(?:cvt(?:pi2ps|ps2pi|si2ss|ss2si))\>`,
+`\<(?:cvt(?:pd2p[si]|p[si]2pd|sd2s[si]|s[si]2sd|dq2p[sd]|p[sd]2dq))\>`,
+`\<(?:cvtt(?:s[sd]2si|p[sd]2pi|p[sd]2dq))\>`
+
+# Pentium II
+# http://developer.intel.com/design/pentiumii/manuals/243191.htm
+keyword = `\<(?:aa[adms]|adc|arpl|bound|bs[fr])\>`,
+`\<(?:bswap|bt[crs]?|call|cbw|cdq|clc|cld|cli|clts|cmc)\>`,
+`\<(?:cmovn?(?:[abgl]e?|[ce]))\>`,
+`\<(?:cpuid)\>`,
+`\<(?:cwd|cdq|cwde|da[as]|dec|emms|enter)\>`,
+`\<(?:f2xm1|fabs|faddp?|fiadd|fbld|fbstp|fchs|fn?clex)\>`,
+`\<(?:fcmovn?(?:b|e|be|u)|fcomp?p?|fu?comip?|fcos|fdecstp)\>`,
+`\<(?:fdivp?|fidiv|fdivrp?|fidivr|ffree|ficomp?|fild|fincstp)\>`,
+`\<(?:fn?init|fistp?|fld(?:1|l2t|l2e|pi|lg2|ln2|z|cw|env)?)\>`,
+`\<(?:fmulp?|fimul|fnop|fp(?:atan|rem|rem1|tan)|frndint|frstor)\>`,
+`\<(?:fn?save|fscale|fsin|fsincos|fsqrt|fstp?)\>`,
+`\<(?:fn?st(?:cw|env|sw)|fsubr?p?|fisubr?|ftst|fucomp?p?|fwait)\>`,
+`\<(?:fx(?:am|ch|rstor|save|tract)|fyl2x(?:p1)?|hlt|idiv|imul)\>`,
+`\<(?:in|inc|ins[bwd]?|into?|inv(?:d|lpg)|iretd?)\>`,
+`\<(?:jn?(?:[abgl]e?|[ceopsz])|jp[eo]|je?cxz|jmp|lahf|lar)\>`,
+`\<(?:ldmxcsr|l[defgs]ds|lea|leave|l[gil]dt|lmsw|lock)\>`,
+`\<(?:lods[bwd]?|loop(?:n?[ez])?|lsl|ltr|maskmovq)\>`,
+`\<(?:neg|nop|not|out|outs[bwd]?)\>`,
+`\<(?:pack(?:sswb|ssdw|uswb)|padd(?:[bwd]|u?s[bw])|pandn?|pavg[bw])\>`,
+`\<(?:pcmp(?:eq|gt)[bwd]|pextrw|pinsrw|pmaddwd|pmax(?:sw|ub))\>`,
+`\<(?:pmin(?:sw|ub)|pmovmskb|pmul(?:hu|h|l)w|pop(?:[af]d?)?|por)\>`,
+`\<(?:prefetch|psadbw|pshufw|psll[wdq]|psra[wd]|psub[bwd])\>`,
+`\<(?:psubu?s[bw]|punpck[hl](?:bw|wd|dq)|push(?:[af]d?)?|pxor)\>`,
+`\<(?:r[co][lr]|rcp[ps]s|rd(?:msr|pmc|tsc)|rep(?:n?[ez])?|ret)\>`,
+`\<(?:rsm|rsqrt[ps]s|sahf|sa[lr]|sbb|scas[bwd]?)\>`,
+`\<(?:setn?(?:[abgl]e?|[ceopsz])|setp[eo]|s[gil]dt|sh[lr]d?)\>`,
+`\<(?:sfence|smsw|st[cdi]|stmxcsr|stos)\>`,
+`\<(?:str|sys(?:enter|exit)|test|ud2)\>`,
+`\<(?:ver[rw]|f?wait|wbinvd|wrmsr|xadd|xchg)\>`,
+`\<(?:xlatb?)\>`
+
+# 不明?
+keyword = `\<(?:opdsz|esc|retf)\>`
+
+keyword = `\<int\d+\>`
+
+#------------------------------------------------------------------------------
+# list of registers taken from agh.text.color.js (2016-04-06)
+
+variable = `\<[ACDB][HL]\>`,
+`\<[RE]?[ACDB]X\>`,
+`\<[RE]?(?:SI|DI|SP|BP)\>`,
+`\<[CDEFGS]S\>`,
+`\<[RE]?FL(?:AGS)?\>`,
+`\<[RE]?IP\>`,
+`\<R(?:[89]|1[012345])\>`,
+`\<XMM[01234567]\>`
+
+variable = `\<[acdb][hl]\>`,
+`\<[re]?[acdb]x\>`,
+`\<[re]?(?:si|di|sp|bp)\>`,
+`\<[cdefgs]s\>`,
+`\<[re]?fl(?:ags)?\>`,
+`\<[re]?ip\>`,
+`\<r(?:[89]|1[012345])\>`,
+`\<xmm[01234567]\>`
+
+#------------------------------------------------------------------------------
+
+type = `\<(?:byte|dword|high|low|qword|tbyte|word) ptr\>`
+nonsensitive
+
+number = `\<0([[:xdigit:]]+)([hHlLuU]*)\>`
+number = `\<((?:0[xX])[[:xdigit:]]+|\d*[\.\_]?\d+(?:[eE][\-\+]\d+)?[hHlLuU]*)\>`
+
+# number = '0([0-9a-fA-F]+)([hHlLuU]*)'
