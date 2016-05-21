@@ -137,6 +137,8 @@ fi
 #------------------------------------------------------------------------------
 # construct pattern
 
+function upvar { unset "$1" && eval "$1=\"\$2\""; }
+
 # 拡張正規表現文字クラスの文字順序
 export LC_COLLATE=C
 
@@ -166,25 +168,33 @@ function escape_regexchars {
 }
 
 function escape_regexchars_in_replacement {
-  # 置換部分に含まれうる特別な文字: \1..\2\r\n\f\t\v\b\a &
-  ret="$1"
-  if [[ $ret == *['][\/^$.*+?{}()|']* ]]; then
-    b=\] a='\]'; ret=${ret//"$b"/"$a"}
-    b=\[ a='\['; ret=${ret//"$b"/"$a"}
-    # b=\\ a='\\'; ret=${ret//"$b"/"$a"}
-    # b=\/ a='\/'; ret=${ret//"$b"/"$a"} # 後でエスケープされる
-    b=\^ a='\^'; ret=${ret//"$b"/"$a"}
-    b=\$ a='\$'; ret=${ret//"$b"/"$a"}
-    b=\. a='\.'; ret=${ret//"$b"/"$a"}
-    b=\* a='\*'; ret=${ret//"$b"/"$a"}
-    b=\+ a='\+'; ret=${ret//"$b"/"$a"}
-    b=\? a='\?'; ret=${ret//"$b"/"$a"}
-    b=\{ a='\{'; ret=${ret//"$b"/"$a"}
-    b=\} a='\}'; ret=${ret//"$b"/"$a"}
-    b=\( a='\('; ret=${ret//"$b"/"$a"}
-    b=\) a='\)'; ret=${ret//"$b"/"$a"}
-    b=\| a='\|'; ret=${ret//"$b"/"$a"}
+  local var=ret
+  if [[ $1 == -v ]]; then
+    var="$2"
+    shift 2
   fi
+
+  local a b text="$1"
+  # 置換部分に含まれうる特別な文字: \1..\2\r\n\f\t\v\b\a &
+  if [[ $text == *['][\/^$.*+?{}()|']* ]]; then
+    b=\] a='\]'; text=${text//"$b"/"$a"}
+    b=\[ a='\['; text=${text//"$b"/"$a"}
+    # b=\\ a='\\'; text=${text//"$b"/"$a"}
+    # b=\/ a='\/'; text=${text//"$b"/"$a"} # 後でエスケープされる
+    b=\^ a='\^'; text=${text//"$b"/"$a"}
+    b=\$ a='\$'; text=${text//"$b"/"$a"}
+    b=\. a='\.'; text=${text//"$b"/"$a"}
+    b=\* a='\*'; text=${text//"$b"/"$a"}
+    b=\+ a='\+'; text=${text//"$b"/"$a"}
+    b=\? a='\?'; text=${text//"$b"/"$a"}
+    b=\{ a='\{'; text=${text//"$b"/"$a"}
+    b=\} a='\}'; text=${text//"$b"/"$a"}
+    b=\( a='\('; text=${text//"$b"/"$a"}
+    b=\) a='\)'; text=${text//"$b"/"$a"}
+    b=\| a='\|'; text=${text//"$b"/"$a"}
+  fi
+
+  local "$var" && upvar "$var" "$text"
 }
 
 if [[ $regex_type == F ]]; then
@@ -197,8 +207,9 @@ if [[ $fB ]]; then
   [[ $bpat =~ ^[_[:alnum:]] ]] && bpat='\b'"$bpat"
   [[ $bpat =~ [_[:alnum:]]$ ]] && bpat="$bpat"'\b'
 
-  [[ $apat =~ ^[_[:alnum:]] ]] && apat='\b'"$apat"
-  [[ $apat =~ [_[:alnum:]]$ ]] && apat="$apat"'\b'
+  escape_regexchars_in_replacement -v apat "$apat"
+  [[ $after =~ ^[_[:alnum:]] ]] && apat='\b'"$apat"
+  [[ $after =~ [_[:alnum:]]$ ]] && apat="$apat"'\b'
 fi
 
 sl=/
@@ -212,7 +223,6 @@ after_escaped="${after//$sl/$esl}"
 # search pattern
 
 target_files=()
-declare -A target_files_dict
 
 echo --------- replace ---------
 
@@ -287,16 +297,15 @@ function enumerate_matches.i2 {
 enumerate_matches.i2
 
 if test "${#target_files[@]}" -le 0; then
-  echo ---------------------------
+  echo '---------------------------'
   echo "refact: pattern ($bpat) not found!" >&2
   exit 2
 fi
-echo ------- collision? --------
-declare ret
-escape_regexchars_in_replacement "$after"
-apat_coll="$ret"
-grc "${grc_options[@]}" "$apat_coll" "${inputfiles[@]}"
-echo ---------------------------
+if [[ $apat ]]; then
+  echo '------- collision? --------'
+  grc "${grc_options[@]}" "$apat" "${inputfiles[@]}"
+fi
+echo '---------------------------'
 
 #------------------------------------------------------------------------------
 # execute replace
