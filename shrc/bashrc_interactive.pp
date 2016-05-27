@@ -197,9 +197,9 @@ function g {
     fi
 
     if [[ -t 1 ]] && type nkf &>/dev/null; then
-      git diff -b --color "${diff_options[@]}" "$@" | nkf -x | less -FSRX
+      git diff --minimal -b --color "${diff_options[@]}" "$@" | nkf -x | less -FSRX
     else
-      git diff -b "${diff_options[@]}" "$@"
+      git diff --minimal -b "${diff_options[@]}" "$@"
     fi
   elif [[ $1 == [tT] ]]; then
     # from http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs
