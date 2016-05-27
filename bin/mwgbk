@@ -33,11 +33,8 @@ function insert_date {
   local file="$1"
   local date="$2"
 
-  if [[ "$file" =~ ^(.*[^/])\.(tar\.[^/.]+)$ ]]; then
-    local filename="${BASH_REMATCH[1]}"
-    local extension="${BASH_REMATCH[2]}"
-    echo "$filename.$date.$extension"
-  elif [[ "$file" =~ ^(.*[^/])\.([^/]+)$ ]]; then
+  local rex1='^(.*[^/])\.((tar\.)?[^/.]+)$'
+  if [[ "$file" =~ $rex1 ]]; then
     local filename="${BASH_REMATCH[1]}"
     local extension="${BASH_REMATCH[2]}"
     echo "$filename.$date.$extension"
