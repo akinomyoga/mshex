@@ -12,7 +12,7 @@ target=
 while (($#)); do
   arg="$1"
   shift
-  case "$arg" in 
+  case "$arg" in
   (--check-syntax)
     check_syntax=1 ;;
   (-*)
@@ -50,6 +50,8 @@ fi
 
 #------------------------------------------------------------------------------
 
+fnInv="$HOME/hist_uniq.invalid.tmp"
+
 tac "$target" | {
   declare -A lines
   declare line
@@ -57,7 +59,7 @@ tac "$target" | {
     test -n "${lines[x$line]}" && continue
     lines["x$line"]=1
     if [[ $check_syntax ]] && ! echo "$line" | bash -n &>/dev/null; then
-      echo "$line" >> "$HOME/2.tmp"
+      echo "$line" >> "$fnInv"
       continue
     fi
     echo "$line"
@@ -66,6 +68,7 @@ tac "$target" | {
 
 mwgbk -m "$target" && mv "$HOME/1.tmp" "$target"
 
-if [[ $check_syntax && -s "$HOME/2.tmp" ]]; then
-  cat bash_history.invalid >> "$HOME/.bash_history.invalid"
+if [[ $check_syntax && -s "$fnInv" ]]; then
+  cat "$fnInv" >> "$HOME/.bash_history.invalid"
+  /bin/rm -f "$fnInv"
 fi
