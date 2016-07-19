@@ -1,5 +1,4 @@
-# bashrc for cygwin -*- sh -*-
-
+# bashrc for cygwin -*- mode: sh; mode: sh-bash -*-
 
 # Paths & Envs
 #export CYGWIN='server error_start=dumper'
@@ -11,7 +10,7 @@ export EXEEXT='.exe'
 
 #------------------------------------------------------------------------------
 # interactive
-if test "$-" != "${-/i/}"; then
+if [[ $- == *i* ]]; then
   # setting PS1
   mwg_bashrc_set_prompt2 '\e[34m' '\e[m'
 
@@ -23,16 +22,13 @@ if test "$-" != "${-/i/}"; then
   shopt -s completion_strip_exe
 
   # emacs
-  if test "$TERM" == cygwin && test "$ROSATERM" == ''; then
-    function emacs(){
-      (
-        CYGWIN=tty /bin/emacs -nw "$@"
-        local ret="$?"
-        #reset
-        stty echo -nl
-        return "$ret"
-      )
-    }
+  if [[ $TERM == cygwin && $ROSATERM == '' ]]; then
+    function emacs() (
+      CYGWIN=tty /bin/emacs -nw "$@"
+      local ret="$?"
+      stty echo -nl
+      return "$ret"
+    )
   fi
 
   #mwg_bashrc_ecl_sock="/tmp/emacs$(id -u)/server"
@@ -43,6 +39,14 @@ if test "$-" != "${-/i/}"; then
     fi
 
     emacsclient -nw "$@"
+  }
+
+  function cygpath {
+    if (($#)); then
+      command cygpath "$@"
+    else
+      command cygpath -w "$PWD"
+    fi
   }
 
   # mcygex
