@@ -39,7 +39,7 @@ alias scp='scp -p'
 alias cp='cp -ia'
 alias mv='mv -i'
 alias rm='rm -i'
-alias rmi='rm_i'
+alias rmi='remove'
 alias grep='grep --color=auto'
 alias ls='ls --color=auto -G'
 

@@ -16,7 +16,7 @@ if [[ $- == *i* ]]; then
 
   # aliases
   alias ls='ls --color=auto --show-control-chars'
-  alias rm='rm_i'
+  alias rm='remove'
   alias o=cygstart
 
   shopt -s completion_strip_exe

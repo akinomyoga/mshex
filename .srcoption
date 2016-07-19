@@ -1,2 +1,2 @@
 # findsrc options
---exclude=shrc/out --extension=:pp
+--exclude=shrc/out --extension=:pp:cygwin
