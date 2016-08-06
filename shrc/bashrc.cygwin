@@ -19,7 +19,7 @@ if [[ $- == *i* ]]; then
   alias rm='remove'
   alias o=cygstart
 
-  shopt -s completion_strip_exe
+  shopt -s completion_strip_exe &>/dev/null
 
   # emacs
   if [[ $TERM == cygwin && $ROSATERM == '' ]]; then
@@ -31,15 +31,14 @@ if [[ $- == *i* ]]; then
     )
   fi
 
-  #mwg_bashrc_ecl_sock="/tmp/emacs$(id -u)/server"
-  mwg_bashrc_ecl_sock="/tmp/emacs$UID/server"
-  function ecl(){
-    if test ! -e "$mwg_bashrc_ecl_sock"; then
-      emacs --daemon
-    fi
-
-    emacsclient -nw "$@"
-  }
+  # #mwg_bashrc_ecl_sock="/tmp/emacs$(id -u)/server"
+  # mwg_bashrc_ecl_sock="/tmp/emacs$UID/server"
+  # function ecl(){
+  #   if test ! -e "$mwg_bashrc_ecl_sock"; then
+  #     emacs --daemon
+  #   fi
+  #   emacsclient -nw "$@"
+  # }
 
   function cygpath {
     if (($#)); then
