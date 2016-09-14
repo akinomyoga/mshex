@@ -240,7 +240,7 @@ function g {
     (*) default=1 ;;
     esac
 
-    [[ $default ]] && git "$@"
+    [[ ! $default ]] || git "$@"
   fi
 }
 
