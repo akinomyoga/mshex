@@ -171,18 +171,27 @@ function g {
     local default=
 
     case "$1" in
+    (u) git add -u ;;
+    (l) ls -ld $(git ls-files "${@:2}") ;;
+
+    # stepcounter
+    # from ephemient's answer at http://stackoverflow.com/questions/4822471/count-number-of-lines-in-a-git-repository
+    (c) git diff --stat 4b825dc642cb6eb9a060e54bf8d69288fbee4904 ;;
+
+    (b)
+      if (($#==1)); then
+        git branch -v
+        git remote -v
+      else
+        git branch "${@:2}"
+      fi ;;
+
     (dist)
       local name="${PWD##*/}"
       test -d dist || mkdir -p dist
       local archive="dist/$name-$(date +%Y%m%d).tar.xz"
       git archive --format=tar --prefix="./$name/" HEAD | xz > "$archive"
       ;;
-    (l) ls -ld $(git ls-files "${@:2}") ;;
-    (u) git add -u ;;
-
-    # stepcounter
-    # from ephemient's answer at http://stackoverflow.com/questions/4822471/count-number-of-lines-in-a-git-repository
-    (c) git diff --stat 4b825dc642cb6eb9a060e54bf8d69288fbee4904 ;;
 
     # diff
     (d*)
