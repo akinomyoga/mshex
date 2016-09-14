@@ -180,7 +180,7 @@ function g {
 
     (b)
       if (($#==1)); then
-        git branch -v
+        git branch -vv
         git remote -v
       else
         git branch "${@:2}"
