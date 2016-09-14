@@ -174,74 +174,96 @@ function g/check-commit-arguments {
   return
 }
 function g {
-  # 正規表現は変数に入れて使わないと bash-4.0 と bash-3.0 で解釈が異なる
-  local rex_diff='^d([0-9]*)$'
-
   if(($#==0)); then
     git -c color.status=always status | less -FSRX
-  elif [[ $1 == dist ]]; then
-    local name="${PWD##*/}"
-    test -d dist || mkdir -p dist
-    local archive="dist/$name-$(date +%Y%m%d).tar.xz"
-    git archive --format=tar --prefix="./$name/" HEAD | xz > "$archive"
-  elif [[ $1 == l ]]; then
-    ls -ld $(git ls-files "${@:2}")
-  elif [[ $1 == u ]]; then
-    git add -u
-  elif [[ $1 == c ]]; then
+  else
+    local default=
+
+    case "$1" in
+    (u) git add -u ;;
+    (l) ls -ld $(git ls-files "${@:2}") ;;
+
     # stepcounter
     # from ephemient's answer at http://stackoverflow.com/questions/4822471/count-number-of-lines-in-a-git-repository
-    git diff --stat 4b825dc642cb6eb9a060e54bf8d69288fbee4904
-  elif [[ $1 =~ $rex_diff ]]; then
-    shift
-    local index="${BASH_REMATCH[1]}"
+    (c) git diff --stat 4b825dc642cb6eb9a060e54bf8d69288fbee4904 ;;
 
-    local -a diff_options=()
-    if [[ $index ]]; then
-      if ((index<=0)); then
-        diff_options=(HEAD --cached)
+    (b)
+      if (($#==1)); then
+        git branch -vv
+        git remote -v
       else
-        diff_options=(HEAD~$((index)) HEAD~$((index-1)))
-      fi
-    fi
+        git branch "${@:2}"
+      fi ;;
 
-    local diff_filter=''
-    if [[ -t 1 ]]; then
-      if type nkf &>/dev/null; then
-        diff_filter="$diff_filter | nkf -x"
-      fi
+    (dist)
+      local name="${PWD##*/}"
+      test -d dist || mkdir -p dist
+      local archive="dist/$name-$(date +%Y%m%d).tar.xz"
+      git archive --format=tar --prefix="./$name/" HEAD | xz > "$archive"
+      ;;
 
-      if type colored &>/dev/null; then
-        mwg.array#push diff_options --color=never
-        diff_filter="$diff_filter | colored -tdiff"
+    # diff
+    (d*)
+      # 正規表現は変数に入れて使わないと bash-4.0 と bash-3.0 で解釈が異なる
+      local rex_diff='^d([0-9]*)$'
+      if [[ $1 =~ $rex_diff ]]; then
+        shift
+        local index="${BASH_REMATCH[1]}"
+
+        local -a diff_options=()
+        if [[ $index ]]; then
+          if ((index<=0)); then
+            diff_options=(HEAD --cached)
+          else
+            diff_options=(HEAD~$((index)) HEAD~$((index-1)))
+          fi
+        fi
+
+        local diff_filter=''
+        if [[ -t 1 ]]; then
+          if type nkf &>/dev/null; then
+            diff_filter="$diff_filter | nkf -x"
+          fi
+
+          if type colored &>/dev/null; then
+            mwg.array#push diff_options --color=never
+            diff_filter="$diff_filter | colored -tdiff"
+          else
+            mwg.array#push diff_options --color=always
+
+          fi
+
+          if [[ $diff_filter ]]; then
+            diff_filter="$diff_filter | less -FSRX"
+          fi
+        fi
+        eval 'git diff --minimal -M -C -b "${diff_options[@]}" "$@"'"$diff_filter"
       else
-        mwg.array#push diff_options --color=always
+        default=1
+      fi ;;
 
-      fi
-
-      if [[ $diff_filter ]]; then
-        diff_filter="$diff_filter | less -FSRX"
-      fi
-    fi
-    eval 'git diff --minimal -M -C -b "${diff_options[@]}" "$@"'"$diff_filter"
-  elif [[ $1 == [tT] ]]; then
+    # show graphs
     # from http://stackoverflow.com/questions/1057564/pretty-git-branch-graphs
-    local esc="(\[[ -?]*[@-~])"
-    if [[ $1 == t ]]; then
-      local format='%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(reset)%s%C(reset) %C(ul)- %an%C(reset)%C(bold yellow)%d%C(reset)'
-      local indent="([[:space:]*|\/]|$esc)* $esc*[[:alnum:]]+$esc* - $esc*\([^()]+\)$esc* "
-      git log --graph --abbrev-commit --decorate --date=relative --format=format:"$format" --all --date-order |
-        ifold -s -w "$COLUMNS" --indent="$indent"
-    else
-      local format='%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(reset)%s%C(reset) %C(ul)- %an%C(reset)'
-      local indent="([[:space:]*|\/]|$esc)*"
-      git log --graph --abbrev-commit --decorate --format=format:"$format" --all --date-order |
-        ifold -s -w "$COLUMNS" --indent="$indent"
-    fi
-  elif [[ $1 == commit ]]; then
-    g/check-commit-arguments && git "$@"
-  else
-    git "$@"
+    ([tT])
+      local esc="(\[[ -?]*[@-~])"
+      if [[ $1 == t ]]; then
+        local format='%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(reset)%s%C(reset) %C(ul)- %an%C(reset)%C(bold yellow)%d%C(reset)'
+        local indent="([[:space:]*|\/]|$esc)* $esc*[[:alnum:]]+$esc* - $esc*\([^()]+\)$esc* "
+        git log --graph --abbrev-commit --decorate --date=relative --format=format:"$format" --all --date-order |
+          ifold -s -w "$COLUMNS" --indent="$indent"
+      else
+        local format='%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(reset)%s%C(reset) %C(ul)- %an%C(reset)'
+        local indent="([[:space:]*|\/]|$esc)*"
+        git log --graph --abbrev-commit --decorate --format=format:"$format" --all --date-order |
+          ifold -s -w "$COLUMNS" --indent="$indent"
+      fi ;;
+
+    (commit) g/check-commit-arguments && git "$@" ;;
+
+    (*) default=1 ;;
+    esac
+
+    [[ ! $default ]] || git "$@"
   fi
 }
 

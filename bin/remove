@@ -12,9 +12,11 @@ dir="$HOME/.recycle"
 
 shopt -s nullglob
 
-# >>>>> yn.sh
+mkd () { test -d "$1" || mkdir -p "$1"; }
+
+# < yn.sh >
 #%include "../functions/yn.sh"
-# <<<<< yn.sh
+# </ yn.sh >
 
 function upvar { unset "$1" && eval "$1=\"\$2\""; }
 
@@ -300,9 +302,8 @@ if ((${#files[@]}==0)); then
   exit 1
 fi
 
-# checking files
-if [[ ! $fR || ! $fF ]]; then
-  declare file
+function check_files_are_removable_files {
+  local file
   for file in "${files[@]}"; do
     if [[ ! $fF && ! ( -e $file || -h $file ) ]]; then
       echo "mshex/remove: '$file' does not exist!" >&2
@@ -312,11 +313,36 @@ if [[ ! $fR || ! $fF ]]; then
       exit 1
     fi
   done
+}
+
+function check_files_are_on_the_same_disk {
+  mkd "$dir"
+  local result=$({ df "$dir" "${files[@]}" | awk '
+    NR==2{mount_point=$NF;next;}
+    NR>=3 && $NF != mount_point {print "odisk=" (NR-3);}'; } 2>&1)
+  if [[ $result ]]; then
+    # print error messages
+    local line
+    while read -r line; do
+      if [[ $line == odisk=* ]]; then
+        local index=${line%odist=}
+        echo "mshex/remove: '${files[index]}' is on a different disk from that of the recycle directory"
+      else
+        echo "$line"
+      fi
+    done <<< "$result" >&2
+    exit 1
+  fi
+}
+
+# checking files
+if [[ ! $fR || ! $fF ]]; then
+  check_files_are_removable_files
+  check_files_are_on_the_same_disk
 fi
 
 #------------------------------------------------------------------------------
 # create backup directory
-mkd () { test -d "$1" || mkdir -p "$1"; }
 now="$(date +%Y%m%d-%H%M%S)"
 
 delete_waiting_files () {
