@@ -6,7 +6,7 @@
 ## $HOME/.mwg/bashrc
 ##
 ## copyright (c) 2010-2012 Koichi MURASE <murase@nt.phys.s.u-tokyo.ac.jp>, <myoga.murase@gmail.com>
-## 
+##
 ## common .bashrc settings
 ##
 #%%elif mode=="zsh"
@@ -15,7 +15,7 @@
 ## $HOME/.mwg/bashrc
 ##
 ## copyright (c) 2010-2012 Koichi MURASE <murase@nt.phys.s.u-tokyo.ac.jp>, <myoga.murase@gmail.com>
-## 
+##
 ## common .zshrc settings
 ##
 #%%)

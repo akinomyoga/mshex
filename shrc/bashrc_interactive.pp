@@ -6,7 +6,7 @@
 ## $HOME/.mwg/bashrc
 ##
 ## copyright (c) 2010-2016 Koichi MURASE <myoga.murase@gmail.com>
-## 
+##
 ## common .zshrc settings
 ##
 #%%else
@@ -15,7 +15,7 @@
 ## $HOME/.mwg/bashrc
 ##
 ## copyright (c) 2010-2016 Koichi MURASE <myoga.murase@gmail.com>
-## 
+##
 ## common .bashrc settings
 ##
 #%%)
@@ -80,6 +80,15 @@ alias 26='fg %26'
 alias 27='fg %27'
 alias 28='fg %28'
 alias 29='fg %29'
+
+#-------------------------------------------------------------------------------
+# utility functions
+
+if ((mwg_bash>=30100)); then
+  function mwg.array#push { eval "$1+=(\"\$2\")"; }
+else
+  function mwg.array#push { eval "$1[\${#$1[@]}]=\"\$2\""; }
+fi
 
 #-------------------------------------------------------------------------------
 # alias functions
@@ -210,11 +219,25 @@ function g {
           fi
         fi
 
-        if [[ -t 1 ]] && type nkf &>/dev/null; then
-          git diff --minimal -M -C -b --color "${diff_options[@]}" "$@" | nkf -x | less -FSRX
-        else
-          git diff --minimal -M -C -b "${diff_options[@]}" "$@"
+        local diff_filter=''
+        if [[ -t 1 ]]; then
+          if type nkf &>/dev/null; then
+            diff_filter="$diff_filter | nkf -x"
+          fi
+
+          if type colored &>/dev/null; then
+            mwg.array#push diff_options --color=never
+            diff_filter="$diff_filter | colored -tdiff"
+          else
+            mwg.array#push diff_options --color=always
+
+          fi
+
+          if [[ $diff_filter ]]; then
+            diff_filter="$diff_filter | less -FSRX"
+          fi
         fi
+        eval 'git diff --minimal -M -C -b "${diff_options[@]}" "$@"'"$diff_filter"
       else
         default=1
       fi ;;
