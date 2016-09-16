@@ -316,10 +316,16 @@ function check_files_are_removable_files {
 }
 
 function check_files_are_on_the_same_disk {
+  local root_synonym=
+  if [[ $OSTYPE == cygwin* ]]; then
+    root_synonym=$(df / | awk 'NR==2 && /^[A-Z]:/ {print "/cygdrive/" tolower(substr($1,1,1));}')
+  fi
+
   mkd "$dir"
-  local result=$({ df "$dir" "${files[@]}" | awk '
-    NR==2{mount_point=$NF;next;}
-    NR>=3 && $NF != mount_point {print "odisk=" (NR-3);}'; } 2>&1)
+  local result=$({ df "$dir" "${files[@]}" | awk -v root_synonym="$root_synonym" '
+    function normalize(path){return path == root_synonym? "/": path;}
+    NR==2{mount_point=normalize($NF);next;}
+    NR>=3 && normalize($NF) != mount_point {print "odisk=" (NR-3);}'; } 2>&1)
   if [[ $result ]]; then
     # print error messages
     local line
