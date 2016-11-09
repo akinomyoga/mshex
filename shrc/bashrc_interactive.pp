@@ -155,6 +155,12 @@ function m {
 
 # alias g=git
 
+function g/apply-commit-time-to-mtime {
+  # modified version from http://stackoverflow.com/questions/2458042/restore-files-modification-time-in-git
+  git log --pretty=%at --name-status |
+    perl -ane '($x,$f)=@F;next if !$x;$t=$x,next if !defined($f);next if $s{$f};$s{$f}=utime($t,$t,$f),next if $x=~/[AM]/;'
+}
+
 function g/check-commit-arguments {
   while (($#)); do
     local arg="$1"; shift
@@ -259,6 +265,9 @@ function g {
       fi ;;
 
     (commit) g/check-commit-arguments && git "$@" ;;
+
+    (set-mtime)
+      g/apply-commit-time-to-mtime ;;
 
     (*) default=1 ;;
     esac
