@@ -180,7 +180,7 @@ function g/check-commit-arguments {
   return
 }
 function g {
-  if(($#==0)); then
+  if (($#==0)); then
     git -c color.status=always status | less -FSRX
   else
     local default=
@@ -354,7 +354,7 @@ mwg_bashrc.bindx() {
     fi
 
     local hex seq2
-    if((mwg_bash>=40100)); then
+    if ((mwg_bash>=40100)); then
       printf -v hex  '\\x%x' "$id"
       printf -v seq2 "$hex"
     else
