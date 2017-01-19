@@ -71,6 +71,6 @@ tac "$target" | {
 mwgbk -m "$target" && mv "$HOME/1.tmp" "$target"
 
 if [[ $check_syntax && -s "$fnInv" ]]; then
-  cat "$fnInv" >> "$HOME/.bash_history.invalid"
+  cat "$fnInv" >> "$target.invalid"
   /bin/rm -f "$fnInv"
 fi
