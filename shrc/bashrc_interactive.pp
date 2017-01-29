@@ -28,6 +28,25 @@ source "$MWGDIR/share/mshex/shrc/dict.sh"
 source "$MWGDIR/share/mshex/shrc/term.sh"
 
 #==============================================================================
+# Fedora / CentOS
+
+if [[ -e /etc/redhat-release ]]; then
+  # Fedora 及び CentOS の変な設定を削除する。
+
+  # 存在しないコマンドに当たった時に、勝手にインターネットに接続して検索しに行く。
+  # スクリプトファイルを読み込んだ時に、PATH を間違えていたり存在しないコマンドを
+  # 大量に使っていたりすると大変な事になる。C-c を連打しても止められない。
+  # <a href="http://luna2-linux.blogspot.jp/2011/03/fedora-14.html">ALL about Linux: Fedora 14 でコマンドを打ち間違えると・・・</a>
+  unset -f command_not_found_handle
+
+  # 勝手に screen のタイトルに変なものを設定しようとする。
+  PROMPT_COMMAND=
+
+  # alias ll='ls -l --color=auto'
+  unalias ll
+fi
+
+#==============================================================================
 # aliases
 
 alias emacs='emacs -nw'
