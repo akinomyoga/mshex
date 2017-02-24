@@ -81,7 +81,11 @@ function option/type {
 }
 
 function option/type:c {
-  option/extension c:h:inl:cpp:cxx:hpp:hxx
+  option/extension c:h
+}
+function option/type:c++ {
+  option/type:c
+  option/extension inl:cpp:cxx:hpp:hxx:cc:C
   local cxx_headers=(
     cassert cctype cerrno cfenv cfloat cinttypes ciso646 climits clocale
     cmath csetjmp csignal cstdarg cstdbool cstddef cstdint cstdio cstdlib
@@ -96,7 +100,6 @@ function option/type:c {
   IFS='|' eval 'rex="(.*/|^)(${cxx_headers[*]})"'
   findRegex+=("$rex")
 }
-function option/type:c++ { option/type:c; }
 function option/type:js  { option/extension js:css; }
 function option/type:f   { option/extension f:inc; }
 function option/type:el  { option/extension el; }
@@ -191,7 +194,7 @@ read_arguments "$@"
 [[ $fArgumentError ]] && exit 1
 
 if [[ ! $typeSpecified ]]; then
-  option/type:c
+  option/type:c++
   option/type:js
   option/type:f
   option/type:el

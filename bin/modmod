@@ -54,6 +54,11 @@ fi|awk '
     next;
   }
 
+  /^a,out$/{
+    print "x" $0;
+    next;
+  }
+
   /^(.*\/)?[^./]+$/{
     print "o" $0;
     next;
