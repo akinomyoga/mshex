@@ -44,6 +44,7 @@ if test "${1%.cz}" != "$1"; then
 
   if ! openssl enc -d -des3 -in "$1" -out /dev/stdout | xz -d - > "$out"; then
     echo 'failed to decrypt!' >&2
+    /bin/rm "$out"
     exit 1
   fi
 
