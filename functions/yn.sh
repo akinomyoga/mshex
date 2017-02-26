@@ -12,6 +12,9 @@ function mshex.yn {
     ret_default=1
     prompt_yn='yes/No'
     shift ;;
+  (*)
+    echo 'msehx.yn: invalid usage!' >&2
+    exit 1 ;;
   esac
 
   while read -ep "$* ($prompt_yn): " line; do
@@ -31,4 +34,6 @@ function mshex.yn {
       fi ;;
     esac
   done
+
+  return 1
 }
