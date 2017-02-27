@@ -2,51 +2,72 @@
 
 prog="$0"
 
-mv_file_with_bk () {
+hasGit=
+type git &>/dev/null && hasGit=1
+
+move_commands=()
+
+function array#push {
+  eval "$1[\${#$1[@]}]=\"\$2\""
+}
+
+function mv_file_with_bk {
+  local q=\' Q=\'\\\'\'
   local src="$1"
   local dst="$2"
-  if test ! -e "$src"; then
-    echo "$prog! file '$src' does not exists." >&2
+  if [[ ! -e $src ]]; then
+    echo "$prog! file '${src//$q/$Q}' does not exists." >&2
     return 1
   fi
 
-  local src2="$1~"
-  if test -d "$dst"; then
-    local dst2="$dst"
-  else
-    local dst2="$dst~"
+  [[ -d $dst ]] && dst=${dst%/}/${src##*/}
+  local src2="$src~"
+  local dst2="$dst~"
+
+  # check dst
+  if [[ -e $dst ]]; then
+    echo "$prog: a target file '${dst//$q/$Q}' already exists." >&2
+    return 1
   fi
 
-  echo mv -i "$src" "$dst"
-  test -e "$src2" && echo mv "$src2" "$dst2"
-  
-  mv -i "$src" "$dst" || return
-  if test -e "$src2"; then
-    mv "$src2" "$dst2"
+  # mv src dst
+  local mv1="mv '${src//$q/$Q}' '${dst//$q/$Q}'"
+  [[ $hasGit ]] && [[ $(git ls-files "$src" 2>/dev/null) ]] && mv1="git $mv1"
+  echo "$mv1"
+  array#push move_commands "$mv1"
+
+  # mv src~ dst~
+  if [[ -e $src2 ]]; then
+    local mv2="mv '${src2//$q/$Q}' '${dst2//$q/$Q}'"
+    [[ $hasGit ]] && [[ $(git ls-files "$src2" 2>/dev/null) ]] && mv2="git $mv2"
+    echo "$mv2"
+    array#push move_commands "$mv2"
   fi
 }
 
-if test $# -eq 0; then
+if (($#==0)); then
   echo "usage: $0 <files...> <target>" >&2
   exit 1
-elif test $# -eq 1; then
+elif (($#==1)); then
   echo "$0! target file is not specified." >&2
   exit 1
-elif test $# -eq 2; then
+elif (($#==2)); then
   mv_file_with_bk "$1" "$2"
 else
   eval dst='${'$#'}'
   echo "# dst=$dst"
-  if test ! -d "$dst"; then
+  if [[ ! -d "$dst" ]]; then
     echo "$0! target file is not a directory." >&2
     exit 1
   fi
 
-  ext=0
-  while test $# -ge 2; do
-    mv_file_with_bk "$1" "$dst" || ext=1
-    shift
+  flagError=
+  for src in "${@:1:$#-1}"; do
+    mv_file_with_bk "$src" "$dst" || flagError=1
   done
-
-  exit $ext
+  [[ $flagError ]] && exit 1
 fi
+
+for cmd in "${move_commands[@]}"; do
+  eval "$cmd"
+done
