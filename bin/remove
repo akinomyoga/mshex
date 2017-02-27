@@ -322,10 +322,27 @@ function check_files_are_on_the_same_disk {
   fi
 
   mkd "$dir"
-  local result=$({ df "$dir" "${files[@]}" | awk -v root_synonym="$root_synonym" '
-    function normalize(path){return path == root_synonym? "/": path;}
-    NR==2{mount_point=normalize($NF);next;}
-    NR>=3 && normalize($NF) != mount_point {print "odisk=" (NR-3);}'; } 2>&1)
+  local result=$(
+    export root_synonym
+
+    # シンボリックリンクがリンク先のディレクトリに解決されるのを防ぐ
+    dffiles=()
+    for file in "${files[@]}"; do
+      if [[ -h $file ]]; then
+        if [[ $file == */* ]]; then
+          file=${file%/*}/
+        else
+          file=.
+        fi
+      fi
+      dffiles[${#dffiles[@]}]=$file
+    done
+
+    { df "$dir" "${dffiles[@]}" | awk '
+      BEGIN {root_synonym = ENVIRON["root_synonym"];}
+      function normalize(path){return path == root_synonym? "/": path;}
+      NR==2{mount_point=normalize($NF);next;}
+      NR>=3 && normalize($NF) != mount_point {print "odisk=" (NR-3);}'; } 2>&1)
   if [[ $result ]]; then
     # print error messages
     local line
