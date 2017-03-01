@@ -106,8 +106,8 @@ $(MWGDIR)/bin/remove: out/bin/remove
 	$(SHELL) make-install_script.sh $< $@
 out/bin/remove: bin/remove | out/bin
 	$(MWGPP) $< > $@ && chmod +x $@
-install+=$(MWGDIR)/bin/~mv
-$(MWGDIR)/bin/~mv: bin/~mv
+install+=$(MWGDIR)/bin/move
+$(MWGDIR)/bin/move: bin/move
 	$(SHELL) make-install_script.sh $< $@
 install+=$(MWGDIR)/bin/src
 $(MWGDIR)/bin/src: bin/src
