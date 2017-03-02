@@ -208,6 +208,10 @@ function g {
     (u) git add -u ;;
     (l) ls -ld $(git ls-files "${@:2}") ;;
 
+    (p) git add -p "${@:2}" ;;
+    (amend)  git commit --amend --no-edit "${@:2}" ;;
+    (reword) git commit --amend "${@:2}" ;;
+
     # stepcounter
     # from ephemient's answer at http://stackoverflow.com/questions/4822471/count-number-of-lines-in-a-git-repository
     (c) git diff --stat 4b825dc642cb6eb9a060e54bf8d69288fbee4904 ;;
