@@ -133,6 +133,9 @@ $(MWGDIR)/bin/ifold: bin/ifold
 install+=$(MWGDIR)/bin/refact
 $(MWGDIR)/bin/refact: bin/refact
 	$(SHELL) make-install_script.sh $< $@
+install+=$(MWGDIR)/bin/tarc
+$(MWGDIR)/bin/tarc: bin/tarc
+	$(SHELL) make-install_script.sh $< $@
 
 #------------------------------------------------------------------------------
 

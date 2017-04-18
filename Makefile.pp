@@ -102,6 +102,7 @@ out/bin/%file%: bin/%file% | out/bin
 #%x bin_file.r|%file%|ren|
 #%x bin_file.r|%file%|ifold|
 #%x bin_file.r|%file%|refact|
+#%x bin_file.r|%file%|tarc|
 
 #------------------------------------------------------------------------------
 

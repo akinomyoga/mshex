@@ -35,14 +35,14 @@ if [[ -x $RAR ]]; then
     else
       "$RAR" a -msrar -m5 -s -sfx "$@"
     fi
-    return ;;
+    exit ;;
   (*.rar)
     if [[ -d $src ]]; then
       "$RAR" a -msrar -m5 -s -r "$@"
     else
       "$RAR" a -msrar -m5 -s "$@"
     fi
-    return ;;
+    exit ;;
   esac
 fi
 
@@ -50,19 +50,33 @@ if type tar &>/dev/null; then
   case "$dst" in
   (*.lzma|*.tlz)
     tar --lzma -cvf "$dst" "$src"
-    return ;;
+    exit ;;
   (*.bz2|*.tbz)
     tar cjvf "$dst" "$src"
-    return ;;
+    exit ;;
   (*.gz|*.tgz)
     tar czvf "$dst" "$src"
-    return ;;
+    exit ;;
   (*.xz|*.txz)
     #tar cvf - "$src" | xz -7 > "$dst"
     tar --xz -cvf "$@"
-    return ;;
+    exit ;;
   esac
 fi
 
+if [[ $dst == *.zip ]]; then
+  if type zip &>/dev/null; then
+    if [[ -d $src ]]; then
+      cd "$src"
+      [[ $dst != /* ]] && dst=../$dst
+      zip -r "$dst" .
+    else
+      zip "$dst" "$src"
+    fi
+    exit
+  fi
+fi
+
+
 echo 'unknown filetype' >&2
-return 1
+exit 1
