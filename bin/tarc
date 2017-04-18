@@ -88,6 +88,18 @@ if [[ $dst == *.zip ]]; then
   fi
 fi
 
+if [[ $dst == *.lzh ]]; then
+  if type lha &>/dev/null; then
+    if [[ -d $src ]]; then
+      cd "$src"
+      [[ $dst != /* ]] && dst=../$dst
+      lha co7 "$dst" .
+    else
+      lha co7 "$dst" "$src"
+    fi
+    exit
+  fi
+fi
 
 echo 'unknown filetype' >&2
 exit 1
