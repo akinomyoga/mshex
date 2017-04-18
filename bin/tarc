@@ -6,24 +6,35 @@
 
 RAR=/unix/koichi/prog/wrar371j/WinRAR
 
+usage() {
+  if [[ ${0:0:1} == '.' ]]; then
+    local self=$0
+  elif [[ $(type -p "${0##*/}") == "$0" ]]; then
+    local self=${0##*/}
+  else
+    local self=$0
+  fi
+  
+  echo "usage: $self <dstfile> <srcfiles>+"
+}
+
+if (($#!=2)); then
+  usage >&2
+  exit 1
+fi
+
 dst=$1
 src=$2
 
 if [[ ! $dst ]]; then
-  if [[ ${0:0:1} == '.' ]]; then
-    self=$0
-  elif [[ $(type -p "${0##*/}") == "$0" ]]; then
-    self=${0##*/}
-  else
-    self=$0
-  fi
-  
-  echo "usage: $self <dstfile> <srcfiles>+"
+  usage >&2
   exit 1
+elif [[ $dst == .* && ! -e ${src%/}$dst ]]; then
+  dst=${src%/}$dst
 fi
 
 if [[ -e $dst ]]; then
-  echo "Specified destination file '$1' is already exists!"
+  echo "Specified destination file '$dst' does already exist!"
   exit 1
 fi
 
