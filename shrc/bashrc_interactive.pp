@@ -176,7 +176,7 @@ function h {
   if (($#)); then
     history "$@"
   else
-    history 10 | awk '{printf("!%-3d !%s", NR - 11, $0);}'
+    history 10 | awk '{printf("!%-3d !%s\n", NR - 11, $0);}'
   fi
 }
 
