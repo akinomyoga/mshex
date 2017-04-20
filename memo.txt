@@ -1,6 +1,185 @@
+mshex/memo.txt
+
+
+-------------------------------------------------------------------------------
+  Note
+-------------------------------------------------------------------------------
+
+* 関数内で declare を用いて変数を宣言すると local で宣言したのと同じ。
+  関数内からグローバルに変数を定義したい時は、
+  a. 何も宣言せずに代入すればグローバルに変数が定義される。
+    整数の変数や連想配列の場合は、必ず宣言が必要であるのでこの方法は使えない。
+  b. export を用いる事で一見してグローバルの変数とする事が出来るが、
+    連想配列は唯の配列として export されるので外部からは中で設定した値を参照できない。
+    また、変数が環境変数となり bash から起動される他のプログラムにも影響を与える。
+  c. zsh / bash-4.2以降 なら declare -g を用いる事でグローバルのシェル変数を宣言できる。
+
+* zsh では
+  + 関数内で export で変数に代入しても外部からは見えない?
+  + ファイル名展開に失敗した場合、既定の設定ではコマンドが実行されない。
+    unsetopt nomatch とする事で、失敗してもそのままの引数でコマンドが実行される様になる。
+    たとえば a[1].txt などと言うファイルに対して操作しようと思ったら必ず a\[1\].txt と書かなければならない。
+  + "$hello[aiu]" は "${hello[aiu]}" と解釈される。
+  + 連想配列の [ ] 内の引用符はそのままの文字として解釈される。
+    例えば dict[1] と dict['1'] と dict["1"] はそれぞれ独立な変数として働く。
+  + local prompt などの変数を定義した上で export PS1 を設定すると、
+    関数を抜けた瞬間にその設定は元に戻る。
+
+* bash-3 では、source_if 等の関数内から source すると、
+  シェル変数は関数内でしか有効にならない。
+  従って source_if 等の関数を宣言してそれを用いて source するのは正しくない。
+
+  追記:
+  どうも関数内部で declare を用いて変数を宣言すると関数内部だけで有効になる様だ。
+  代わりに何も宣言をせずに変数を使うと問題なく、関数外の環境に影響を与える事ができる。
+  更に、bash-4.2 以降では -g オプションによって
+  関数内で declare を実行されてもグローバルに変数を宣言できる。
+
+* [2013-05-28 15:37:12] zsh では、
+    echo arr[0]=10
+  等とすると該当するファイル名がないというエラーが発生しコマンドが実行されない。
+    unsetopt nomatch
+  と設定指定置けば、ファイル名生成に失敗しても、そのままの引数でコマンドが実行される。
+
+  更に、何たる事か "$hello[aiu]" とすると bash の "${hello[aiu]}" と同じに解釈される。
+
+  また、dict['a'] と dict[a] は異なるエントリーとして扱われる。
+  色々試してみた結果、index=1 の時、
+  + dict[1] と dict[$index] は同じ
+  + dict["1"] と dict["$index"] は同じ
+  + dict['1'] と dict['$index'] は同じ
+  + そして、上記の異なる項目にある物は全て区別される。
+  つまる所、引用符を唯の文字と認識しているという事の様である。
+
+■bash versions
+
+bash: version 依存の機能
+
+declare -i mwg_bash=$((${BASH_VERSINFO[0]}*10000+${BASH_VERSINFO[1]}*100+${BASH_VERSINFO[2]}))
+
+bash-4.2, ((mwg_bash>=40200))
+  + declare -g
+    関数内からグローバル変数を明示的に定義する
+  + test -v var
+    これについては test -n "${var+set}" で代用できる
+  + $'\uXXXX'
+  + printf '%()T' -1
+
+bash-4.1, ((mwg_bash>=40100))
+  + printf -v
+  + read -N
+  + {var}> fname redirection
+
+bash-4.0, ((mwg_bash>=40000))
+  + declare -A
+    連想配列
+  + read -t に小数を指定できる
+
+bash-3.1
+  + s+=1       30100
+  + a+=(1)     30100
+
+bash-3.0-beta1
+  + ${var:offset:len}
+
+    3.0-beta1 未満では、offset, len は文字数ではなくてバイト数として扱われる。
+    つまり日本語などが入っていると滅茶苦茶な事になる。
+    従って、${var:offset:len} は実質 3.0-beta1 以降でしか使えないと考えるのが良い。
+
+bash-3.0-alpha
+  + [[ text =~ ERE ]]
+
+bash-2.04
+  + read -n
+  + ${!pref*} (${!pref@} もこの時?)
+
+bash-2.03
+  + ${FUNCNAME[@]}
+    (caller [int] コマンドは 2.05b 以降)
+
+bash-2.02
+  + shopt -s extglob
+
+?
+  * ${arr[@]:offset:length} 少なくとも 3.0 以降では使える様だ
 
 
+■zsh のプロンプト設定について
+  %%            %
+  %#            \$
 
+  %n            username
+  %m            hostname
+  %M            hostname full
+
+  %C            pwd dirname
+  %c            pwd dirname (~ abbr)
+  %.            pwd dirname (~ abbr)
+  %d            pwd
+  %/            pwd
+  %~            pwd (~ abbr)
+
+  %l            tty
+  %?            $?
+  %!            num of commands ?
+  %h            num of commands ? history の項目数
+  %i            num of commands ?
+  %I            num of commands ?
+  %j            num of jobs
+
+  %B ... %b     bold
+  %U ... %u     underline
+  %K ... %k     ??? makkuro
+  %S ... %s     inverted
+  %{ ... %}     quote format
+  %[ ... %]     ???
+
+  %L            ?
+  %N            "zsh"
+
+  %T            time +%H:%M
+  %t            time +%l:%M%p  2:34AM
+  %@            time +%l:%M%p  2:34AM
+  %*            time +%H:%M:%S
+  %D            date +%y-%m-%d
+  %W            date +%m/%d/%y
+  %w            date +%a %d    Jan 13
+
+■zsh の振る舞いについて
+
+* ファイル名置換に失敗するとエラーになってコマンドを実行できない。
+  ファイル名置換に失敗した場合、パターンのままコマンドを実行するには、
+  以下を設定に加える。
+
+  unsetopt nomatch
+
+* for ループで for の後に SP を入れる必要がある。
+  for ((i=0;i<100;i++)); do
+  done
+
+* TAB でファイル名補間をしようとすると、
+  TAB 2 回目で候補の内の一つが入力されてしまう。
+  これだと incremental に入力しながら候補を探っていく事が出来ない。
+  無効にする為には以下を設定に加えればよい。
+
+  unsetopt auto_menu
+
+  因みに補完が実行される度に BEL が鳴ってうるさい時は、以下の設定で無効に出来る。
+
+  unsetopt list_beep
+
+  
+
+  参考:
+  <a href="http://memo.officebrook.net/20100223.html">めも - Zshオプション::補完関係</a>
+
+* 操作のキャンセルのつもりで C-g を押すと、今入力している途中のコマンド自体が消される。
+  これの解決方法は未だ分かっていない。
+
+  因みに bindkey '^G' beep 等とすると、
+  今度は C-r で履歴検索をした後にキャンセル出来なくなったので駄目。
+
+
 ------------------------------------------------------------------------------
   ToDo
 ------------------------------------------------------------------------------
@@ -28,4 +207,479 @@
   3. ${text//'"'/'\"'}
   4. ${text//'<quot>'/'"'}
 
+
+-------------------------------------------------------------------------------
+  Done
+-------------------------------------------------------------------------------
+
+old logs
+
+* 連想配列を再現するための関数の高速な入出力方法
+
+  [結論]
+
+  標準入出力を使った受け渡しプロセスを作成するので遅い。
+  ローカル変数を使った受け渡しが速い。特に eval を使えば良い。
+
+  [mwg_bash 速度計測]
+
+  古い版の bash では連想配列が使えない。しかし、連想配列を前提とした実装にしてし
+  まった。連想配列にする事によって管理を統一的にしながらシーケンスの取得を高速に
+  行う事ができると考えたが、古い bash でも動かす可能性がある事を考えると連想配列
+  は使えない。
+
+  これを解決する一つの方法は連想配列に対する参照を関数にくるんでしまって、古い版
+  の bash ではその関数の実装を連想配列を使用しない形に書き換える事である。連想配
+  列を直接参照しないインターフェイスにするとどれだけ速度に影響が出るだろうか。
+
+  time for((i=0;i<100;i++));do a="${arr[$1]}"; done
+
+    100回            | 10000回実行すると
+    -----------------+-----------------
+    real    0m0.000s | real    0m0.469s
+    user    0m0.000s | user    0m0.469s
+    sys     0m0.000s | sys     0m0.000s
+                     |                 
+    real    0m0.016s | real    0m0.453s
+    user    0m0.015s | user    0m0.453s
+    sys     0m0.000s | sys     0m0.000s
+
+
+  arr.get() { echo "${arr[$i]}"; }
+  time for((i=0;i<100;i++));do a="$(arr.get $i)"; done
+
+    real    0m6.266s
+    user    0m2.279s
+    sys     0m4.327s
+
+    real    0m6.281s
+    user    0m2.158s
+    sys     0m4.236s
+
+    格段に遅くなる。多分プロセスを作るのに近い事をしている。
+
+  arr.get() { echo "${arr[$i]}"; }
+  time for((i=0;i<100;i++));do a="`arr.get $i`"; done
+
+    real    0m6.313s
+    user    0m2.229s
+    sys     0m3.719s
+
+    real    0m6.266s
+    user    0m2.135s
+    sys     0m3.977s
+
+    やはり遅い
+
+  arr.get2() { result="${arr[$1]}"; }
+  time for((i=0;i<100;i++));do arr.get2 $i; a="$result"; done
+
+    100回            | 10000回
+    -----------------+-----------------
+    real    0m0.000s | real    0m1.047s
+    user    0m0.000s | user    0m1.047s
+    sys     0m0.000s | sys     0m0.000s
+                     |                 
+    real    0m0.000s | real    0m1.047s
+    user    0m0.000s | user    0m1.047s
+    sys     0m0.000s | sys     0m0.000s
+
+    なんと、変数に代入する事によって渡せば遅くならない。
+    10000 回実行しても二倍程度にしか遅くない:
+
+
+  arr.get3() { eval "${2-REPLY}='${arr[$1]}'"; }
+  time for((i=0;i<100;i++));do arr.get3 $i test; a="$test"; done
+
+    100回            | 10000回
+    -----------------+-----------------
+    real    0m0.016s | real    0m1.593s
+    user    0m0.015s | user    0m1.672s
+    sys     0m0.000s | sys     0m0.000s
+                     |
+    real    0m0.016s | real    0m1.609s
+    user    0m0.016s | user    0m1.734s
+    sys     0m0.000s | sys     0m0.000s
+
+    より現実的なインターフェイスでも速度はそれ程落ちない
+    eval は local 変数に対しても有効なのか?
+
+    []$ test1() { local hello; arr.get3 10 hello; echo $hello; }
+    []$ hello=1
+    []$ echo $hello
+    1
+    []$ test1
+    55
+    []$ echo $hello
+    1
+
+    local 変数が宣言されている時は local 変数に代入される
+    local 変数が宣言されている時は外の変数には影響を与えない。
+    local 変数の中でも一番内側の関数で宣言されている物が影響を受ける。
+
+    しかし、この方法を取るとすると予め arr.get3 の様なコマンドを使用して、
+    ローカル変数にシーケンスを読み取る必要がある。
+    やはり、${mwg_term[]} で直ぐに参照できた方が良いのは事実である。
+
+  またもう一つの解決方法として、連想配列や配列を使用せずにグローバル変数にフラッ
+  トに変数を記録する事ができる。この時統一的な管理をしようと思ったら eval 等を使
+  って変数を設定するなどすれば良い。また、参照する時には普通の変数として参照すれ
+  ば良いので速度の問題は一切ない。後、参照の仕方が mwg_term_cf_dr 等、長い名前に
+  なって途中で切れていないと幾らか気分が悪い…がこれは仕方がない。また、declare
+  で変数一覧を参照する時に散乱して見にくいという事と、declare -p mwg_term で一括
+  して見る、等と言った事ができないという問題点もある。またキーに用いる文字列は当
+  然ながら変数に用いる事のできる文字列で構成されていなければならないので、使用の
+  際に充分気を付ける必要がある。
+
+
+
+-------------------------------------------------------------------------------
+  変更履歴 (ChangeLog)
+-------------------------------------------------------------------------------
+
+2015-06-21
+  * bin/grc: 既定で引数に指定されたファイルを除外しない様に変更。
+  * bin/grc: `--exclude-default' で引数に指定されたファイルを除外する事を指定する。
+  * bin/refact: bugfix, 引数が足りない時のエラーメッセージ&終了ができていなかった。
+
+2015-06-20
+  * bin/findsrc: c++ header files も列挙する
+  * shrc/bashrc_interactive.pp (m): Makefile.pp -> Makefile の生成を行う
+  * bin/ren: `-S', `--shell-expand' option で after の値をシェル展開の対象とする。
+
+2015-06-17
+  * shrc/bashrc_interactive.pp: function m for make. alias m を置き換え。
+
+2015-03-22
+  * shrc/bashrc_interactive.pp: bugfix, bind -x $'\ez' の類が直接設定されていた。
+
+2015-03-19
+  * shrc/bashrc_interactive.pp: HISTSIZE を 100000 に増加。
+  * shrc/bashrc_interactive.pp: alias d, 曜日を追加。
+
+2015-02-23
+  * bin/findsrc: Added `--exclude=' option.
+  * bin/findsrc: reorganized argument processing.
+  * bin/grc: findsrc の引数処理の変更に伴う指定の変更。
+
+2015-02-10
+  * shrc/bash_interactipve.pp (g): added the form `g d\d+ [files]'
+
+2015-02-08
+  * shrc/bashrc_interactive.pp, ...:
+    全般に高速化。cygwin での bashrc の読込が遅いと思っていたら、bindx の中で行
+    われている $(printf) が悪かった。bash-4.1 以上で printf -v を用いる様に変更。
+    他にも $(mwg.dict new:...) なども遅くなる原因だった。
+    (cygwin では可能な限り fork が起きない様にしなければならない事を再認識した)。
+  * shrc/bash_tools, shrc/lib/menu.sh: cdhist で項目の移動を "," "." でできる様に。
+  * shrc/lib/term.sh: 諸々の修正
+    - read -sn と read -sN の version による切り替えが逆転していた
+    - read -srN 等の様に -r を指定しないとバックスラッシュがエスケープの一部と解釈される。
+    - IFS= としておかないと -N を指定していても改行などの読み取り結果が '' になってしまう。
+    - まとめ: 正しくは IFS= read -srN 1 var 等としなければならない。
+  * git で管理する事に
+  * 古いファイルなどの整理
+    - shrc/tools/menu.bash_source (menu.sh の旧版) を削除
+    - shrc/out: 自動的に生成されるファイルはこの中に移動
+    - install-copy_script.sh は分かり易い様に make-install_script.sh に改名。
+    - shrc/lib: 中身を shrc/ に移動
+  * shrc/bash_interactipve.pp: created g command
+  
+2015-01-19
+  * bin/refact: 引数にファイルを指定した場合、そのファイルを対象に置換する。
+  * bin/grc: .js ファイルを追加。
+  * bin/grc: 引数に指定したファイルが一つの場合でもファイル名を出力する。
+    (egrep は指定したファイルが1つの場合、既定でファイル名を出力しない。-H で出力させられる。)
+
+2015-01-04
+  * shrc/bash_tools: mwg_cdhist.cd, -f option, ディレクトリが存在しない場合に作る
+
+2014-11-04
+  * bin/refact: -Wg (grc options) を collision の方にも適用する様に変更。
+  * bin/grc: 該当ファイルがない時に検索を行わない様に変更。
+
+2014-08-03
+  * shrc/lib/path.sh: 作成。既存の PATH 操作関連の関数を纏める。
+  * shrc/lib/dict.sh: mwg.dict keys=(!hash[@]) 追加
+  * shrc/lib/term.sh: mwg_term.readkey 追加
+  * shrc/tools/menu.bash_source: 呼出の形式を変更
+  * shrc/tools/menu.bash_source: 起動・表示速度向上
+
+2014-07-30
+  * shrc/bashrc_interactive: mwg.windowtitle コマンド。screen のウィンドウ名をつける。
+
+2014-06-05
+  * bin/refact: パターン一致部分の実装を改良
+
+2014-05-28
+  * bin/ren: 上書き確認時のメッセージで、変換後ファイル名衝突時のメッセージを追加。
+  * bin/ren: 引数個数チェック
+  * bin/ren: ファイル名を省略した場合は、同じディレクトリにある全てのファイル
+
+2014-05-02
+  * bin/ren: 上書きをしない様にチェックをする。
+  * bin/ren: 改名の確認を取った後に実際に実行する (今迄は自分で sh に渡していた)
+  * bin/refact: option `-Wg,...' grc に対するオプションを指定できる様に。
+
+2014-04-29
+  * bin/findsrc, grc: `-x extensions' option, `-a' option, `-b' option に対応
+  * bin/grc: `--help' option に対応。
+2014-04-06
+  * bin/refact: 作成
+  * bin/grc: --color option
+
+2014-03-29
+  * bin/modmod: option -?/--help で説明を表示。
+
+2014-03-07
+  * bin/findsrc: . で始まるファイル・ディレクトリを除外する様に変更
+
+2014-02-01, KM,
+  * bin/ren: gauge:~/bin から移動
+
+2014-01-12, KM,
+  * bin/~mv: bugfix, >&2 を > &2 と記述していた。繋げないとエラーになる。
+  * bin/mwgbk: bugfix, 拡張子がなくて所属ディレクトリに . がある場合に、所属ディレクトリに日付が付加される。
+
+2014-01-07, KM,
+  * bin/cz: 暗号化の際に passwd~ の様なバックアップファイルも一緒に削除する様に変更。
+  * bin/cz: option -b, バックアップファイルを削除しない様にする指定を追加。
+  * bin/modmod: ファイルに拡張子がない場合も、
+    permission が 0 or 777 の時には 644 を設定する。
+    ファイルが実行可能ファイルかディレクトリの場合には 777 を指定する。
+    permission が 777 でファイルがシンボリックリンクの場合には何も変更しない。
+  * bin/modmod: option -r で再帰的にファイルの permission を変更できる様に。
+
+2013-12-18, KM,
+  * shrc/lib/term.sh, shrc/tools/menu.bash_source: /dev/stderr を &2 に書き換え。
+    Android/Linux では /dev/stderr は存在しない。
+    (他にも ssh host command などの実行で /dev/stderr がなくて問題になる事があるので &2 に置き換えた方がよい)
+  * bin/findsrc: 引数 `sh' (拡張子 .sh .src) 及び `all' (拡張子を問わない) に対応
+  * bin/grc: 引数 -t <findsrc_type> に対応。findsrc に指定する type を指定可能に
+  * bin/rm_i, ~mv, cz, czless: /dev/stderr を &2 に書き換え。
+  * install-copy_script.sh: /bin/bash が存在しない環境の為に、一行目 (#!/bin/bash) を書き換えるスクリプトを作成。
+
+2013-11-05, KM,
+  * bin/mwgbk: --help オプションの内容を更新。--help を記述してから機能を増やしていたので。
+
+2013-10-26, KM,
+  * shrc/bashrc_interactive: alias grep egrep, fgrep に -n --color=auto 追加。
+    (今迄は grep だけに --color=auto だけを指定していた。)
+
+2013-10-25, KM,
+  * bin/mwgbk: -t オプションに対応。backup ディレクトリを遡って探索する。
+  * bin/mwgbk: --help オプションに対応。
+  * bin/mwgbk: -- オプションに対応。
+  * bin/mwgbk: 短形式のオプションを、一つのオプション内で複数指定できる様に。例 -tm。
+  * bin/mwgbk: --dir, --list オプションに対応。
+
+2013-08-07, KM,
+  * bin/findsrc: .el を追加。また、スクリプトの構造を位置から見直し。
+
+2013-07-11, KM,
+  * bin/msync: mwgbk ディレクトリではなくその場所にバックアップファイルを作成する
+    オプションとして flat を作成。
+
+2013-06-12, KM,
+  * shrc/bashrc_interactive.pp: bugfix,
+    eval "$(mwg.dict new:*)" を引用符で囲んでいなかった為、
+    bash-3 でコマンドが一行に結合されて実行され、エラーになっていた。
+
+2013-05-28, KM, 主に bash-3, zsh での bugfix とコードの整理
+  * shrc/bashrc.pp:
+    既に MWGDIR 及び MWG_LOGINTERM が設定されていても、明示的に export する。
+  * shrc/bashrc.pp: mwg_bash を export する。
+  * shrc/lib/dict.sh (#created): 連想配列を扱う為の抽象化層
+    + shrc/lib/bashrc_interactive.pp: mwg_term コードを dict.sh を用いて書き直し
+    + shrc/mwg_term.pp (#removed): bashrc_interactive.pp 内の mwg_term コードと統合し廃止
+    + shrc/lib/term.sh (#created): bashrc_interactive.pp 内の mwg_term コードから分離
+    + shrc/lib/bashrc_interactive.pp (mwg_bashrc.bindx): dict.sh を用いて書き直し
+    + shrc/tools/menu.bash_source: mwg_term 更新
+    + shrc/bashrc.pp, shrc/bashrc_interactive.pp, Makefile.pp:
+      依存性は全て dict.sh に押しつけたので shrc/bashrc_interactive.3 廃止。
+    + shrc/bashrc.pp, shrc/bashrc_interactive.pp, shrc/lib/term.sh,
+      shrc/tools/menu.bash_source: [bugfix] mwg.dict h[abc] 等と書くと ha
+      等というファイルが存在した時にそのファイルの名前に展開されてしまう。
+      mwg.dict の引数を全て引用符で囲む事で対処。
+      (この文法にした利点が余りなくなったかも)
+    + shrc/lib/dict.sh (mwg.dict.set): [bugfix] zsh は連想配列の添字に引用符が
+      含まれている場合、それを普通の文字と解釈するようだ。
+  * shrc/lib/term.sh (mwg_term.set_title.escaped): [bugfix]
+    中身の escape はしなくて良い。fsl, tsl の \ を \\ に変えるだけで良かった。
+    元々この関数は PS1 として fsl, tsl の \ が解釈されるのを防ぐ為の物だった。
+  * shrc/bashrc_interactive.pp (mwg_bashrc.PS1.set): [bugfix]
+    zshrc で PS1 が設定されないバグ。local prompt を宣言したのが悪かった。
+  * shrc/lib/term.sh (mwg_term.set_title.escaped): [bugfix]
+    fsl を置くべき所で tsl を置いていた。
+  * shrc/bashrc_interactive.pp: [bugfix] eval "$(mwg.dict new:hash)" の様に、
+    引用符で囲んでおかないと複数行のスクリプトが一行にくっついてしまう。
+    特に bash-3 の時に mwg.dict が複数行のスクリプトを出す。
+  * shrc/lib/dict.sh: [bugfix] mwg.dict -n/-z で、key が見付からなかった時に、
+    内容があるかの様に振る舞っていた。これはデバグの為に tmp=123 で初期化していた為。
+  * shrc/tools/menu.bash_source: 連想配列を用いない実装に切り替え。
+
+2013-05-27, KM,
+  * shrc/bashrc_interactive.pp, shrc/mwg_term.pp (mwg_term.register_cap):
+    [bugfix] cap の判定で、if tput とするべき所を if test tput としていた為に
+    常に cap が false となっていた。
+  * shrc/bashrc_interactive.pp, shrc/mwg_term.pp (mwg_term.set_title):
+    hs cap が存在する時だけウィンドウタイトル設定シーケンスを発行する様に変更。
+
+2013-05-13, KM,
+  * shrc/bashrc_interactive.pp: mwg_bashrc.bindx: [bugfix] dict[cmd]=id の登録
+    を忘れていた。
+  * shrc/bashrc_interactive.pp: mwg_bashrc.bindx: [bugfix] bash3 に対する対応。
+  * shrc/tools/menu.bash_source: declare -A に依存しない実装 for bash3
+  * shrc/tools/menu.bash_source: メニューの操作を追加。q, ^G に [キャンセル] を割り当て。
+    n, p, m にそれぞれ [下], [上], [決定] を割り当て。
+  * shrc/bash_tools: cdhist で menu を呼び出す時 [キャンセル] 機能を有効に。
+
+2013-05-08, KM,
+  * bin/mwgbk: 既に同じファイルが backup されている場合に省略するように変更。
+    オプション `-f' 以降に指定したファイルは、同じファイルがあっても強制的に
+    バックアップを実行する。逆に オプション `-F' はこの設定を逆に上書きして、
+    以降のファイルは同じファイルかどうかの確認をせずに常にバックアップを実行
+    する。
+  * shrc/bash_interactive.pp: alias d に date を割り当て。
+
+2013-05-06, KM,
+  * shrc/bash_interactive.pp: M-RET に history-expand-line を bind
+
+2013-04-25, KM,
+  * bin/findsrc: fortran の拡張子に対応
+
+2013-04-22, KM,
+  * shrc/bash_tools:cd: option `mwg_cdhist_config_BubbleHist' を追加。
+    mwg_cdhist_config_BubbleHist=1 が設定されている場合、
+    ディレクトリ履歴を遡っている状態で新しいディレクトリに cd した時、
+    今迄居たディレクトリを履歴のトップに持ってきてから cd を実行する。
+
+2013-04-21, KM,
+  * bin/mwgbk: *.tar.* の形式のファイル名の拡張子を .tar.* と認識する様に変更。
+
+2013-02-06, KM,
+  * shrc/bash_interactive.pp: HISTIGNORE
+    今迄は bash_history が含まれるコマンドは何れも登録しないようにしていたが、
+    そんな事をして history 編集を隠しても仕方がないし、不便なので止める。
+
+2013-01-24, KM,
+  * bin/czless: エラー処理
+    存在しないファイルを指定した時や、パスワードを誤った場合など。
+
+2013-01-23, KM,
+  * shrc/bash_interactive.pp: COLUMNS LINES を export する様に。
+
+2012-11-23, KM,
+  * shrc/tools/menu: C-p 及び C-n でメニュー項目を移動できる様に。
+
+2012-11-06, KM,
+  * alias .. を追加
+
+2012-11-04, KM,
+  * bin/grc
+    書き換え
+    -C オプションを処理できる様に
+
+2012-10-26, KM,
+  * shrc/mwg_term.sh
+    mwg_term の部分だけ分離。
+    bash-4.0 以降で最速になる様に最適化。
+    bash-4.0 以下でも高速なインターフェイスとして mwg_term.set 関数を提供
+
+2012-10-24, KM,
+  * bin/~mv: ~ ファイルが元からない場合に、
+    移動に成功しているのに exit code 1 を返すバグを修正。
+  * bin/mwgbk: ~ で終わるファイルのバックアップ時に、
+    ~ のついていないファイルのバックアップを取ってしまうバグを修正。
+
+2012-10-23, KM,
+  * bin/rm_i: ディレクトリへのシンボリックリンクの削除に -r が必要だったのを修正。
+
+2012-10-21, KM,
+  * M-Enter に割り当てた stty echo は意味がない事が判明
+    仕様がないの alias s に割り当てる事にした。
+  * cz, czless を追加
+  * bin/~mv: 複数ファイルを移動する時の exit code.
+
+2012-10-20, KM,
+  + findsrc の先頭 #!/bin/sh を #!/bin/bash に修正。
+    bash の比較演算子を使っていた為。
+  + M-Enter に stty echo を追加。
+    頻繁に stty -echo の設定になって面倒だから。
+  + bin/mwgbk: バックアップファイルの末尾の ~ が除去できていなかったのを修正。
+    チルダ展開が実行されない様に ${1%~} ではなく ${1%'~'} とする必要があった。
+
+2012-10-16 KM
+  * ~/bin/ren: ファイル名を引用符で囲むように変更
+
+2012-10-03, KM,
+  + ls -l を M-l に割り当て
+  + cdhist で一旦戻った後に
+  + PS1 の設定を整理・統合
+
+2012-10-01, KM,
+  + shrc.pp を bashrc.pp と bashrc_interactive.pp に分割
+    - shrc.pp は bashrc_interactive.pp に名前変更
+  + mwg.bashrc.bindx:
+    - bind -x で複数文字のシーケンスに対し簡単にコマンドを設定できる様に。
+    - fg, mwg_cdhist の類をこれで定義
+  + mwg_term: bash_tools -> bash_interactive に移動
+  + $HOME/bin にあった良く使うスクリプトを統合
+
+ChangeLog $HOME/.mwg/bin
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+2012-09-23
+  * ~/bin/ren: 作成
+
+2012-08-03 08:48:45
+  + grc
+
+2012-05-07 03:03:10
+  + findsrc
+
+<=2011-10-09 03:49:27
+  + ~mv
+
+<=2011-07-29 02:14:29
+  + msync
+
+<=2011-05-31 23:21:39
+  + mwgbk
+
+<=2011-05-06 20:40:25
+  + rm_i
+
+<=2010-11-25 22:46:32
+  + makepp
+
+<=2010-07-14 23:43:41
+  + modmod
+
+ChangeLog $HOME/.mwg/bashrc
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+2012-09-29 KM
+  + $HOME/.mwg/bash_tools
+    - mwg_term[] に terminal 情報を記録する様に変更
+    - mwg_cdhist: cd の履歴機能を追加
+  + source_if の中で変数を宣言しても外から見えない事が判明
+
+2012-07-26 KM
+  + $HOME/.mwg/shrc.pp:
+    bashrc と zshrc で殆ど同じなので、
+    違う部分だけ mwg_pp.awk で切り替えて出力する様にする
+
+2012-05-10 KM
+  + $HOME/.mwg/bashrc.cygwin
+    cygwin 特有の設定を bashrc.cygwin に纏める
+
+2011-07-16 KM
+  + $HOME/.mwg/zshrc
+    zshrc でも bashrc に設定したのと同様の設定を
+
+2010-11-12 KM
+  + $HOME/.mwg/bashrc
+    マシン間で共通の設定を纏める。
+    記録していないので日時が分からないが少なくともこれ以前。
 
