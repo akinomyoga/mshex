@@ -113,7 +113,7 @@ fi
 # alias functions
 
 if ((mwg_bash>=40200)); then
-  function d { printf $'%(\e[94m%F (%a) %T %Z\e[m \e[90m(%x %r)\e[m %Y%m%d-%H%M%S)T\n\n' -1; cal; }
+  function d { printf $'%(\e[94m%F (%a) %T %Z\e[m\n\e[32m%x %r\e[m\n%Y%m%d-%H%M%S)T\n\n' -1; cal; }
 else
   function d { date +$'\e[94m%F (%a) %T %Z\e[m\n%Y%m%d-%H%M%S'; echo; cal; }
 fi
