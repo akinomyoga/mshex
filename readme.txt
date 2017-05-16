@@ -63,20 +63,20 @@ source ~/.mwg/bashrc による設定
 
   ジョブ管理
 
-    $ j       jobs
-    $ f       fg %
-    $ F       fg %-
-    $ NUM     fg %NUM
+    j       jobs
+    f       fg %
+    F       fg %-
+    NUM     fg %NUM
 
-    M-z       fg
-    C-z       fg
+    M-z (key binding)     fg
+    C-z (key binding)     fg
 
   ディレクトリ移動
 
-    $ c       cd -        前のディレクトリ
-    $ C       cd ..       一つ上のディレクトリ
+    c       cd -          前のディレクトリ
+    C       cd ..         一つ上のディレクトリ
 
-    M-c       ディレクトリ移動履歴を表示、カーソルキーで選択
+    M-c (key binding)     ディレクトリ移動履歴を表示、カーソルキーで選択
 
   Devel
 
@@ -87,11 +87,11 @@ source ~/.mwg/bashrc による設定
 
   他
 
-    $ h       history     最近の history 項目
-    $ d       date; cal   現在の日時を表示
-    $ w       (元々ある)
+    h       history       最近の history 項目
+    d       date; cal     現在の日時を表示
+    w       (元々ある)
 
-    他にも基本機能をいろいろ割り当て
+    他いろいろ
 
   設定
 
@@ -104,6 +104,9 @@ source ~/.mwg/share/mshex/shrc/path.sh による関数
   PATH.append       [-v VARNAME] [-F SEP] [-n] PATHS...
   PATH.remove       [-v VARNAME] [-F SEP] PATHS...
   PATH.show         [VARNAME]
-  -v VARNAME  変更する変数名。既定値 PATH
-  -F SEP      パスの区切に使用する文字。既定値 :
-  -n          存在しないパスは追加しない
+
+  オプション
+
+    -v VARNAME  変更する変数名。既定値 PATH
+    -F SEP      パスの区切に使用する文字。既定値 :
+    -n          存在しないパスは追加しない
