@@ -1,0 +1,40 @@
+#!/bin/bash
+
+#%include "../functions/hdirname.sh"
+
+function echo_exec {
+  echo "$0\$ $*" >&2
+  "$@"
+}
+
+function sub:update {
+  local dir
+  if [[ -d ~/.mwg/src/mshex ]]; then
+    dir=~/.mwg/src/mshex
+  else
+    hdirname -v dir "$0" .
+    if [[ -d $dir/../src/mshex ]]; then
+      dir=$dir/../src/mshex
+    else
+      dir=
+    fi
+  fi
+
+  if [[ ! $dir ]]; then
+    echo "$0: failed to find the mshex source directory"
+    return 1
+  fi
+
+  (
+    echo_exec cd "$dir" &&
+      echo_exec git pull &&
+      echo_exec make install
+  )
+}
+
+if declare -f sub:"$1" &>/dev/null; then
+  sub:"$@"
+else
+  echo "$0: subcommand $1 not found" >&2
+  exit 1
+fi

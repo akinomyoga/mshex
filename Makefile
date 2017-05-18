@@ -106,6 +106,12 @@ $(MWGDIR)/bin/remove: out/bin/remove
 	$(SHELL) make-install_script.sh $< $@
 out/bin/remove: bin/remove | out/bin
 	$(MWGPP) $< > $@ && chmod +x $@
+compile+=out/bin/mshex
+install+=$(MWGDIR)/bin/mshex
+$(MWGDIR)/bin/mshex: out/bin/mshex
+	$(SHELL) make-install_script.sh $< $@
+out/bin/mshex: bin/mshex | out/bin
+	$(MWGPP) $< > $@ && chmod +x $@
 install+=$(MWGDIR)/bin/move
 $(MWGDIR)/bin/move: bin/move
 	$(SHELL) make-install_script.sh $< $@

@@ -93,6 +93,7 @@ out/bin/%file%: bin/%file% | out/bin
 #%x bin_file.r|%file%|mwgbk|
 #%x bin_file.r|%file%|msync|
 #%x bin_pp.r|%file%|remove|
+#%x bin_pp.r|%file%|mshex|
 #%x bin_file.r|%file%|move|
 #%x bin_file.r|%file%|src|
 #%x bin_file.r|%file%|findsrc|
