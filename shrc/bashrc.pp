@@ -25,18 +25,19 @@ export LANG='ja_JP.UTF-8'
 export TIME_STYLE='+%Y-%m-%d %H:%M:%S'
 
 # mwg setting
-test -z "$MWGDIR" -a -d "$HOME/.mwg" && MWGDIR="$HOME/.mwg"
-test -z "$MWG_LOGINTERM" && MWG_LOGINTERM="$TERM"
+[[ ! $MWGDIR && -d $HOME/.mwg ]] && MWGDIR="$HOME/.mwg"
+: ${MWG_LOGINTERM:="$TERM"}
+
 export MWGDIR MWG_LOGINTERM
 
-if test "$-" != "${-/i/}"; then
+if [[ $- == *i* ]]; then
 #%%if mode=="bash" (
   declare -i mwg_bash=$((${BASH_VERSINFO[0]}*10000+${BASH_VERSINFO[1]}*100+${BASH_VERSINFO[2]}))
   export mwg_bash
 
-  source $MWGDIR/share/mshex/shrc/bashrc_interactive
+  source "$MWGDIR"/share/mshex/shrc/bashrc_interactive
 
-  function .mwg/bashrc/settrap {
+  function mwg/.settrap {
     # ble には元から同じ機能がある
     ((_ble_bash)) && return
 
@@ -45,14 +46,14 @@ if test "$-" != "${-/i/}"; then
     trap "echo \"$tmp1[trap: exit \$?]$tmp2\"" ERR
   }
 
-  .mwg/bashrc/settrap
+  mwg/.settrap
 
-  test -s $MWGDIR/share/mshex/shrc/bash_tools && . $MWGDIR/share/mshex/shrc/bash_tools
+  [[ -s $MWGDIR/share/mshex/shrc/bash_tools ]] && source "$MWGDIR"/share/mshex/shrc/bash_tools
   alias cd=mwg_cdhist.cd
   mwg_bashrc.bind3 M-c    'c'    mwg_cdhist.select
   mwg_bashrc.bind3 M-up   '[D' mwg_cdhist.prev
   mwg_bashrc.bind3 M-down '[C' mwg_cdhist.next
-  if test "$TERM" == rosaterm -o "$MWG_LOGINTERM" == rosaterm; then
+  if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
     mwg_bashrc.bind3 'C-,' '[44;5^' mwg_cdhist.prev # C-,
     mwg_bashrc.bind3 'C-.' '[46;5^' mwg_cdhist.next # C-.
     mwg_bashrc.bind3 'C--' '[45;5^' mwg_cdhist.prev # C--
