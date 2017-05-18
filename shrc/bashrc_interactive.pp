@@ -307,6 +307,36 @@ function g {
   fi
 }
 
+function mwg/mkd {
+  [[ -d "$1" ]] || mkdir -p "$1"
+}
+mwg_tmp="$MWGDIR/tmp"
+mwg/mkd "$mwg_tmp"
+
+# setup DISPLAY
+
+function mwg/display {
+  local fsshtty="$mwg_tmp/SSH_TTY"
+  if [[ -s $fsshtty ]]; then
+    export DISPLAY=$(< "$fsshtty")
+  fi
+}
+
+function mwg/display/.save {
+  if [[ ! $STY && $SSH_TTY && $DISPLAY ]]; then
+    if [[ $(tty) == "$SSH_TTY" ]]; then
+      <<< "$DISPLAY" sed 's/^127\.0\.0\.1:/:/;s/^localhost:/:/' > "$mwg_tmp/SSH_TTY"
+    fi
+  fi
+}
+
+function mwg/display/.login {
+  [[ ! $STY && $DISPLAY ]] && mwg/display/.save
+  [[ $STY && ! $DISPLAY ]] && mwg/display
+}
+
+mwg/display/.login
+
 #------------------------------------------------------------------------------
 #%%if mode=="zsh" (
 bind_fg () {
@@ -548,6 +578,7 @@ mwg_bashrc_set_prompt2 () {
 function mwg.windowtitle {
   SCREEN_WINDOW_TITLE="$*"
 }
+
 #------------------------------------------------------------------------------
 #  shell/terminal setting
 
