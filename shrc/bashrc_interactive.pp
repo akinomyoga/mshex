@@ -43,7 +43,7 @@ if [[ -e /etc/redhat-release ]]; then
   PROMPT_COMMAND=
 
   # alias ll='ls -l --color=auto'
-  unalias ll
+  unalias ll &>/dev/null
 fi
 
 #==============================================================================
