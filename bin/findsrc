@@ -104,6 +104,10 @@ function option/type:js  { option/extension js:css; }
 function option/type:f   { option/extension f:inc; }
 function option/type:el  { option/extension el; }
 function option/type:sh  { option/extension sh:src; }
+function option/type:awk { option/extension awk; }
+function option/type:py  { option/extension py; }
+function option/type:rb  { option/extension rb; }
+function option/type:pl  { option/extension pl; }
 function option/type:plain { :; }
 function option/type:all { fALL=1; }
 
@@ -199,6 +203,10 @@ if [[ ! $typeSpecified ]]; then
   option/type:f
   option/type:el
   option/type:sh
+  option/type:awk
+  option/type:py
+  option/type:rb
+  option/type:pl
 fi
 
 # egrep -v の引数を構築
