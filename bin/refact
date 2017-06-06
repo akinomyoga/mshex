@@ -54,7 +54,7 @@ function usage_exit {
 }
 function print_help {
   ifold <<EOF
-usage: refact [options...] extended_regex after
+usage: refact [options...] [--] extended_regex after
 
 OPTIONS
 
@@ -74,6 +74,8 @@ OPTIONS
 EOF
 }
 
+opt_options_end=
+
 grc_options=(--color -U)
 inputfiles=()
 
@@ -81,24 +83,27 @@ regex_type=E
 
 fB=
 
-flagDone=
+flagHelp=
 flagError=
 before= flagBeforeSpecified=
 after=  flagAfterSpecified=
 while (($#)); do
   declare arg="$1"; shift
-  case "$arg" in
-  (-b|--word-boundary)      fB=1 ;;
-  (-B|--no-word-boundary)   fB= ;;
-  (-F|--fixed-strings) regex_type=F ;;
-  (-Wg,?*)
-    IFS=, eval 'grc_options+=(${arg:4})' ;;
-  (--help)
-    print_help; flagDone=1 ;;
-  (-*)
-    echo "refact: unknown option ($arg)." >&2
-    flagError=1 ;;
-  (*)
+  if [[ ! $opt_options_end && $arg == -* ]]; then
+    case "$arg" in
+    (-b|--word-boundary)      fB=1 ;;
+    (-B|--no-word-boundary)   fB= ;;
+    (-F|--fixed-strings) regex_type=F ;;
+    (-Wg,?*)
+      IFS=, eval 'grc_options+=(${arg:4})' ;;
+    (--help)
+      flagHelp=1 ;;
+    (--) opt_options_end=1 ;;
+    (-*)
+      echo "refact: unknown option ($arg)." >&2
+      flagError=1 ;;
+    esac
+  else
     if [[ ! $flagBeforeSpecified ]]; then
       before=$arg
       flagBeforeSpecified=1
@@ -116,11 +121,14 @@ while (($#)); do
       fi
       inputfiles[${#inputfiles[@]}]=$arg
     fi
-    ;;
-  esac
+  fi
 done
 
-[[ $flagDone ]] && exit 0
+if [[ $flagHelp ]]; then
+  print_help
+  [[ ! $flagError ]]
+  exit
+fi
 
 [[ $flagBeforeSpecified && $flagAfterSpecified ]] || flagError=1
 
