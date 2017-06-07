@@ -259,7 +259,14 @@ function g {
         local diff_filter=''
         if [[ -t 1 ]]; then
           if type nkf &>/dev/null; then
-            diff_filter="$diff_filter | nkf -x"
+            local ctype=${LC_CTYPE:-$LANG}
+            if [[ $ctype =~ .(UTF-?8|utf-?8)$ ]]; then
+              diff_filter="$diff_filter | nkf -xw"
+            elif [[ $ctype =~ .(euc(JP|jp)?|ujis)$ ]]; then
+              diff_filter="$diff_filter | nkf -xe"
+            else
+              diff_filter="$diff_filter | nkf -x"
+            fi
           fi
 
           if type colored &>/dev/null; then

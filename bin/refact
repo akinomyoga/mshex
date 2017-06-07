@@ -38,7 +38,7 @@ shopt -s extglob
 GSED=sed
 isGNUSed=1
 if [[ $OSTYPE == @(darwin*|bsd*|solaris*) ]]; then
-  if type gsed; then
+  if type gsed &>/dev/null; then
     GSED=gsed
   else
     isGNUSed=
