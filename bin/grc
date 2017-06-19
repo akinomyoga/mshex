@@ -29,8 +29,8 @@ GetExtension:() {
 declare color_option=--color=auto
 
 declare -a findsrc_args
-declare -a args_option
-declare -a args_file
+declare -a grep_opts=()
+declare -a grep_files=()
 regexp=
 
 declare fDefaultExcludes=
@@ -44,29 +44,34 @@ while (($#)); do
 usage: grc [options] pattern [files...]
 
 options
+
   --help
-  -C NUMBER
-  --color
 
 grep options
+
+  --color
+  -C NUMBER
   -U, --binary
+  -F. --fixed-strings
 
 findsrc options:
+
   -x, --extension=EXTENSIONS
   -a
   -b
   -t, --type=SRCTYPE
   --exclude=PATTERN
+
 EOF
     exit
     ;;
   (-C)
-    array#push args_option -C "$1"
+    array#push grep_opts -C "$1"
     shift 1 ;;
   (-C?*)
-    array#push args_option -C "${arg:2}" ;;
-  (-U|--binary)
-    array#push args_option "$arg" ;;
+    array#push grep_opts -C "${arg:2}" ;;
+  (-U|--binary|-F|--fixed-strings)
+    array#push grep_opts "$arg" ;;
   (--color)
     color_option=--color=always ;;
   (-x)
@@ -101,7 +106,7 @@ EOF
           continue ;;
         esac
       fi
-      args_file+=("$arg")
+      grep_files[${#grep_files[@]}]="$arg"
     else
       regexp="$arg"
     fi ;;
@@ -113,10 +118,10 @@ if [[ -z $regexp ]]; then
   exit 2
 fi
 
-if ((${#args_file[@]}==0)); then
-  args_file=($(findsrc "${findsrc_args[@]}"))
+if ((${#grep_files[@]}==0)); then
+  grep_files=($(findsrc "${findsrc_args[@]}"))
 fi
 
-if ((${#args_file[@]}>=1)); then
-  grep -E $color_option -n -H "${args_option[@]}" "$regexp" "${args_file[@]}"
+if ((${#grep_files[@]}>=1)); then
+  grep -E $color_option -n -H "${grep_opts[@]}" "$regexp" "${grep_files[@]}"
 fi
