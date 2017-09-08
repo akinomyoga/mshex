@@ -208,13 +208,13 @@ function g/check-commit-arguments {
 }
 function g {
   if (($#==0)); then
-    { # printf '\e[1m$ git status\e[m\n'
-      git -c color.status=always status
+    ( # printf '\e[1m$ git status\e[m\n'
+      git -c color.status=always status || exit
       printf '\n\e[1m$ git branch\e[m\n'
       git -c color.ui=always branch -vv
       printf '\n\e[1m$ git remote\e[m\n'
       git -c color.ui=always remote -v
-    } | less -FSRX
+    ) | less -FSRX
   else
     local default=
 
