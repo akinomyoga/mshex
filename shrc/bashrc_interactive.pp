@@ -265,10 +265,10 @@ function g {
         local diff_filter=''
         if [[ -t 1 ]]; then
           if type nkf &>/dev/null; then
-            local ctype=${LC_CTYPE:-$LANG}
-            if [[ $ctype =~ .(UTF-?8|utf-?8)$ ]]; then
+            local ctype=${LC_CTYPE:-$LANG} rex
+            if rex='.(UTF-?8|utf-?8)$'; [[ $ctype =~ $rex ]]; then
               diff_filter="$diff_filter | nkf -xw"
-            elif [[ $ctype =~ .(euc(JP|jp)?|ujis)$ ]]; then
+            elif rex='.(euc(JP|jp)?|ujis)$'; [[ $ctype =~ $rex ]]; then
               diff_filter="$diff_filter | nkf -xe"
             else
               diff_filter="$diff_filter | nkf -x"
