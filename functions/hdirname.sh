@@ -17,25 +17,25 @@
 
 # readlink -f
 function hdirname/readlink {
-  local path="$1"
+  local path=$1
   case "$OSTYPE" in
   (cygwin|linux-gnu)
     # 少なくとも cygwin, GNU/Linux では readlink -f が使える
     PATH=/bin:/usr/bin readlink -f "$path" ;;
   (darwin*|*)
     # Mac OSX には readlink -f がない。
-    local PWD="$PWD" OLDPWD="$OLDPWD"
+    local PWD=$PWD OLDPWD=$OLDPWD
     while [[ -h $path ]]; do
-      local link="$(PATH=/bin:/usr/bin readlink "$path" || true)"
+      local link=$(PATH=/bin:/usr/bin readlink "$path" 2>/dev/null || true)
       [[ $link ]] || break
 
       if [[ $link = /* || $path != */* ]]; then
         # * $link ~ 絶対パス の時
         # * $link ~ 相対パス かつ ( $path が現在のディレクトリにある ) の時
-        path="$link"
+        path=$link
       else
-        local dir="${path%/*}"
-        path="${dir%/}/$link"
+        local dir=${path%/*}
+        path=${dir%/}/$link
       fi
     done
     echo -n "$path" ;;
