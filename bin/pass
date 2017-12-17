@@ -1,0 +1,9 @@
+#!/bin/bash
+
+dir=~/.ssh
+case $1 in
+(edit)
+  cz --edit "$dir"/passwd.cz ;;
+(*)
+  czless --passwd "$dir"/passwd.cz ;;
+esac

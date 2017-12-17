@@ -130,6 +130,12 @@ $(MWGDIR)/bin/cz: bin/cz
 install+=$(MWGDIR)/bin/czless
 $(MWGDIR)/bin/czless: bin/czless
 	$(SHELL) make-install_script.sh $< $@
+install+=$(MWGDIR)/bin/pass
+$(MWGDIR)/bin/pass: bin/pass
+	$(SHELL) make-install_script.sh $< $@
+install+=$(MWGDIR)/bin/passgen
+$(MWGDIR)/bin/passgen: bin/passgen
+	$(SHELL) make-install_script.sh $< $@
 install+=$(MWGDIR)/bin/ren
 $(MWGDIR)/bin/ren: bin/ren
 	$(SHELL) make-install_script.sh $< $@

@@ -100,6 +100,8 @@ out/bin/%file%: bin/%file% | out/bin
 #%x bin_file.r|%file%|grc|
 #%x bin_file.r|%file%|cz|
 #%x bin_file.r|%file%|czless|
+#%x bin_file.r|%file%|pass|
+#%x bin_file.r|%file%|passgen|
 #%x bin_file.r|%file%|ren|
 #%x bin_file.r|%file%|ifold|
 #%x bin_file.r|%file%|refact|

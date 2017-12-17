@@ -7,21 +7,63 @@
 # xzless .tmp
 # rm -rf .tmp
 
-if test ! -s "$1"; then
-  if test ! -e "$1"; then
-    echo "czless: the specified file '$1' is not found." >&2
-  elif test -d "$1"; then
-    echo "czless: the specified file '$1' is a directory." >&2
+flag_type=
+input=
+function read_arguments {
+  local flag_error=
+  while (($#)); do
+    local arg=$1; shift
+    if [[ $arg == -* ]]; then
+      case $arg in
+      (--passwd)
+        flag_type=passwd ;;
+      (*)
+        echo "czless: unrecognized option ($arg) is specified." >&2
+        flag_error=1 ;;
+      esac
+    elif [[ $arg ]]; then
+      if [[ $input ]]; then
+        echo "czless: the input file is already specified." >&2
+        flag_error=1
+      else
+        input=$arg
+      fi
+    else
+      echo "czless: an empty argument is specified." >&2
+      flag_error=1
+    fi
+  done
+
+  if [[ ! $input ]]; then
+    echo "czless: no input file is specified." >&2
+    flag_error=1
+  fi
+
+  [[ ! $flag_error ]]
+}
+
+read_arguments "$@" || exit 1
+
+if [[ ! -s "$input" ]]; then
+  if [[ ! -e "$input" ]]; then
+    echo "czless: the specified file '$input' is not found." >&2
+  elif [[ -d "$input" ]]; then
+    echo "czless: the specified file '$input' is a directory." >&2
   else
-    echo "czless: the specified file '$1' is empty." >&2
+    echo "czless: the specified file '$input' is empty." >&2
   fi
   exit 1
 fi
 
-data="$(openssl enc -d -des3 -in "$1" -out /dev/stdout|xz -d - || echo -n '--czless.error--')"
-if test "$data" == '--czless.error--'; then
-  echo "czless: failed to open the specified file '$1'." >&2
+data=$(openssl enc -d -des3 -in "$input" -out /dev/stdout|xz -d - || printf %s '--czless.error--')
+if [[ $data == '--czless.error--' ]]; then
+  echo "czless: failed to open the specified file '$input'." >&2
   exit 1
 fi
 
-echo -n "$data" | less
+if [[ $flag_type == passwd ]]; then
+  sgr1=$'\e[30;40m' sgr0=$'\e[m'
+  printf %s "$data" | sed 's/^\([[:space:]]*[[:alpha:]]*Pass\(word\)\{0,1\}[[:space:]]\{1,\}\)\([^*[:space:]]\{1,\}\)\(\([[:space:]].*\)\{0,1\}\)$/\1'$sgr1'\3'$sgr0'\4/' | less -R
+else
+  printf %s "$data" | less
+fi

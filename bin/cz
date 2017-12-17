@@ -1,80 +1,164 @@
 #!/bin/bash
 
-rmbk() {
-  local file="$1"
-  local out="${1%.*}.`date +%Y%m%d-%H%M%S`"
-  local ext=".${1##*.}"
-  test "$ext" == . && ext=
+function rmbk {
+  local file=$1
+  local out=${1%.*}.$(date +%Y%m%d-%H%M%S)
+  local ext=.${1##*.}
+  [[ $ext == . ]] && ext=
 
-  while test -e "$out$ext"; do
-    out="$out+"
+  while [[ -e $out$ext ]]; do
+    out=$out+
   done
-  
+
   mv "$file" "$out$ext"
 }
 
+input_filename=
 fRemoveBackup=1
-while test $# -gt 0; do
-  case "$1" in
-  -b)
-    # don't remove the backup file
-    fRemoveBackup=
-    ;;
-  -*)
-    echo unknown options >&2
-    exit 1 ;;
-  *)
-    break ;;
-  esac
-done
+flag_edit=
+function read_arguments {
+  local flag_error=
+  while (($#)); do
+    local arg=$1; shift
+    case "$arg" in
+    (--edit) flag_edit=1 ;;
+    (-b)
+      # don't remove the backup file
+      fRemoveBackup=
+      ;;
+    (-*)
+      flag_error=1
+      echo "cz: unknown option $arg" >&2 ;;
+    ('')
+      flag_error=1
+      echo "cz: an empty argument is specified" >&2 ;;
+    (*)
+      if [[ $input_filename ]]; then
+        flag_error=1
+        echo "cz: input filename is already specified" >&2
+        continue
+      fi
 
-if test ! -f "$1"; then
-  echo "the file does not exist!" >&2
-  exit 1
-fi
+      input_filename=$arg
+      if [[ ! -f $input_filename ]]; then
+        flag_error=1
+        echo "cz: the file \"$input_filename\" does not exist!" >&2
+        continue
+      fi ;;
+    esac
+  done
 
-if test "${1%.cz}" != "$1"; then
-  in="$1"
-  out="${1%.cz}"
+  if [[ ! $input_filename ]]; then
+    flag_error=1
+    echo "inputfile is not specified!" >&2
+  fi
 
-  if test -e "$out"; then
+  [[ ! $flag_error ]]
+}
+
+read_arguments "$@" || exit 1
+
+function command:edit {
+  local tmp=${input_filename%.cz}
+  local in=$input_filename.cz
+  local p=
+
+  if [[ -e $in ]]; then
+    if [[ -e $tmp ]]; then
+      echo "cz: the file \"$tmp\" already exists." >&2
+      return 2
+    fi
+
+    if [[ -t 0 ]] && read -r -e -p "(passphrase for $in) "$'\e[37;47;97;107;8m' p; then
+      echo "cz: failed to read passphrase." >&2
+      return 2
+    fi
+    printf $'\e[m'
+
+    if ! openssl enc -d -des3 -pass:"$p" -in "$in" -out /dev/stdout | xz -d - > "$tmp"; then
+      echo "cz: failed to decrypt the file \"$in\"!" >&2
+      /bin/rm "$tmp"
+      return 2
+    fi
+
+    if [[ ! -s $tmp ]]; then
+      echo "cz: failed to decrypt the file \"$in\"!" >&2
+      return 2
+    fi
+
+    rmbk "$in"
+  else
+    [[ -e $tmp ]] || touch "$tmp"
+  fi
+
+  # 編集
+  if ! ${EDITOR:-emacs} "$tmp"; then
+    echo "cz: failed to edit the file \"$tmp\"!" >&2
+    [[ -e $in ]] && /bin/rm "$tmp"
+    return 2
+  fi
+
+  # 暗号化
+  if ! xz -c "$tmp" | openssl enc -e -des3 ${p:+-pass:"$p"} -in /dev/stdin -out "$in"; then
+    echo "cz: failed to encrypt the file \"$tmp\"!" >&2
+    return 2
+  elif [[ ! -s $in ]]; then
+    echo "cz: failed to encrypt the file \"$tmp\"!" >&2
+    return 2
+  fi
+
+  /bin/rm -f "$tmp"
+  if [[ $fRemoveBackup && -f $tmp~ ]]; then
+    /bin/rm -f "$tmp~"
+  fi
+
+  return 0
+}
+
+if [[ $flag_edit ]]; then
+  command:edit
+elif [[ $input_filename == *.cz ]]; then
+  in=$input_filename
+  out=${input_filename%.cz}
+
+  if [[ -e $out ]]; then
     echo "output file already exists!" >&2
     exit 1
   fi
 
-  if ! openssl enc -d -des3 -in "$1" -out /dev/stdout | xz -d - > "$out"; then
+  if ! openssl enc -d -des3 -in "$in" -out /dev/stdout | xz -d - > "$out"; then
     echo 'failed to decrypt!' >&2
     /bin/rm "$out"
     exit 1
   fi
 
-  if test ! -s "$out"; then
+  if [[ ! -s $out ]]; then
     echo 'failed to decrypt!' >&2
     exit 1
   fi
 
   rmbk "$in"
 else
-  in="$1"
-  out="$1.cz"
+  in=$input_filename
+  out=$input_filename.cz
 
-  if test -e "$out"; then
+  if [[ -e $out ]]; then
     echo "output file already exists!" >&2
     exit 1
   fi
 
   if ! xz -c "$in" | openssl enc -e -des3 -in /dev/stdin -out "$out"; then
-    echo 'failed to crypt!' >&2
+    echo 'failed to encrypt!' >&2
     exit 1
   fi
 
-  if test ! -s "$out"; then
-    echo 'failed to crypt!' >&2
+  if [[ ! -s $out ]]; then
+    echo 'failed to encrypt!' >&2
     exit 1
   fi
 
   /bin/rm -f "$in"
-  if test -n "$fRemoveBackup" -a -f "$in~"; then
+  if [[ $fRemoveBackup && -f $in~ ]]; then
     /bin/rm -f "$in~"
   fi
 fi
