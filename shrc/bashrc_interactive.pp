@@ -100,6 +100,14 @@ alias 27='fg %27'
 alias 28='fg %28'
 alias 29='fg %29'
 
+if [[ $OSTYPE == cygwin ]] && type -t cygpath &>/dev/null; then
+  alias o=cygstart
+elif type -t xdg-open &>/dev/null; then
+  alias o=xdg-open
+elif type -t open &>/dev/null; then
+  alias o=open
+fi
+
 #-------------------------------------------------------------------------------
 # utility functions
 
@@ -110,7 +118,7 @@ else
 fi
 
 #-------------------------------------------------------------------------------
-# alias functions
+# functions
 
 if ((mwg_bash>=40200)); then
   function d { printf $'%(\e[94m%F (%a) %T %Z\e[m\n\e[32m%x %r\e[m\n%Y%m%d-%H%M%S)T\n\n' -1; cal; }
