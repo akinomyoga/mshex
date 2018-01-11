@@ -39,10 +39,10 @@ out/shrc/zshrc: out/shrc/bashrc | out/shrc
 	touch $@
 install+=$(MWGDIR)/bashrc
 $(MWGDIR)/bashrc: out/shrc/bashrc
-	cp -p $< $@
+	cp -pr $< $@
 install+=$(MWGDIR)/zshrc
 $(MWGDIR)/zshrc: out/shrc/zshrc
-	cp -p $< $@
+	cp -pr $< $@
 
 compile+=out/shrc/bashrc_interactive
 out/shrc/bashrc_interactive: shrc/bashrc_interactive.pp | out/shrc
@@ -52,32 +52,29 @@ out/shrc/zshrc_interactive: out/shrc/bashrc_interactive | out/shrc
 	touch $@
 install+=$(MWGDIR)/share/mshex/shrc/zshrc_interactive
 $(MWGDIR)/share/mshex/shrc/zshrc_interactive: out/shrc/zshrc_interactive
-	cp -p $< $@
+	cp -pr $< $@
 install+=$(MWGDIR)/share/mshex/shrc/bashrc_interactive
 $(MWGDIR)/share/mshex/shrc/bashrc_interactive: out/shrc/bashrc_interactive
-	cp -p $< $@
+	cp -pr $< $@
 
 install+=$(MWGDIR)/bashrc.cygwin
 $(MWGDIR)/bashrc.cygwin: shrc/bashrc.cygwin
-	cp -p $< $@
+	cp -pr $< $@
 install+=$(MWGDIR)/share/mshex/shrc/bash_tools
 $(MWGDIR)/share/mshex/shrc/bash_tools: shrc/bash_tools
-	cp -p $< $@
+	cp -pr $< $@
 install+=$(MWGDIR)/share/mshex/shrc/dict.sh
 $(MWGDIR)/share/mshex/shrc/dict.sh: shrc/dict.sh
-	cp -p $< $@
+	cp -pr $< $@
 install+=$(MWGDIR)/share/mshex/shrc/term.sh
 $(MWGDIR)/share/mshex/shrc/term.sh: shrc/term.sh
-	cp -p $< $@
+	cp -pr $< $@
 install+=$(MWGDIR)/share/mshex/shrc/menu.sh
 $(MWGDIR)/share/mshex/shrc/menu.sh: shrc/menu.sh
-	cp -p $< $@
+	cp -pr $< $@
 install+=$(MWGDIR)/share/mshex/shrc/path.sh
 $(MWGDIR)/share/mshex/shrc/path.sh: shrc/path.sh
-	cp -p $< $@
-install+=$(MWGDIR)/share/mshex/shrc/x86.lang
-$(MWGDIR)/share/mshex/shrc/x86.lang: shrc/x86.lang
-	cp -p $< $@
+	cp -pr $< $@
 
 # 以下は互換性の為
 compile+=out/shrc/libmwg_src.sh
@@ -90,71 +87,95 @@ out/shrc/libmwg_src.sh: shrc/libmwg_src.pp | out/shrc
 
 install+=$(MWGDIR)/bin/modmod
 $(MWGDIR)/bin/modmod: bin/modmod
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/makepp
 $(MWGDIR)/bin/makepp: bin/makepp
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/mwgbk
 $(MWGDIR)/bin/mwgbk: bin/mwgbk
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/msync
 $(MWGDIR)/bin/msync: bin/msync
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 compile+=out/bin/remove
 install+=$(MWGDIR)/bin/remove
 $(MWGDIR)/bin/remove: out/bin/remove
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 out/bin/remove: bin/remove | out/bin
 	$(MWGPP) $< > $@ && chmod +x $@
 compile+=out/bin/mshex
 install+=$(MWGDIR)/bin/mshex
 $(MWGDIR)/bin/mshex: out/bin/mshex
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 out/bin/mshex: bin/mshex | out/bin
 	$(MWGPP) $< > $@ && chmod +x $@
 install+=$(MWGDIR)/bin/move
 $(MWGDIR)/bin/move: bin/move
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/src
 $(MWGDIR)/bin/src: bin/src
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/findsrc
 $(MWGDIR)/bin/findsrc: bin/findsrc
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/grc
 $(MWGDIR)/bin/grc: bin/grc
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/cz
 $(MWGDIR)/bin/cz: bin/cz
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/czless
 $(MWGDIR)/bin/czless: bin/czless
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/pass
 $(MWGDIR)/bin/pass: bin/pass
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/passgen
 $(MWGDIR)/bin/passgen: bin/passgen
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/ren
 $(MWGDIR)/bin/ren: bin/ren
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/ifold
 $(MWGDIR)/bin/ifold: bin/ifold
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/refact
 $(MWGDIR)/bin/refact: bin/refact
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 install+=$(MWGDIR)/bin/tarc
 $(MWGDIR)/bin/tarc: bin/tarc
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
+
+#------------------------------------------------------------------------------
+# directory source-highlight
+
+srchilite_dir := $(MWGDIR)/share/mshex/source-highlight
+install += $(srchilite_dir)
+$(srchilite_dir):
+	./make-install_script.sh initialize-source-highlight $@
+
+install += $(srchilite_dir)/bash_simple_expansion.lang
+$(srchilite_dir)/bash_simple_expansion.lang: source-highlight/bash_simple_expansion.lang | $(srchilite_dir)
+	test -d $(srchilite_dir) && ./make-install_script.sh copy $< $@
+install += $(srchilite_dir)/esc256-light_background.outlang
+$(srchilite_dir)/esc256-light_background.outlang: source-highlight/esc256-light_background.outlang | $(srchilite_dir)
+	test -d $(srchilite_dir) && ./make-install_script.sh copy $< $@
+install += $(srchilite_dir)/my.style
+$(srchilite_dir)/my.style: source-highlight/my.style | $(srchilite_dir)
+	test -d $(srchilite_dir) && ./make-install_script.sh copy $< $@
+install += $(srchilite_dir)/sh.lang
+$(srchilite_dir)/sh.lang: source-highlight/sh.lang | $(srchilite_dir)
+	test -d $(srchilite_dir) && ./make-install_script.sh copy $< $@
+install += $(srchilite_dir)/x86.lang
+$(srchilite_dir)/x86.lang: source-highlight/x86.lang | $(srchilite_dir)
+	test -d $(srchilite_dir) && ./make-install_script.sh copy $< $@
 
 #------------------------------------------------------------------------------
 
 compile: $(compile)
 install: pre_install $(install)
 pre_install:
-	$(SHELL) update.sh
+	./update.sh
 
 dist:
 	cd .. && tar cavf mshex.`date +%Y%m%d`.tar.xz ./mshex --exclude=*/backup --exclude=*~ --exclude=./mshex/.git --exclude=./mshex/shrc/out

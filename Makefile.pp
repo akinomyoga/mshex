@@ -47,7 +47,7 @@ out/shrc/%out%: shrc/%in% | out/shrc
 #%m install (
 install+=$(MWGDIR)/%d%
 $(MWGDIR)/%d%: %s%
-	cp -p $< $@
+	cp -pr $< $@
 #%)
 
 #%x shrc_pp .r|%in%|bashrc.pp|.r|%out%|bashrc|
@@ -66,7 +66,6 @@ $(MWGDIR)/%d%: %s%
 #%x install.r|%s%|shrc/term.sh|.r|%d%|share/mshex/shrc/term.sh|
 #%x install.r|%s%|shrc/menu.sh|.r|%d%|share/mshex/shrc/menu.sh|
 #%x install.r|%s%|shrc/path.sh|.r|%d%|share/mshex/shrc/path.sh|
-#%x install.r|%s%|shrc/x86.lang|.r|%d%|share/mshex/shrc/x86.lang|
 
 # 以下は互換性の為
 #%x shrc_pp0 .r|%in%|libmwg_src.pp|.r|%out%|libmwg_src.sh|
@@ -77,13 +76,13 @@ $(MWGDIR)/%d%: %s%
 #%m bin_file (
 install+=$(MWGDIR)/bin/%file%
 $(MWGDIR)/bin/%file%: bin/%file%
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 #%)
 #%m bin_pp
 compile+=out/bin/%file%
 install+=$(MWGDIR)/bin/%file%
 $(MWGDIR)/bin/%file%: out/bin/%file%
-	$(SHELL) make-install_script.sh $< $@
+	./make-install_script.sh copy -s $< $@
 out/bin/%file%: bin/%file% | out/bin
 	$(MWGPP) $< > $@ && chmod +x $@
 #%end
@@ -108,11 +107,30 @@ out/bin/%file%: bin/%file% | out/bin
 #%x bin_file.r|%file%|tarc|
 
 #------------------------------------------------------------------------------
+# directory source-highlight
+
+srchilite_dir := $(MWGDIR)/share/mshex/source-highlight
+install += $(srchilite_dir)
+$(srchilite_dir):
+	./make-install_script.sh initialize-source-highlight $@
+
+#%m srchilite_file
+install += $(srchilite_dir)/%file%
+$(srchilite_dir)/%file%: source-highlight/%file% | $(srchilite_dir)
+	test -d $(srchilite_dir) && ./make-install_script.sh copy $< $@
+#%end
+#%x srchilite_file.r|%file%|bash_simple_expansion.lang|
+#%x srchilite_file.r|%file%|esc256-light_background.outlang|
+#%x srchilite_file.r|%file%|my.style|
+#%x srchilite_file.r|%file%|sh.lang|
+#%x srchilite_file.r|%file%|x86.lang|
+
+#------------------------------------------------------------------------------
 
 compile: $(compile)
 install: pre_install $(install)
 pre_install:
-	$(SHELL) update.sh
+	./update.sh
 
 dist:
 	cd .. && tar cavf mshex.`date +%Y%m%d`.tar.xz ./mshex --exclude=*/backup --exclude=*~ --exclude=./mshex/.git --exclude=./mshex/shrc/out

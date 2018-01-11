@@ -1,0 +1,14 @@
+# simple parameter expansions, etc.
+
+# ${var}
+(symbol,variable,normal,symbol) = `(\$\{)([#!]?[_[:alpha:]][[:word:]]*|[-*@#?$!0]|[1-9][0-9]*)([^}]*)(\})`
+
+# $var
+(symbol,variable) = `(\$)([_[:alpha:]][[:word:]]*|[-*@#?$!0]|[1-9][0-9]*)`
+
+# $( ... ), $(( ... )), $[ ... ] - TODO: impossible to support in source-highlight
+
+# ` ... `
+environment string delim "`" "`" multiline begin
+  specialchar = '\\["$`]'
+end

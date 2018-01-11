@@ -136,7 +136,7 @@ fi
 function v {
   if (($#==1)) && [[ ( $1 == *.o || $1 == *.obj || $1 == *.exe ) && -f $1 ]]; then
     #objdump -CDM intel "$1" | v/less-highlight -s asm
-    objdump -CDM intel "$1" | v/less-highlight --lang-def=$HOME/.mwg/share/mshex/shrc/x86.lang
+    objdump -CDM intel "$1" | v/less-highlight --lang-def=$HOME/.mwg/share/mshex/source-highlight/x86.lang
   fi
 }
 
@@ -638,6 +638,8 @@ shopt -u hostcomplete
 #------------------------------------------------------------------------------
 
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+[[ -d $MWGDIR/share/mshex/source-highlight ]] &&
+  export SOURCE_HIGHLIGHT_DATADIR=$MWGDIR/share/mshex/source-highlight
 
 #%)
 #%[mode="bash"]
