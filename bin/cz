@@ -60,22 +60,22 @@ read_arguments "$@" || exit 1
 
 function command:edit {
   local tmp=${input_filename%.cz}
-  local in=$input_filename.cz
+  local in=$tmp.cz
   local p=
 
   if [[ -e $in ]]; then
-    if [[ -e $tmp ]]; then
+    if [[ -e $tmp && -s $tmp ]]; then
       echo "cz: the file \"$tmp\" already exists." >&2
       return 2
     fi
 
-    if [[ -t 0 ]] && read -r -e -p "(passphrase for $in) "$'\e[37;47;97;107;8m' p; then
+    if ! { [[ -t 0 ]] && read -r -e -p "(passphrase for $in) "$'\e[37;47;97;107;8m' p; }; then
       echo "cz: failed to read passphrase." >&2
       return 2
     fi
     printf $'\e[m'
 
-    if ! openssl enc -d -des3 -pass:"$p" -in "$in" -out /dev/stdout | xz -d - > "$tmp"; then
+    if ! openssl enc -d -des3 -pass pass:"$p" -in "$in" -out /dev/stdout | xz -d - > "$tmp"; then
       echo "cz: failed to decrypt the file \"$in\"!" >&2
       /bin/rm "$tmp"
       return 2
@@ -99,7 +99,7 @@ function command:edit {
   fi
 
   # 暗号化
-  if ! xz -c "$tmp" | openssl enc -e -des3 ${p:+-pass:"$p"} -in /dev/stdin -out "$in"; then
+  if ! xz -c "$tmp" | openssl enc -e -des3 ${p:+-pass pass:"$p"} -in /dev/stdin -out "$in"; then
     echo "cz: failed to encrypt the file \"$tmp\"!" >&2
     return 2
   elif [[ ! -s $in ]]; then
