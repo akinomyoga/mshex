@@ -158,9 +158,9 @@ export LC_COLLATE=C
 function escape_regexchars {
   ret="$1"
   if [[ $ret == *['][\/^$.*+?{}()|']* ]]; then
+    b=\\ a='\\'; ret=${ret//"$b"/"$a"}
     b=\] a='\]'; ret=${ret//"$b"/"$a"}
     b=\[ a='\['; ret=${ret//"$b"/"$a"}
-    b=\\ a='\\'; ret=${ret//"$b"/"$a"}
     # b=\/ a='\/'; ret=${ret//"$b"/"$a"} # 後でエスケープされる
     b=\^ a='\^'; ret=${ret//"$b"/"$a"}
     b=\$ a='\$'; ret=${ret//"$b"/"$a"}
@@ -179,17 +179,17 @@ function escape_regexchars {
 function escape_regexchars_in_replacement {
   local var=ret
   if [[ $1 == -v ]]; then
-    var="$2"
+    var=$2
     shift 2
   fi
 
-  local a b text="$1"
+  local a b text=$1
   # 置換部分に含まれうる特別な文字: \1..\2\r\n\f\t\v\b\a &
   if [[ $text == *['][\/^$.*+?{}()|']* ]]; then
+    b=\\ a='\\'; text=${text//"$b"/"$a"}
     b=\] a='\]'; text=${text//"$b"/"$a"}
     b=\[ a='\['; text=${text//"$b"/"$a"}
-    # b=\\ a='\\'; text=${text//"$b"/"$a"}
-    # b=\/ a='\/'; text=${text//"$b"/"$a"} # 後でエスケープされる
+    # b=\/ a='\/'; text=${text//"$b"/"$a"}
     b=\^ a='\^'; text=${text//"$b"/"$a"}
     b=\$ a='\$'; text=${text//"$b"/"$a"}
     b=\. a='\.'; text=${text//"$b"/"$a"}
@@ -206,14 +206,14 @@ function escape_regexchars_in_replacement {
   local "$var" && upvar "$var" "$text"
 }
 
-bpat="$before"
-apat="$after"
+bpat=$before
+apat=$after
 escape_regexchars_in_replacement -v apat "$apat"
 
 if [[ $regex_type == F ]]; then
   declare ret
   escape_regexchars "$bpat"
-  bpat="$ret"
+  bpat=$ret
 fi
 
 if [[ $fB ]]; then
@@ -226,8 +226,8 @@ fi
 
 sl=/
 esl='\/'
-bpat_escaped="${bpat//$sl/$esl}"
-after_escaped="${after//$sl/$esl}"
+bpat_escaped=${bpat//$sl/$esl}
+after_escaped=${after//$sl/$esl}
 
 #echo "dbg: bpat=($bpat) apat=($apat)"
 
@@ -324,7 +324,7 @@ echo '---------------------------'
 
 mshex.yn -n "execute replace? " || exit 3
 
-sedx="s/${bpat_escaped}/${after_escaped}/g"
+sedx=s/${bpat_escaped}/${after_escaped}/g
 if [[ $isGNUSed ]]; then
   # GNU sed
   $GSED -r -i "$sedx" "${target_files[@]}"
