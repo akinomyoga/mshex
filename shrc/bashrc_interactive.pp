@@ -360,7 +360,7 @@ mwg/display/.login
 
 #------------------------------------------------------------------------------
 #%%if mode=="zsh" (
-bind_fg () {
+mshex_bind_fg () {
   echo -n $'\e['"${COLUMNS:-80}"'D\e[2K'
   setopt no_beep
   fg "$@" ; local r="$?"
@@ -374,14 +374,14 @@ bind_fg () {
   else
     echo ; zle redisplay
   fi
-} ; zle -N bind_fg
-bindkey 'z' bind_fg
-bindkey '' bind_fg
+} ; zle -N mshex_bind_fg
+bindkey 'z' mshex_bind_fg
+bindkey '' mshex_bind_fg
 
-bind_pushd () { pushd -0; } ; zle -N bind_pushd
-bindkey 'c' bind_pushd
+mshex_bind_pushd () { pushd -0; } ; zle -N mshex_bind_pushd
+bindkey 'c' mshex_bind_pushd
 
-if test "$TERM" = rosaterm -o "$MWG_LOGINTERM" = rosaterm; then
+if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
   bindkey '[3~' delete-char
   bindkey '[2~' overwrite-mode
   bindkey '[1~' beginning-of-line
@@ -397,36 +397,40 @@ if test "$TERM" = rosaterm -o "$MWG_LOGINTERM" = rosaterm; then
   # bindkey '[3~' copy-forward-word
 
 
-  bind_jobs () { jobs; } ; zle -N bind_jobs ; bindkey '[6~' bind_jobs
-  bind_fg0 () { bind_fg %-; } ; zle -N bind_fg0 ; bindkey '[48;5^' bind_fg0
-  bind_fg1 () { bind_fg %1; } ; zle -N bind_fg1 ; bindkey '[49;5^' bind_fg1
-  bind_fg2 () { bind_fg %2; } ; zle -N bind_fg2 ; bindkey '[50;5^' bind_fg2
-  bind_fg3 () { bind_fg %3; } ; zle -N bind_fg3 ; bindkey '[51;5^' bind_fg3
-  bind_fg4 () { bind_fg %4; } ; zle -N bind_fg4 ; bindkey '[52;5^' bind_fg4
-  bind_fg5 () { bind_fg %5; } ; zle -N bind_fg5 ; bindkey '[53;5^' bind_fg5
-  bind_fg6 () { bind_fg %6; } ; zle -N bind_fg6 ; bindkey '[54;5^' bind_fg6
-  bind_fg7 () { bind_fg %7; } ; zle -N bind_fg7 ; bindkey '[55;5^' bind_fg7
-  bind_fg8 () { bind_fg %8; } ; zle -N bind_fg8 ; bindkey '[56;5^' bind_fg8
-  bind_fg9 () { bind_fg %9; } ; zle -N bind_fg9 ; bindkey '[57;5^' bind_fg9
+  mshex_bind_jobs () { jobs; } ; zle -N mshex_bind_jobs ; bindkey '[6~' mshex_bind_jobs
+  mshex_bind_fg0 () { mshex_bind_fg %-; } ; zle -N mshex_bind_fg0 ; bindkey '[48;5^' mshex_bind_fg0
+  mshex_bind_fg1 () { mshex_bind_fg %1; } ; zle -N mshex_bind_fg1 ; bindkey '[49;5^' mshex_bind_fg1
+  mshex_bind_fg2 () { mshex_bind_fg %2; } ; zle -N mshex_bind_fg2 ; bindkey '[50;5^' mshex_bind_fg2
+  mshex_bind_fg3 () { mshex_bind_fg %3; } ; zle -N mshex_bind_fg3 ; bindkey '[51;5^' mshex_bind_fg3
+  mshex_bind_fg4 () { mshex_bind_fg %4; } ; zle -N mshex_bind_fg4 ; bindkey '[52;5^' mshex_bind_fg4
+  mshex_bind_fg5 () { mshex_bind_fg %5; } ; zle -N mshex_bind_fg5 ; bindkey '[53;5^' mshex_bind_fg5
+  mshex_bind_fg6 () { mshex_bind_fg %6; } ; zle -N mshex_bind_fg6 ; bindkey '[54;5^' mshex_bind_fg6
+  mshex_bind_fg7 () { mshex_bind_fg %7; } ; zle -N mshex_bind_fg7 ; bindkey '[55;5^' mshex_bind_fg7
+  mshex_bind_fg8 () { mshex_bind_fg %8; } ; zle -N mshex_bind_fg8 ; bindkey '[56;5^' mshex_bind_fg8
+  mshex_bind_fg9 () { mshex_bind_fg %9; } ; zle -N mshex_bind_fg9 ; bindkey '[57;5^' mshex_bind_fg9
 fi
 #%%elif mode=="bash"
 declare -i mwg_bashrc_bindx_count=0
 declare "${mwg_dict_declare[@]//DICTNAME/mwg_bashrc_bindx_dict}"
 
-mwg_bashrc.bindx() {
-  if test $# -ne 2; then
-    echo "usage: mwg_bashrc.bindx keyseq command" 1>&2
+mshex/bindx() {
+  if (($#!=2)); then
+    echo "usage: mshex/bindx keyseq command" 1>&2
     exit 1
   fi
 
-  local seq="$1"
-  local cmd="$2"
+  local seq=$1
+  local cmd=$2
   local q='"'
-  if test "${#seq}" -le 2; then
-    bind -x "$q$seq$q:$cmd"
+  if ((${#seq}<=2)); then
+    if [[ $seq == ['"\'] ]]; then
+      bind -x "$q\\$seq$q:$cmd"
+    else
+      bind -x "$q$seq$q:$cmd"
+    fi
   else
     local id; mwg.dict "id=mwg_bashrc_bindx_dict[$cmd]"
-    if test -z "$id"; then
+    if [[ ! $id ]]; then
       let mwg_bashrc_bindx_count++
       if test $mwg_bashrc_bindx_count -eq 10; then
         let mwg_bashrc_bindx_count++
@@ -451,20 +455,20 @@ mwg_bashrc.bindx() {
 }
 
 if ((_ble_bash)); then
-  function mwg_bashrc.bind3 {
+  function mshex/bind3 {
     ble-bind -cf "$1" "$3"
   }
 else
-  function mwg_bashrc.bind3 {
-    mwg_bashrc.bindx "$2" "$3"
+  function mshex/bind3 {
+    mshex/bindx "$2" "$3"
   }
 fi
 
-mwg_bashrc.bind3 M-z $'\ez' 'fg'
-# mwg_bashrc.bind3 M-c $'\ec' 'pushd -0'
-mwg_bashrc.bind3 M-l $'\el' l
+mshex/bind3 M-z $'\ez' 'fg'
+# mshex/bind3 M-c $'\ec' 'pushd -0'
+mshex/bind3 M-l $'\el' l
 
-if test "$TERM" = rosaterm -o "$MWG_LOGINTERM" = rosaterm; then
+if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
   if ! ((_ble_bash)); then
     bind '"\eL":downcase-word'
 
@@ -494,33 +498,40 @@ if test "$TERM" = rosaterm -o "$MWG_LOGINTERM" = rosaterm; then
     bind '"":history-expand-line'         # M-RET
   fi
 
-  mwg_bashrc.bind3 'next' '[6~' 'jobs'
-  mwg_bashrc.bind3 'C-0' '[27;5;48~' 'fg %-'
-  mwg_bashrc.bind3 'C-1' '[27;5;49~' 'fg %1'
-  mwg_bashrc.bind3 'C-2' '[27;5;50~' 'fg %2'
-  mwg_bashrc.bind3 'C-3' '[27;5;51~' 'fg %3'
-  mwg_bashrc.bind3 'C-4' '[27;5;52~' 'fg %4'
-  mwg_bashrc.bind3 'C-5' '[27;5;53~' 'fg %5'
-  mwg_bashrc.bind3 'C-6' '[27;5;54~' 'fg %6'
-  mwg_bashrc.bind3 'C-7' '[27;5;55~' 'fg %7'
-  mwg_bashrc.bind3 'C-8' '[27;5;56~' 'fg %8'
-  mwg_bashrc.bind3 'C-9' '[27;5;57~' 'fg %9'
-  # mwg_bashrc.bind3 'M-RET' ''     'stty echo'
+  mshex/bind3 'next' '[6~' 'jobs'
+  mshex/bind3 'C-0' '[27;5;48~' 'fg %-'
+  mshex/bind3 'C-1' '[27;5;49~' 'fg %1'
+  mshex/bind3 'C-2' '[27;5;50~' 'fg %2'
+  mshex/bind3 'C-3' '[27;5;51~' 'fg %3'
+  mshex/bind3 'C-4' '[27;5;52~' 'fg %4'
+  mshex/bind3 'C-5' '[27;5;53~' 'fg %5'
+  mshex/bind3 'C-6' '[27;5;54~' 'fg %6'
+  mshex/bind3 'C-7' '[27;5;55~' 'fg %7'
+  mshex/bind3 'C-8' '[27;5;56~' 'fg %8'
+  mshex/bind3 'C-9' '[27;5;57~' 'fg %9'
+  # mshex/bind3 'M-RET' ''     'stty echo'
 
   # 古い rosaterm の設定 (redundant for ble-bind)
   if ! ((_ble_bash)); then
     bind '"[8;2^":shell-backward-kill-word'    # S-Backspace
     bind '"[13;5^":shell-expand-line'       # C-RET
-    mwg_bashrc.bindx '[48;5^' 'fg %-'
-    mwg_bashrc.bindx '[49;5^' 'fg %1'
-    mwg_bashrc.bindx '[50;5^' 'fg %2'
-    mwg_bashrc.bindx '[51;5^' 'fg %3'
-    mwg_bashrc.bindx '[52;5^' 'fg %4'
-    mwg_bashrc.bindx '[53;5^' 'fg %5'
-    mwg_bashrc.bindx '[54;5^' 'fg %6'
-    mwg_bashrc.bindx '[55;5^' 'fg %7'
-    mwg_bashrc.bindx '[56;5^' 'fg %8'
-    mwg_bashrc.bindx '[57;5^' 'fg %9'
+    mshex/bindx '[48;5^' 'fg %-'
+    mshex/bindx '[49;5^' 'fg %1'
+    mshex/bindx '[50;5^' 'fg %2'
+    mshex/bindx '[51;5^' 'fg %3'
+    mshex/bindx '[52;5^' 'fg %4'
+    mshex/bindx '[53;5^' 'fg %5'
+    mshex/bindx '[54;5^' 'fg %6'
+    mshex/bindx '[55;5^' 'fg %7'
+    mshex/bindx '[56;5^' 'fg %8'
+    mshex/bindx '[57;5^' 'fg %9'
+  fi
+
+  if ((_ble_bash)); then
+    if [[ -o emacs ]]; then
+      ble-bind -f f9  emacs/undo 2>/dev/null
+      ble-bind -f f10 emacs/redo 2>/dev/null
+    fi
   fi
 fi
 #%%)
