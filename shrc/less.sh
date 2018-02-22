@@ -23,13 +23,6 @@ _mshex_shrc_less_sh=1
 
 [[ $- == *i* ]] || return
 
-function mshex/array#push {
-  eval "shift; while ((\$#)); do
-    $1[\${#$1[@]}]=\"\$1\"
-    shift
-  done"
-}
-
 function mshex/less/initialize {
   local -i colors=$(tput colors)
   if ((colors>=256)); then

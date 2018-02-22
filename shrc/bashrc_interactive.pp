@@ -109,15 +109,6 @@ elif type -t open &>/dev/null; then
 fi
 
 #-------------------------------------------------------------------------------
-# utility functions
-
-if ((mwg_bash>=30100)); then
-  function mwg.array#push { eval "$1+=(\"\$2\")"; }
-else
-  function mwg.array#push { eval "$1[\${#$1[@]}]=\"\$2\""; }
-fi
-
-#-------------------------------------------------------------------------------
 # functions
 
 if ((mwg_bash>=40200)); then
@@ -284,10 +275,10 @@ function g {
           fi
 
           if type colored &>/dev/null; then
-            mwg.array#push diff_options --color=never
+            mshex/array#push diff_options --color=never
             diff_filter="$diff_filter | colored -tdiff"
           else
-            mwg.array#push diff_options --color=always
+            mshex/array#push diff_options --color=always
 
           fi
 
@@ -413,119 +404,57 @@ fi
 declare -i mwg_bashrc_bindx_count=0
 declare "${mwg_dict_declare[@]//DICTNAME/mwg_bashrc_bindx_dict}"
 
-mshex/bindx() {
-  if (($#!=2)); then
-    echo "usage: mshex/bindx keyseq command" 1>&2
-    exit 1
-  fi
-
-  local seq=$1
-  local cmd=$2
-  local q='"'
-  if ((${#seq}<=2)); then
-    if [[ $seq == ['"\'] ]]; then
-      bind -x "$q\\$seq$q:$cmd"
-    else
-      bind -x "$q$seq$q:$cmd"
-    fi
-  else
-    local id; mwg.dict "id=mwg_bashrc_bindx_dict[$cmd]"
-    if [[ ! $id ]]; then
-      let mwg_bashrc_bindx_count++
-      if test $mwg_bashrc_bindx_count -eq 10; then
-        let mwg_bashrc_bindx_count++
-      fi
-      id=$mwg_bashrc_bindx_count
-      mwg.dict "mwg_bashrc_bindx_dict[$cmd]=$id"
-    fi
-
-    local hex seq2
-    if ((mwg_bash>=40100)); then
-      printf -v hex  '\\x%x' "$id"
-      printf -v seq2 "$hex"
-    else
-      # cygwin だと fork が遅い
-      hex='\x'$(printf '%x' $id)
-      seq2="$(printf "$hex")"
-    fi
-
-    bind "$q$seq$q:$q$seq2$q"
-    bind -x "$q$seq2$q:$cmd"
-  fi
-}
-
 if ((_ble_bash)); then
-  function mshex/bind3 {
+  function mshex/util/bind {
     ble-bind -cf "$1" "$3"
   }
 else
-  function mshex/bind3 {
-    mshex/bindx "$2" "$3"
+  function mshex/util/bind {
+    if (($#!=3)); then
+      echo "usage: mshex/bindx keyseq command" 1>&2
+      exit 1
+    fi
+
+    local seq=$2
+    local cmd=$3
+    local q='"'
+    if ((${#seq}<=2)); then
+      if [[ $seq == ['"\'] ]]; then
+        bind -x "$q\\$seq$q:$cmd"
+      else
+        bind -x "$q$seq$q:$cmd"
+      fi
+    else
+      local id; mwg.dict "id=mwg_bashrc_bindx_dict[$cmd]"
+      if [[ ! $id ]]; then
+        let mwg_bashrc_bindx_count++
+        if test $mwg_bashrc_bindx_count -eq 10; then
+          let mwg_bashrc_bindx_count++
+        fi
+        id=$mwg_bashrc_bindx_count
+        mwg.dict "mwg_bashrc_bindx_dict[$cmd]=$id"
+      fi
+
+      local hex seq2
+      if ((mwg_bash>=40100)); then
+        printf -v hex  '\\x%x' "$id"
+        printf -v seq2 "\\x1E$hex"
+      else
+        # cygwin だと fork が遅い
+        hex='\x'$(printf '%x' $id)
+        seq2=$'\x1E'$(printf "$hex")
+      fi
+
+      bind "$q$seq$q:$q$seq2$q"
+      bind -x "$q$seq2$q:$cmd"
+    fi
   }
 fi
 
-mshex/bind3 M-z $'\ez' 'fg'
-# mshex/bind3 M-c $'\ec' 'pushd -0'
-mshex/bind3 M-l $'\el' l
-
-if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
-  if ! ((_ble_bash)); then
-    bind '"\eL":downcase-word'
-
-    bind '"[2~":overwrite-mode'             # Ins
-
-    # move-word
-    bind '"[1;5D":backward-word'            # C-Left
-    bind '"[1;5C":forward-word'             # C-Right
-    bind '"[D":shell-backward-word'       # M-Left
-    bind '"[C":shell-forward-word'        # M-Right
-    # kill-word
-    bind '"":backward-kill-word'            # C-Backspace
-    bind '"":unix-word-rubout'            # M-Backspace
-    bind '"[27;2;8~":shell-backward-kill-word' # S-Backspace
-    bind '"[3;5~":kill-word'                # C-Delete
-    bind '"[3;5~":shell-kill-word'          # M-delete
-    # copy-word
-    bind '"":copy-backward-word'          # C-M-Backwspace
-    bind '"[3;5~":copy-forward-word'      # C-M-Delete
-
-    # region
-    bind '"":kill-region'                   # C-w
-    bind '"w":copy-region-as-kill'          # M-w
-
-    bind '"[20~":undo'                      # F9
-    bind '"[27;5;13~":shell-expand-line'    # C-RET
-    bind '"":history-expand-line'         # M-RET
-  fi
-
-  mshex/bind3 'next' '[6~' 'jobs'
-  mshex/bind3 'C-0' '[27;5;48~' 'fg %-'
-  mshex/bind3 'C-1' '[27;5;49~' 'fg %1'
-  mshex/bind3 'C-2' '[27;5;50~' 'fg %2'
-  mshex/bind3 'C-3' '[27;5;51~' 'fg %3'
-  mshex/bind3 'C-4' '[27;5;52~' 'fg %4'
-  mshex/bind3 'C-5' '[27;5;53~' 'fg %5'
-  mshex/bind3 'C-6' '[27;5;54~' 'fg %6'
-  mshex/bind3 'C-7' '[27;5;55~' 'fg %7'
-  mshex/bind3 'C-8' '[27;5;56~' 'fg %8'
-  mshex/bind3 'C-9' '[27;5;57~' 'fg %9'
-  # mshex/bind3 'M-RET' ''     'stty echo'
-
-  # 古い rosaterm の設定 (redundant for ble-bind)
-  if ! ((_ble_bash)); then
-    bind '"[8;2^":shell-backward-kill-word'    # S-Backspace
-    bind '"[13;5^":shell-expand-line'       # C-RET
-    mshex/bindx '[48;5^' 'fg %-'
-    mshex/bindx '[49;5^' 'fg %1'
-    mshex/bindx '[50;5^' 'fg %2'
-    mshex/bindx '[51;5^' 'fg %3'
-    mshex/bindx '[52;5^' 'fg %4'
-    mshex/bindx '[53;5^' 'fg %5'
-    mshex/bindx '[54;5^' 'fg %6'
-    mshex/bindx '[55;5^' 'fg %7'
-    mshex/bindx '[56;5^' 'fg %8'
-    mshex/bindx '[57;5^' 'fg %9'
-  fi
+function mshex/my-key-bindings {
+  mshex/util/bind M-z $'\ez' 'fg'
+  # mshex/util/bind M-c $'\ec' 'pushd -0'
+  mshex/util/bind M-l $'\el' l
 
   if ((_ble_bash)); then
     if [[ -o emacs ]]; then
@@ -533,14 +462,81 @@ if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
       ble-bind -f f10 emacs/redo 2>/dev/null
     fi
   fi
+
+  if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
+    if ! ((_ble_bash)); then
+      bind $'"\eL":downcase-word'
+
+      bind $'"\e[2~":overwrite-mode'             # Ins
+
+      # move-word
+      bind $'"\e[1;5D":backward-word'            # C-Left
+      bind $'"\e[1;5C":forward-word'             # C-Right
+      bind $'"\e\e[D":shell-backward-word'       # M-Left
+      bind $'"\e\e[C":shell-forward-word'        # M-Right
+      # kill-word
+      bind $'"\x1F":backward-kill-word'          # C-Backspace (^_)
+      bind $'"\e\x7F":unix-word-rubout'          # M-Backspace (^?)
+      bind $'"\e[27;2;8~":shell-backward-kill-word' # S-Backspace
+      bind $'"\e[3;5~":kill-word'                # C-Delete
+      bind $'"\e[3;5~":shell-kill-word'          # M-delete
+      # copy-word
+      bind $'"\e\x1F":copy-backward-word'        # C-M-Backwspace (^[^_)
+      bind $'"\e\e[3;5~":copy-forward-word'      # C-M-Delete
+
+      # region
+      bind $'"\x17":kill-region'                 # C-w (^W)
+      bind $'"\ew":copy-region-as-kill'          # M-w
+
+      bind $'"\e[20~":undo'                      # F9
+      bind $'"\e[27;5;13~":shell-expand-line'    # C-RET
+      bind $'"\e\r":history-expand-line'         # M-RET (^[^M)
+    fi
+
+    mshex/util/bind 'next' $'\e[6~' 'jobs'
+    mshex/util/bind 'C-0'  $'\e[27;5;48~' 'fg %-'
+    mshex/util/bind 'C-1'  $'\e[27;5;49~' 'fg %1'
+    mshex/util/bind 'C-2'  $'\e[27;5;50~' 'fg %2'
+    mshex/util/bind 'C-3'  $'\e[27;5;51~' 'fg %3'
+    mshex/util/bind 'C-4'  $'\e[27;5;52~' 'fg %4'
+    mshex/util/bind 'C-5'  $'\e[27;5;53~' 'fg %5'
+    mshex/util/bind 'C-6'  $'\e[27;5;54~' 'fg %6'
+    mshex/util/bind 'C-7'  $'\e[27;5;55~' 'fg %7'
+    mshex/util/bind 'C-8'  $'\e[27;5;56~' 'fg %8'
+    mshex/util/bind 'C-9'  $'\e[27;5;57~' 'fg %9'
+    # mshex/util/bind 'M-RET' $'\e\r'     'stty echo'
+
+    # 古い rosaterm の設定 (redundant for ble-bind)
+    if ! ((_ble_bash)); then
+      bind $'"\e[8;2^":shell-backward-kill-word'    # S-Backspace
+      bind $'"\e[13;5^":shell-expand-line'       # C-RET
+      mshex/util/bind nil $'\e[48;5^' 'fg %-'
+      mshex/util/bind nil $'\e[49;5^' 'fg %1'
+      mshex/util/bind nil $'\e[50;5^' 'fg %2'
+      mshex/util/bind nil $'\e[51;5^' 'fg %3'
+      mshex/util/bind nil $'\e[52;5^' 'fg %4'
+      mshex/util/bind nil $'\e[53;5^' 'fg %5'
+      mshex/util/bind nil $'\e[54;5^' 'fg %6'
+      mshex/util/bind nil $'\e[55;5^' 'fg %7'
+      mshex/util/bind nil $'\e[56;5^' 'fg %8'
+      mshex/util/bind nil $'\e[57;5^' 'fg %9'
+    fi
+  fi
+}
+
+if ((_ble_bash)); then
+  ble/array#push _ble_keymap_default_load_hook mshex/my-key-bindings
+else
+  mshex/my-key-bindings
 fi
+
 #%%)
 
 #==============================================================================
 #  shell/terminal settings - prompt
 
-#%%m set_prompt (
-mwg_bashrc.PS1.set() {
+#%%m set_prompt
+function mshex/set-prompt {
   # prompt
   if test -n "$1" -a -n "$2"; then
     local A='<A>'"$1"'<Z>';
@@ -566,50 +562,53 @@ mwg_bashrc.PS1.set() {
       local label1='['"$title_host"'] <jobs> <pwd> @ <pwp>'
       local screenWindowLabel='${SCREEN_WINDOW_TITLE}${SCREEN_WINDOW_TITLE:+ }['"${title_host:+<host>}"'] <jobs> <pwd> @ <pwp>'
       local title1=']0;'"$label1"''
-#%%if mode=="zsh" (
+#%%if mode=="zsh"
       local screenWindowTitle='k'"$screenWindowLabel"'\'
 #%%else
       local screenWindowTitle='k'"$screenWindowLabel"'\\'
-#%%)
+#%%end
       local title="$title1$screenWindowTitle"
       ;;
   *)
       local label='['"$title_host"'] <jobs> <pwd> @ <pwp>'
-#%%if mode=="zsh" (
+#%%if mode=="zsh"
       local title="$(mwg_term.set_title "$label")";
 #%%else
       local title="$(mwg_term.set_title.escaped "$label")";
-#%%)
+#%%end
       ;;
   esac
 
   export PS1='<A>'"$title"'<Z>'"$_prompt"
-#%%if mode=="zsh" (
+#%%if mode=="zsh"
   export RPS1='<pwp>';
-#%%)
+#%%end
 }
-
-mwg_bashrc.PS1.set
-
-mwg_bashrc_set_prompt2 () {
-  local A="$1"
-  local Z="$2"
-  test -n "$A" || mwg.dict 'A=mwg_term[fDG]'
-  test -n "$Z" || mwg.dict 'Z=mwg_term[sgr0]'
-  mwg_bashrc.PS1.set "$A" "$Z"
-}
-#%%)
-#%%if mode=="zsh" (
+#%%end
+#%%if mode=="zsh"
 #%%%m set_prompt set_prompt.r/<user>/%n/.r/<host>/%m/.r/<jobs>/%j/.r/<pwd>/%c/.r/<pwp>/%~/.r/<pchar>/%#/
 #%%%x set_prompt.r/<A>/%{/.r/<Z>/%}/.r/\[\$\]/$/
 #%%else
 #%%%m set_prompt set_prompt.r/<user>/\u/.r/<host>/\h/.r/<jobs>/\j/.r/<pwd>/\W/.r/<pwp>/\w/.r/<pchar>/\$/
 #%%%x set_prompt.r/<A>/\[/.r/<Z>/\]/.r/\[\$\]//
-#%%)
+#%%end
 
-function mwg.windowtitle {
+mshex/set-prompt
+
+function mshex/set-window-title {
   SCREEN_WINDOW_TITLE="$*"
 }
+
+# old functions
+function mwg_bashrc.PS1.set { mshex/set-prompt "$@"; }
+function mwg_bashrc_set_prompt2 {
+  local A=$1
+  local Z=$2
+  test -n "$A" || mwg.dict 'A=mwg_term[fDG]'
+  test -n "$Z" || mwg.dict 'Z=mwg_term[sgr0]'
+  mwg_bashrc.PS1.set "$A" "$Z"
+}
+function mwg.windowtitle { mshex/set-window-title "$@"; }
 
 #------------------------------------------------------------------------------
 #  shell/terminal setting

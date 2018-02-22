@@ -22,16 +22,10 @@ mwg_term.register_key rmso rmso '[m'
 
 source "${MWGDIR:-$HOME/.mwg}/share/mshex/shrc/menu.sh"
 
-if ((mwg_bash>=30100)); then
-  function mwg/array#append { eval "$1+=(\"\${@:2}\")"; }
-else
-  function mwg/array#append { eval "$1=(\"\${$1[@]}\" \"\${@:2}\")"; }
-fi
-
 #------------------------------------------------------------------------------
 # cd
 
-if test -z "$mwg_cdhist_level"; then
+if [[ ! $mwg_cdhist_level ]]; then
   declare -a mwg_cdhist
   mwg_cdhist=("$PWD")
   declare -i mwg_cdhist_level=0
@@ -182,12 +176,12 @@ mwg_cdhist.cd() {
     (-f) fForce=1 ;;
     (-)
       dst="$OLDPWD"
-      mwg/array#append args "$1" ;;
+      mshex/array#push args "$1" ;;
     (-*)
-      mwg/array#append args "$1" ;;
+      mshex/array#push args "$1" ;;
     (*)
       : ${dst:=$1}
-      mwg/array#append args "$1" ;;
+      mshex/array#push args "$1" ;;
     esac
     shift
   done
