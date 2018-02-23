@@ -23,6 +23,7 @@
 #test -z "$LANG" && export LANG='ja_JP.UTF-8'
 export LANG='ja_JP.UTF-8'
 export TIME_STYLE='+%Y-%m-%d %H:%M:%S'
+[[ $HOSTNAME ]] && export HOSTNAME # export されていない事がある
 
 # mwg setting
 [[ ! $MWGDIR && -d $HOME/.mwg ]] && MWGDIR="$HOME/.mwg"
