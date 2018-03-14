@@ -25,7 +25,7 @@ export LANG='ja_JP.UTF-8'
 export TIME_STYLE='+%Y-%m-%d %H:%M:%S'
 
 # mwg setting
-[[ ! $MWGDIR && -d $HOME/.mwg ]] && MWGDIR="$HOME/.mwg"
+[[ ! $MWGDIR && -d $HOME/.mwg ]] && MWGDIR=$HOME/.mwg
 : ${MWG_LOGINTERM:="$TERM"}
 
 export MWGDIR MWG_LOGINTERM

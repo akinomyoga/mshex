@@ -464,7 +464,9 @@ function mshex/my-key-bindings {
   fi
 
   if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
-    if ! ((_ble_bash)); then
+    if ((_ble_bash)); then
+      ble-bind -f C-_ delete-backward-cword
+    else
       bind $'"\eL":downcase-word'
 
       bind $'"\e[2~":overwrite-mode'             # Ins
