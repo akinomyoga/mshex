@@ -1,9 +1,30 @@
 #!/bin/bash
 
 dir=~/.ssh
-case $1 in
-(edit)
-  cz --edit "$dir"/passwd.cz ;;
-(*)
-  czless --passwd "$dir"/passwd.cz ;;
-esac
+
+function print-help {
+  printf '%s\n' \
+         'usage: pass [options]' \
+         '' \
+         'OPTIONS' \
+         '    --edit' \
+         '    --help' \
+         ''
+}
+
+if (($#==0)); then
+  czless --passwd "$dir"/passwd.cz
+elif (($#==1)); then
+  case $1 in
+  (edit|--edit)
+    cz --edit "$dir"/passwd.cz ;;
+  (--help)
+    print-help ;;
+  (*)
+    print-help
+    exit 1 ;;
+  esac
+else
+  print-help
+  exit 1
+fi
