@@ -50,16 +50,17 @@ $(MWGDIR)/%d%: %s%
 	cp -pr $< $@
 #%)
 
-#%x shrc_pp .r|%in%|bashrc.pp|.r|%out%|bashrc|
-#%x shrc_ppd.r|%ref%|bashrc|  .r|%out%|zshrc|
-#%x install.r|%s%|out/shrc/bashrc|  .r|%d%|bashrc|
-#%x install.r|%s%|out/shrc/zshrc|   .r|%d%|zshrc|
+#%x shrc_pp .r|%in%|bashrc_common.pp|  .r|%out%|bashrc_common.sh|
+#%x shrc_ppd.r|%ref%|bashrc_common.sh| .r|%out%|zshrc_common.sh|
+#%x install.r|%s%|out/shrc/bashrc_common.sh|  .r|%d%|bashrc_common.sh|
+#%x install.r|%s%|out/shrc/zshrc_common.sh|   .r|%d%|zshrc_common.sh|
 
 #%x shrc_pp .r|%in%|bashrc_interactive.pp|.r|%out%|bashrc_interactive|
 #%x shrc_ppd.r|%ref%|bashrc_interactive|  .r|%out%|zshrc_interactive|
 #%x install.r|%s%|out/shrc/zshrc_interactive|   .r|%d%|share/mshex/shrc/zshrc_interactive|
 #%x install.r|%s%|out/shrc/bashrc_interactive|  .r|%d%|share/mshex/shrc/bashrc_interactive|
 
+#%x install.r|%s%|shrc/bashrc|       .r|%d%|bashrc|
 #%x install.r|%s%|shrc/bashrc.cygwin|.r|%d%|bashrc.cygwin|
 #%x install.r|%s%|shrc/bash_tools|.r|%d%|share/mshex/shrc/bash_tools|
 #%x install.r|%s%|shrc/dict.sh|.r|%d%|share/mshex/shrc/dict.sh|

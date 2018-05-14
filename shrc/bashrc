@@ -1,0 +1,16 @@
+# -*- mode: sh; mode: sh-bash -*-
+
+# This file is obsoleted. Please use `bashrc_common.sh' instead.
+
+# Determine MWGDIR
+if [[ ! $MWGDIR ]]; then
+  if [[ $BASH_SOURCE == */share/mshex/bashrc ]]; then
+    MWGDIR=${BASH_SOURCE%/share/mshex/bashrc}
+  elif [[ $BASH_SOURCE == */bashrc ]]; then
+    MWGDIR=${BASH_SOURCE%/bashrc}
+  elif [[ -d $HOME/.mwg ]]; then
+    MWGDIR=$HOME/.mwg
+  fi
+fi
+
+source "$MWGDIR/bashrc_common.sh"

@@ -5,9 +5,9 @@
 ##
 ## $HOME/.mwg/bashrc
 ##
-## copyright (c) 2010-2012 Koichi MURASE <murase@nt.phys.s.u-tokyo.ac.jp>, <myoga.murase@gmail.com>
+## Copyright (c) 2010-2012 Koichi MURASE <murase@nt.phys.s.u-tokyo.ac.jp>, <myoga.murase@gmail.com>
 ##
-## common .bashrc settings
+## .bashrc settings
 ##
 #%%elif mode=="zsh"
 #!/bin/zsh
@@ -16,10 +16,15 @@
 ##
 ## copyright (c) 2010-2012 Koichi MURASE <murase@nt.phys.s.u-tokyo.ac.jp>, <myoga.murase@gmail.com>
 ##
-## common .zshrc settings
+## .zshrc settings
 ##
 #%%)
 #-------------------------------------------------------------------------------
+#
+# Common settings
+#
+#-------------------------------------------------------------------------------
+
 #test -z "$LANG" && export LANG='ja_JP.UTF-8'
 export LANG='ja_JP.UTF-8'
 export TIME_STYLE='+%Y-%m-%d %H:%M:%S'
@@ -85,11 +90,11 @@ if [[ $- == *i* ]]; then
   source $MWGDIR/share/mshex/shrc/zshrc_interactive
 #%%)
 fi
-#-------------------------------------------------------------------------------
+
 #%)
 #%[mode="bash"]
-#%$>../out/shrc/bashrc
+#%$>../out/shrc/bashrc_common.sh
 #%x 1
 #%[mode="zsh"]
-#%$>../out/shrc/zshrc
+#%$>../out/shrc/zshrc_common.sh
 #%x 1

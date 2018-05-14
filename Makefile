@@ -31,17 +31,17 @@ out/shrc out/bin:
 
 
 
-compile+=out/shrc/bashrc
-out/shrc/bashrc: shrc/bashrc.pp | out/shrc
-	cd shrc && $(MWGPP) bashrc.pp
-compile+=out/shrc/zshrc
-out/shrc/zshrc: out/shrc/bashrc | out/shrc
+compile+=out/shrc/bashrc_common.sh
+out/shrc/bashrc_common.sh: shrc/bashrc_common.pp | out/shrc
+	cd shrc && $(MWGPP) bashrc_common.pp
+compile+=out/shrc/zshrc_common.sh
+out/shrc/zshrc_common.sh: out/shrc/bashrc_common.sh | out/shrc
 	touch $@
-install+=$(MWGDIR)/bashrc
-$(MWGDIR)/bashrc: out/shrc/bashrc
+install+=$(MWGDIR)/bashrc_common.sh
+$(MWGDIR)/bashrc_common.sh: out/shrc/bashrc_common.sh
 	cp -pr $< $@
-install+=$(MWGDIR)/zshrc
-$(MWGDIR)/zshrc: out/shrc/zshrc
+install+=$(MWGDIR)/zshrc_common.sh
+$(MWGDIR)/zshrc_common.sh: out/shrc/zshrc_common.sh
 	cp -pr $< $@
 
 compile+=out/shrc/bashrc_interactive
@@ -57,6 +57,9 @@ install+=$(MWGDIR)/share/mshex/shrc/bashrc_interactive
 $(MWGDIR)/share/mshex/shrc/bashrc_interactive: out/shrc/bashrc_interactive
 	cp -pr $< $@
 
+install+=$(MWGDIR)/bashrc
+$(MWGDIR)/bashrc: shrc/bashrc
+	cp -pr $< $@
 install+=$(MWGDIR)/bashrc.cygwin
 $(MWGDIR)/bashrc.cygwin: shrc/bashrc.cygwin
 	cp -pr $< $@
