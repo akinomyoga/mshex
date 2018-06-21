@@ -152,6 +152,8 @@ $(MWGDIR)/bin/tarc: bin/tarc
 #------------------------------------------------------------------------------
 # directory source-highlight
 
+ifneq ($(shell which source-highlight 2>/dev/null),)
+
 srchilite_dir := $(MWGDIR)/share/mshex/source-highlight
 install += $(srchilite_dir)
 $(srchilite_dir):
@@ -172,6 +174,8 @@ $(srchilite_dir)/sh.lang: source-highlight/sh.lang | $(srchilite_dir)
 install += $(srchilite_dir)/x86.lang
 $(srchilite_dir)/x86.lang: source-highlight/x86.lang | $(srchilite_dir)
 	test -d $(srchilite_dir) && ./make-install_script.sh copy $< $@
+
+endif
 
 #------------------------------------------------------------------------------
 

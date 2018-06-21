@@ -110,6 +110,8 @@ out/bin/%file%: bin/%file% | out/bin
 #------------------------------------------------------------------------------
 # directory source-highlight
 
+ifneq ($(shell which source-highlight 2>/dev/null),)
+
 srchilite_dir := $(MWGDIR)/share/mshex/source-highlight
 install += $(srchilite_dir)
 $(srchilite_dir):
@@ -125,6 +127,8 @@ $(srchilite_dir)/%file%: source-highlight/%file% | $(srchilite_dir)
 #%x srchilite_file.r|%file%|my.style|
 #%x srchilite_file.r|%file%|sh.lang|
 #%x srchilite_file.r|%file%|x86.lang|
+
+endif
 
 #------------------------------------------------------------------------------
 
