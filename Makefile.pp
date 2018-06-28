@@ -57,20 +57,21 @@ $(MWGDIR)/%d%: %s%
 
 #%x shrc_pp .r|%in%|bashrc_interactive.pp|        .r|%out%|bashrc_interactive.sh|
 #%x shrc_ppd.r|%ref%|bashrc_interactive.sh|       .r|%out%|zshrc_interactive.sh|
-#%x install .r|%s%|out/shrc/zshrc_interactive.sh|    .r|%d%|share/mshex/shrc/zshrc_interactive.sh|
+#%x install .r|%s%|out/shrc/zshrc_interactive.sh| .r|%d%|share/mshex/shrc/zshrc_interactive.sh|
 #%x install .r|%s%|out/shrc/bashrc_interactive.sh|.r|%d%|share/mshex/shrc/bashrc_interactive.sh|
 
-#%x install.r|%s%|shrc/bashrc|       .r|%d%|bashrc|
-#%x install.r|%s%|shrc/bashrc.cygwin|.r|%d%|bashrc.cygwin|
-#%x install.r|%s%|shrc/bash_tools|   .r|%d%|share/mshex/shrc/bash_tools|
-#%x install.r|%s%|shrc/dict.sh|	     .r|%d%|share/mshex/shrc/dict.sh|
-#%x install.r|%s%|shrc/term.sh|	     .r|%d%|share/mshex/shrc/term.sh|
-#%x install.r|%s%|shrc/menu.sh|	     .r|%d%|share/mshex/shrc/menu.sh|
-#%x install.r|%s%|shrc/path.sh|	     .r|%d%|share/mshex/shrc/path.sh|
-#%x install.r|%s%|shrc/less.sh|	     .r|%d%|share/mshex/shrc/less.sh|
+#%x install.r|%s%|shrc/bashrc_cygwin.sh|.r|%d%|share/mshex/shrc/bashrc_cygwin.sh|
+#%x install.r|%s%|shrc/bash_tools|   	.r|%d%|share/mshex/shrc/bash_tools|
+#%x install.r|%s%|shrc/dict.sh|	     	.r|%d%|share/mshex/shrc/dict.sh|
+#%x install.r|%s%|shrc/term.sh|	     	.r|%d%|share/mshex/shrc/term.sh|
+#%x install.r|%s%|shrc/menu.sh|	     	.r|%d%|share/mshex/shrc/menu.sh|
+#%x install.r|%s%|shrc/path.sh|	     	.r|%d%|share/mshex/shrc/path.sh|
+#%x install.r|%s%|shrc/less.sh|	     	.r|%d%|share/mshex/shrc/less.sh|
 
 # 以下は互換性の為
-#%x shrc_pp0 .r|%in%|libmwg_src.pp|.r|%out%|libmwg_src.sh|
+#%x shrc_pp0.r|%in%|libmwg_src.pp|    .r|%out%|libmwg_src.sh|
+#%x install .r|%s%|shrc/bashrc|       .r|%d%|bashrc|
+#%x install .r|%s%|shrc/bashrc.cygwin|.r|%d%|bashrc.cygwin|
 
 #------------------------------------------------------------------------------
 # directory bin

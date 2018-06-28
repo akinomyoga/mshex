@@ -57,11 +57,8 @@ install+=$(MWGDIR)/share/mshex/shrc/bashrc_interactive.sh
 $(MWGDIR)/share/mshex/shrc/bashrc_interactive.sh: out/shrc/bashrc_interactive.sh
 	cp -pr $< $@
 
-install+=$(MWGDIR)/bashrc
-$(MWGDIR)/bashrc: shrc/bashrc
-	cp -pr $< $@
-install+=$(MWGDIR)/bashrc.cygwin
-$(MWGDIR)/bashrc.cygwin: shrc/bashrc.cygwin
+install+=$(MWGDIR)/share/mshex/shrc/bashrc_cygwin.sh
+$(MWGDIR)/share/mshex/shrc/bashrc_cygwin.sh: shrc/bashrc_cygwin.sh
 	cp -pr $< $@
 install+=$(MWGDIR)/share/mshex/shrc/bash_tools
 $(MWGDIR)/share/mshex/shrc/bash_tools: shrc/bash_tools
@@ -86,6 +83,12 @@ $(MWGDIR)/share/mshex/shrc/less.sh: shrc/less.sh
 compile+=out/shrc/libmwg_src.sh
 out/shrc/libmwg_src.sh: shrc/libmwg_src.pp | out/shrc
 	$(MWGPP) shrc/libmwg_src.pp > out/shrc/libmwg_src.sh
+install+=$(MWGDIR)/bashrc
+$(MWGDIR)/bashrc: shrc/bashrc
+	cp -pr $< $@
+install+=$(MWGDIR)/bashrc.cygwin
+$(MWGDIR)/bashrc.cygwin: shrc/bashrc.cygwin
+	cp -pr $< $@
 
 #------------------------------------------------------------------------------
 # directory bin
