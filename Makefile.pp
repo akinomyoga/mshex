@@ -28,46 +28,46 @@ install+=%name%
 out/shrc out/bin:
 	mkdir -p $@
 
-#%m shrc_pp (
+#%m shrc_pp
 compile+=out/shrc/%out%
 out/shrc/%out%: shrc/%in% | out/shrc
 	cd shrc && $(MWGPP) %in%
-#%)
-#%m shrc_ppd (
+#%end
+#%m shrc_ppd
 compile+=out/shrc/%out%
 out/shrc/%out%: out/shrc/%ref% | out/shrc
 	touch $@
-#%)
-#%m shrc_pp0 (
+#%end
+#%m shrc_pp0
 compile+=out/shrc/%out%
 out/shrc/%out%: shrc/%in% | out/shrc
 	$(MWGPP) shrc/%in% > out/shrc/%out%
-#%)
+#%end
 
-#%m install (
+#%m install
 install+=$(MWGDIR)/%d%
 $(MWGDIR)/%d%: %s%
 	cp -pr $< $@
-#%)
+#%end
 
-#%x shrc_pp .r|%in%|bashrc_common.pp|  .r|%out%|bashrc_common.sh|
-#%x shrc_ppd.r|%ref%|bashrc_common.sh| .r|%out%|zshrc_common.sh|
-#%x install.r|%s%|out/shrc/bashrc_common.sh|  .r|%d%|bashrc_common.sh|
-#%x install.r|%s%|out/shrc/zshrc_common.sh|   .r|%d%|zshrc_common.sh|
+#%x shrc_pp .r|%in%|bashrc_common.pp|  	       .r|%out%|bashrc_common.sh|
+#%x shrc_ppd.r|%ref%|bashrc_common.sh| 	       .r|%out%|zshrc_common.sh|
+#%x install .r|%s%|out/shrc/bashrc_common.sh|  .r|%d%|share/mshex/shrc/bashrc_common.sh|
+#%x install .r|%s%|out/shrc/zshrc_common.sh|   .r|%d%|share/mshex/shrc/zshrc_common.sh|
 
-#%x shrc_pp .r|%in%|bashrc_interactive.pp|.r|%out%|bashrc_interactive|
-#%x shrc_ppd.r|%ref%|bashrc_interactive|  .r|%out%|zshrc_interactive|
-#%x install.r|%s%|out/shrc/zshrc_interactive|   .r|%d%|share/mshex/shrc/zshrc_interactive|
-#%x install.r|%s%|out/shrc/bashrc_interactive|  .r|%d%|share/mshex/shrc/bashrc_interactive|
+#%x shrc_pp .r|%in%|bashrc_interactive.pp|     .r|%out%|bashrc_interactive|
+#%x shrc_ppd.r|%ref%|bashrc_interactive|       .r|%out%|zshrc_interactive|
+#%x install .r|%s%|out/shrc/zshrc_interactive| .r|%d%|share/mshex/shrc/zshrc_interactive|
+#%x install .r|%s%|out/shrc/bashrc_interactive|.r|%d%|share/mshex/shrc/bashrc_interactive|
 
 #%x install.r|%s%|shrc/bashrc|       .r|%d%|bashrc|
 #%x install.r|%s%|shrc/bashrc.cygwin|.r|%d%|bashrc.cygwin|
-#%x install.r|%s%|shrc/bash_tools|.r|%d%|share/mshex/shrc/bash_tools|
-#%x install.r|%s%|shrc/dict.sh|.r|%d%|share/mshex/shrc/dict.sh|
-#%x install.r|%s%|shrc/term.sh|.r|%d%|share/mshex/shrc/term.sh|
-#%x install.r|%s%|shrc/menu.sh|.r|%d%|share/mshex/shrc/menu.sh|
-#%x install.r|%s%|shrc/path.sh|.r|%d%|share/mshex/shrc/path.sh|
-#%x install.r|%s%|shrc/less.sh|.r|%d%|share/mshex/shrc/less.sh|
+#%x install.r|%s%|shrc/bash_tools|   .r|%d%|share/mshex/shrc/bash_tools|
+#%x install.r|%s%|shrc/dict.sh|	     .r|%d%|share/mshex/shrc/dict.sh|
+#%x install.r|%s%|shrc/term.sh|	     .r|%d%|share/mshex/shrc/term.sh|
+#%x install.r|%s%|shrc/menu.sh|	     .r|%d%|share/mshex/shrc/menu.sh|
+#%x install.r|%s%|shrc/path.sh|	     .r|%d%|share/mshex/shrc/path.sh|
+#%x install.r|%s%|shrc/less.sh|	     .r|%d%|share/mshex/shrc/less.sh|
 
 # 以下は互換性の為
 #%x shrc_pp0 .r|%in%|libmwg_src.pp|.r|%out%|libmwg_src.sh|

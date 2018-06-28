@@ -13,4 +13,4 @@ if [[ ! $MWGDIR ]]; then
   fi
 fi
 
-source "$MWGDIR/bashrc_common.sh"
+source "$MWGDIR/share/mshex/shrc/bashrc_common.sh"
