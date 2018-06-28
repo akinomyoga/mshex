@@ -37,24 +37,24 @@ out/shrc/bashrc_common.sh: shrc/bashrc_common.pp | out/shrc
 compile+=out/shrc/zshrc_common.sh
 out/shrc/zshrc_common.sh: out/shrc/bashrc_common.sh | out/shrc
 	touch $@
-install+=$(MWGDIR)/bashrc_common.sh
-$(MWGDIR)/bashrc_common.sh: out/shrc/bashrc_common.sh
+install+=$(MWGDIR)/share/mshex/shrc/bashrc_common.sh
+$(MWGDIR)/share/mshex/shrc/bashrc_common.sh: out/shrc/bashrc_common.sh
 	cp -pr $< $@
-install+=$(MWGDIR)/zshrc_common.sh
-$(MWGDIR)/zshrc_common.sh: out/shrc/zshrc_common.sh
+install+=$(MWGDIR)/share/mshex/shrc/zshrc_common.sh
+$(MWGDIR)/share/mshex/shrc/zshrc_common.sh: out/shrc/zshrc_common.sh
 	cp -pr $< $@
 
-compile+=out/shrc/bashrc_interactive
-out/shrc/bashrc_interactive: shrc/bashrc_interactive.pp | out/shrc
+compile+=out/shrc/bashrc_interactive.sh
+out/shrc/bashrc_interactive.sh: shrc/bashrc_interactive.pp | out/shrc
 	cd shrc && $(MWGPP) bashrc_interactive.pp
-compile+=out/shrc/zshrc_interactive
-out/shrc/zshrc_interactive: out/shrc/bashrc_interactive | out/shrc
+compile+=out/shrc/zshrc_interactive.sh
+out/shrc/zshrc_interactive.sh: out/shrc/bashrc_interactive.sh | out/shrc
 	touch $@
-install+=$(MWGDIR)/share/mshex/shrc/zshrc_interactive
-$(MWGDIR)/share/mshex/shrc/zshrc_interactive: out/shrc/zshrc_interactive
+install+=$(MWGDIR)/share/mshex/shrc/zshrc_interactive.sh
+$(MWGDIR)/share/mshex/shrc/zshrc_interactive.sh: out/shrc/zshrc_interactive.sh
 	cp -pr $< $@
-install+=$(MWGDIR)/share/mshex/shrc/bashrc_interactive
-$(MWGDIR)/share/mshex/shrc/bashrc_interactive: out/shrc/bashrc_interactive
+install+=$(MWGDIR)/share/mshex/shrc/bashrc_interactive.sh
+$(MWGDIR)/share/mshex/shrc/bashrc_interactive.sh: out/shrc/bashrc_interactive.sh
 	cp -pr $< $@
 
 install+=$(MWGDIR)/bashrc

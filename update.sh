@@ -33,14 +33,14 @@ upd_rm() {
 }
 
 #------------------------------------------------------------------------------
-# 20120726
+# 2012-07-26
 
 if test -d "$MWGDIR/bashrc.d"; then
   rm -rf "$MWGDIR/bashrc.d"
 fi
 
 #------------------------------------------------------------------------------
-# 20121003
+# 2012-10-03
 
 sdir="$MWGDIR/share/mshex"
 mkd "$sdir"
@@ -58,10 +58,17 @@ fi
 
 mkd "$sdir/shrc"
 upd_mv "$MWGDIR/bash_tools" "$sdir/shrc/bash_tools"
-upd_mv "$MWGDIR/bash_interactive" "$sdir/shrc/bash_interactive"
-upd_mv "$MWGDIR/zsh_interactive" "$sdir/shrc/zsh_interactive"
+upd_mv "$MWGDIR/bashrc_interactive" "$sdir/shrc/bashrc_interactive"
+upd_mv "$MWGDIR/zshrc_interactive" "$sdir/shrc/zshrc_interactive"
 
 #------------------------------------------------------------------------------
-# 20150208
+# 2015-02-08
 
 upd_rm "$sdir/shrc/menu.bash_source"
+
+#------------------------------------------------------------------------------
+# 2018-06-28
+
+upd_mv "$MWGDIR/bashrc_common.sh" "$sdir/shrc/bashrc_common.sh"
+upd_mv "$sdir/shrc/bashrc_interactive" "$sdir/shrc/bashrc_interactive.sh"
+upd_mv "$sdir/shrc/zshrc_interactive" "$sdir/shrc/zshrc_interactive.sh"

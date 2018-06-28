@@ -655,8 +655,8 @@ export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quo
 
 #%)
 #%[mode="bash"]
-#%$>../out/shrc/bashrc_interactive
+#%$>../out/shrc/bashrc_interactive.sh
 #%x 1
 #%[mode="zsh"]
-#%$>../out/shrc/zshrc_interactive
+#%$>../out/shrc/zshrc_interactive.sh
 #%x 1

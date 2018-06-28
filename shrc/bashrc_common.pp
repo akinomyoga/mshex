@@ -50,7 +50,7 @@ if [[ $- == *i* ]]; then
     }
   fi
 
-  source "$MWGDIR"/share/mshex/shrc/bashrc_interactive
+  source "$MWGDIR"/share/mshex/shrc/bashrc_interactive.sh
 
   function mshex/.settrap {
     # ble には元から同じ機能がある
@@ -87,7 +87,7 @@ if [[ $- == *i* ]]; then
   # = () { mwg_cdhist.select; }
 #%%elif mode=="zsh"
   function mshex/array#push { eval "$1+=(\"\${@:2}\")"; }
-  source $MWGDIR/share/mshex/shrc/zshrc_interactive
+  source $MWGDIR/share/mshex/shrc/zshrc_interactive.sh
 #%%)
 fi
 

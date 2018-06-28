@@ -55,10 +55,10 @@ $(MWGDIR)/%d%: %s%
 #%x install .r|%s%|out/shrc/bashrc_common.sh|  .r|%d%|share/mshex/shrc/bashrc_common.sh|
 #%x install .r|%s%|out/shrc/zshrc_common.sh|   .r|%d%|share/mshex/shrc/zshrc_common.sh|
 
-#%x shrc_pp .r|%in%|bashrc_interactive.pp|     .r|%out%|bashrc_interactive|
-#%x shrc_ppd.r|%ref%|bashrc_interactive|       .r|%out%|zshrc_interactive|
-#%x install .r|%s%|out/shrc/zshrc_interactive| .r|%d%|share/mshex/shrc/zshrc_interactive|
-#%x install .r|%s%|out/shrc/bashrc_interactive|.r|%d%|share/mshex/shrc/bashrc_interactive|
+#%x shrc_pp .r|%in%|bashrc_interactive.pp|        .r|%out%|bashrc_interactive.sh|
+#%x shrc_ppd.r|%ref%|bashrc_interactive.sh|       .r|%out%|zshrc_interactive.sh|
+#%x install .r|%s%|out/shrc/zshrc_interactive.sh|    .r|%d%|share/mshex/shrc/zshrc_interactive.sh|
+#%x install .r|%s%|out/shrc/bashrc_interactive.sh|.r|%d%|share/mshex/shrc/bashrc_interactive.sh|
 
 #%x install.r|%s%|shrc/bashrc|       .r|%d%|bashrc|
 #%x install.r|%s%|shrc/bashrc.cygwin|.r|%d%|bashrc.cygwin|

@@ -1,7 +1,7 @@
 #!/bin/bash
 ## 
 ## $HOME/.mwg/bash_tools
-##   requires $HOME/.mwg/bashrc_interactive
+##   requires $HOME/.mwg/bashrc_interactive.sh
 ## 
 ## copyright (c) 2012-2014 Koichi Murase <murase@nt.phys.s.u-tokyo.ac.jp>
 ## 

@@ -1,2 +1,3 @@
 # findsrc options
 --exclude=shrc/out --extension=:pp:cygwin
+--exclude=out --exclude=Makefile
