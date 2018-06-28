@@ -18,7 +18,11 @@ if [[ $- == *i* ]]; then
   shopt -s completion_strip_exe &>/dev/null
 
   if type psforest &>/dev/null; then
-    alias p='psforest'
+    if [[ $(tput colors) -ge 256 ]]; then
+      alias p='psforest'
+    else
+      alias p='psforest --color=never'
+    fi
   else
     alias p='ps uax'
   fi
