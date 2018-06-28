@@ -3,7 +3,6 @@
 # Paths & Envs
 #export CYGWIN='server error_start=dumper'
 export CYGWIN='server'
-export MANPATH="$MANPATH${MANPATH:+:}/usr/share/man:/usr/local/man"
 : ${DISPLAY:=:0.0}
 export DISPLAY
 export EXEEXT='.exe'
@@ -12,17 +11,17 @@ export EXEEXT='.exe'
 # interactive
 if [[ $- == *i* ]]; then
   # setting PS1
-  mwg_bashrc_set_prompt2 '\e[34m' '\e[m'
+  # mshex/set-prompt '\e[34m' '\e[m'
 
   # aliases
   alias ls='ls --color=auto --show-control-chars'
   shopt -s completion_strip_exe &>/dev/null
 
   # emacs
-  if [[ $TERM == cygwin && $ROSATERM == '' ]]; then
+  if [[ $TERM == cygwin && ! $ROSATERM ]]; then
     function emacs() (
       CYGWIN=tty /bin/emacs -nw "$@"
-      local ret="$?"
+      local ret=$?
       stty echo -nl
       return "$ret"
     )
