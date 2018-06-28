@@ -17,6 +17,12 @@ if [[ $- == *i* ]]; then
   alias ls='ls --color=auto --show-control-chars'
   shopt -s completion_strip_exe &>/dev/null
 
+  if type psforest &>/dev/null; then
+    alias p='psforest'
+  else
+    alias p='ps uax'
+  fi
+
   # emacs
   if [[ $TERM == cygwin && ! $ROSATERM ]]; then
     function emacs() (
