@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #%include "../functions/hdirname.sh"
+#%$ echo mshex_installer_repository=$PWD
 
 function echo_exec {
   echo "$0\$ $*" >&2
@@ -9,7 +10,9 @@ function echo_exec {
 
 function sub:update {
   local dir
-  if [[ -d ~/.mwg/src/mshex ]]; then
+  if [[ -d $mshex_installer_repository/.git ]]; then
+    dir=$mshex_installer_repository
+  elif [[ -d ~/.mwg/src/mshex ]]; then
     dir=~/.mwg/src/mshex
   else
     hdirname -v dir "$0" .
