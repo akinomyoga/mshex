@@ -60,7 +60,6 @@ alias mv='mv -i'
 alias rm='rm -i'
 alias rmi='remove'
 alias grep='grep --color=auto'
-alias ls='ls --color=auto -G'
 
 alias s='stty echo -nl'
 
@@ -106,6 +105,28 @@ elif type -t xdg-open &>/dev/null; then
   alias o=xdg-open
 elif type -t open &>/dev/null; then
   alias o=open
+fi
+
+if [[ $OSTYPE == linux-gnu ]]; then
+    alias p='ps uaxf'
+elif type -t psforest &>/dev/null; then
+  if [[ $(tput colors) -ge 256 ]]; then
+    alias p='psforest'
+  else
+    alias p='psforest --color=never'
+  fi
+else
+  alias p='ps uax'
+fi
+
+if type -t colored &>/dev/null; then
+  alias ls='colored ls --show-control-chars'
+elif [[ $OSTYPE == cygwin || $OSTYPE == msys* ]]; then
+  alias ls='ls --color=auto --show-control-chars'
+elif [[ $OSTYPE == linux-gnu ]]; then
+  alias ls='ls --color=auto'
+elif [[ $OSTYPE == darwin* || $OSTYPE == freebsd* ]]; then
+  alias ls='ls -G'
 fi
 
 #-------------------------------------------------------------------------------
