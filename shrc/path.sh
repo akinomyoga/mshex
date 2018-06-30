@@ -166,4 +166,3 @@ function PATH.show {
   local name="${1-PATH}"
   eval "echo \"\${$name}\""|sed 's/:/\n/g'
 }
-
