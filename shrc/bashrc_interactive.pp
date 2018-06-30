@@ -129,6 +129,10 @@ elif [[ $OSTYPE == darwin* || $OSTYPE == freebsd* ]]; then
   alias ls='ls -G'
 fi
 
+if type -t colored &>/dev/null; then
+  alias diff='colored -F diff'
+fi
+
 #-------------------------------------------------------------------------------
 # functions
 
