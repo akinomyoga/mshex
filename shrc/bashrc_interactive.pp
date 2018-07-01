@@ -133,9 +133,9 @@ if type -t colored &>/dev/null; then
   alias diff='colored -F diff'
 fi
 
-type -P l  || alias l='ls -lB'
-type -P ll || alias ll='ls -l'
-type -P la || alias la='ls -la'
+type -P l  &>/dev/null || alias l='ls -lB'
+type -P ll &>/dev/null || alias ll='ls -l'
+type -P la &>/dev/null || alias la='ls -la'
 
 #-------------------------------------------------------------------------------
 # functions
