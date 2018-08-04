@@ -1,9 +1,11 @@
 #!/bin/bash
 
-#data="$(openssl enc -d -des3 -in "$1" -out /dev/stdout)"
+function openssl/decrypt { openssl enc -d -des3 -md md5 "${@:3}" -in "$1" -out "$2"; }
+
+#data="$(openssl/decrypt "$1" /dev/stdout)"
 #echo "$data" | less
 
-# openssl enc -d -des3 -in "$1" -out .tmp
+# openssl/decrypt "$1" .tmp
 # xzless .tmp
 # rm -rf .tmp
 
@@ -55,7 +57,7 @@ if [[ ! -s "$input" ]]; then
   exit 1
 fi
 
-data=$(openssl enc -d -des3 -in "$input" -out /dev/stdout|xz -d - || printf %s '--czless.error--')
+data=$(openssl/decrypt "$input" /dev/stdout | xz -d - || printf %s '--czless.error--')
 if [[ $data == '--czless.error--' ]]; then
   echo "czless: failed to open the specified file '$input'." >&2
   exit 1
