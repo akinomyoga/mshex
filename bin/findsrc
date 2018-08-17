@@ -6,11 +6,11 @@
 # from ble.sh
 _ble_bash=$((BASH_VERSINFO[0]*10000+BASH_VERSINFO[1]*100+BASH_VERSINFO[2]))
 if ((_ble_bash>=30200)); then
-  function ble/util/isfunction {
+  function ble/is-function {
     builtin declare -F "$1" &>/dev/null
   }
 else
-  function ble/util/isfunction {
+  function ble/is-function {
     [[ $(type -t "$1" 2>/dev/null) == function ]]
   }
 fi
@@ -71,7 +71,7 @@ function option/type {
   option/check-optarg1 "$@" || return 1
 
   local type="$1"
-  if ble/util/isfunction "option/type:$type"; then
+  if ble/is-function "option/type:$type"; then
     typeSpecified=1
     "option/type:$type"
   else
