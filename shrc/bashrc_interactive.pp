@@ -40,7 +40,11 @@ if [[ -e /etc/redhat-release ]]; then
   unset -f command_not_found_handle
 
   # 勝手に screen のタイトルに変なものを設定しようとする。
-  PROMPT_COMMAND=
+  if [[ $PROMPT_COMMAND == ble/* ]]; then
+    _ble_base_attach_PROMPT_COMMAND=
+  else
+    PROMPT_COMMAND=
+  fi
 
   # alias ll='ls -l --color=auto'
   unalias ll &>/dev/null
