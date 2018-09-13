@@ -294,6 +294,9 @@ function g {
           else
             diff_options=(HEAD~$((index)) HEAD~$((index-1)))
           fi
+        elif local rex='^[0-9a-f]+$'; [[ $# -eq 1 && $1 =~ $rex ]]; then
+          diff_options=("$1~" "$1")
+          shift
         fi
 
         local diff_filter=''
