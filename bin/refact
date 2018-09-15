@@ -246,12 +246,12 @@ function enumerate_matches.i2 {
     # fd1 に一致ファイル一覧を出力
     # fd5 に一致箇所のレポートを出力
 
-    local sgr_rls='\x1b[48;5;225m'
-    local sgr_rws='\x1b[1;48;5;217m'
-    local sgr_rwe='\x1b[22;48;5;225m'
-    local sgr_als='\x1b[48;5;193m'
-    local sgr_aws='\x1b[1;48;5;155m'
-    local sgr_awe='\x1b[22;48;5;193m'
+    local sgr_rls='\x1b[38;5;16;48;5;225m'
+    local sgr_rws='\x1b[38;5;16;1;48;5;217m'
+    local sgr_rwe='\x1b[38;5;16;22;48;5;225m'
+    local sgr_als='\x1b[38;5;16;48;5;193m'
+    local sgr_aws='\x1b[38;5;16;1;48;5;155m'
+    local sgr_awe='\x1b[38;5;16;22;48;5;193m'
     local tab='\x1b[37m< TAB \/>\x1b[39m'
     local cr='\x1b[7m^M\x1b[27m'
 
