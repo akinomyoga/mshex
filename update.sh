@@ -57,7 +57,7 @@ if test -d "$MWGDIR/shrc.d"; then
 fi
 
 mkd "$sdir/shrc"
-upd_mv "$MWGDIR/bash_tools" "$sdir/shrc/bash_tools"
+upd_mv "$MWGDIR/cdhist.sh" "$sdir/shrc/cdhist.sh"
 upd_mv "$MWGDIR/bashrc_interactive" "$sdir/shrc/bashrc_interactive"
 upd_mv "$MWGDIR/zshrc_interactive" "$sdir/shrc/zshrc_interactive"
 

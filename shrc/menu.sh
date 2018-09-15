@@ -158,7 +158,7 @@ function mshex/menu/delete {
 
 function mshex/menu/exch {
   local index="$1"
-  ((0<index&&index<mwg_cdhist_count)) || return 1
+  ((0<index&&index<_mshex_cdhist_count)) || return 1
 
   local mshex_menu_stdout
 

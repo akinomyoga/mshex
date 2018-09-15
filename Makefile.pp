@@ -61,7 +61,7 @@ $(MWGDIR)/%d%: %s%
 #%x install .r|%s%|out/shrc/bashrc_interactive.sh|.r|%d%|share/mshex/shrc/bashrc_interactive.sh|
 
 #%x install.r|%s%|shrc/bashrc_cygwin.sh|.r|%d%|share/mshex/shrc/bashrc_cygwin.sh|
-#%x install.r|%s%|shrc/bash_tools|   	.r|%d%|share/mshex/shrc/bash_tools|
+#%x install.r|%s%|shrc/cdhist.sh|   	.r|%d%|share/mshex/shrc/cdhist.sh|
 #%x install.r|%s%|shrc/dict.sh|	     	.r|%d%|share/mshex/shrc/dict.sh|
 #%x install.r|%s%|shrc/term.sh|	     	.r|%d%|share/mshex/shrc/term.sh|
 #%x install.r|%s%|shrc/menu.sh|	     	.r|%d%|share/mshex/shrc/menu.sh|

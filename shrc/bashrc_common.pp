@@ -62,18 +62,18 @@ if [[ $- == *i* ]]; then
   }
   mshex/.settrap
 
-  [[ -s $MWGDIR/share/mshex/shrc/bash_tools ]] && source "$MWGDIR"/share/mshex/shrc/bash_tools
-  alias cd=mwg_cdhist.cd
+  [[ -s $MWGDIR/share/mshex/shrc/cdhist.sh ]] && source "$MWGDIR"/share/mshex/shrc/cdhist.sh
+  alias cd=mshex/cdhist/cd
 
   function mshex/bashrc/bind-keys {
-    mshex/util/bind M-c    $'\ec'    mwg_cdhist.select
-    mshex/util/bind M-up   $'\e\e[D' mwg_cdhist.prev
-    mshex/util/bind M-down $'\e\e[C' mwg_cdhist.next
+    mshex/util/bind M-c    $'\ec'    mshex/cdhist/select
+    mshex/util/bind M-up   $'\e\e[D' mshex/cdhist/prev
+    mshex/util/bind M-down $'\e\e[C' mshex/cdhist/next
     if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
-      mshex/util/bind 'C-,' $'\e[44;5^' mwg_cdhist.prev # C-,
-      mshex/util/bind 'C-.' $'\e[46;5^' mwg_cdhist.next # C-.
-      mshex/util/bind 'C--' $'\e[45;5^' mwg_cdhist.prev # C--
-      mshex/util/bind 'C-+' $'\e[43;5^' mwg_cdhist.next # C-+
+      mshex/util/bind 'C-,' $'\e[44;5^' mshex/cdhist/prev # C-,
+      mshex/util/bind 'C-.' $'\e[46;5^' mshex/cdhist/next # C-.
+      mshex/util/bind 'C--' $'\e[45;5^' mshex/cdhist/prev # C--
+      mshex/util/bind 'C-+' $'\e[43;5^' mshex/cdhist/next # C-+
     fi
   }
   if ((_ble_bash)); then
@@ -82,9 +82,9 @@ if [[ $- == *i* ]]; then
     mshex/bashrc/bind-keys
   fi
 
-  # - () { mwg_cdhist.prev; }
-  # + () { mwg_cdhist.next; }
-  # = () { mwg_cdhist.select; }
+  # - () { mshex/cdhist/prev; }
+  # + () { mshex/cdhist/next; }
+  # = () { mshex/cdhist/select; }
 #%%elif mode=="zsh"
   function mshex/array#push { eval "$1+=(\"\${@:2}\")"; }
   source $MWGDIR/share/mshex/shrc/zshrc_interactive.sh

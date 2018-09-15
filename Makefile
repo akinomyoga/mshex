@@ -60,8 +60,8 @@ $(MWGDIR)/share/mshex/shrc/bashrc_interactive.sh: out/shrc/bashrc_interactive.sh
 install+=$(MWGDIR)/share/mshex/shrc/bashrc_cygwin.sh
 $(MWGDIR)/share/mshex/shrc/bashrc_cygwin.sh: shrc/bashrc_cygwin.sh
 	cp -pr $< $@
-install+=$(MWGDIR)/share/mshex/shrc/bash_tools
-$(MWGDIR)/share/mshex/shrc/bash_tools: shrc/bash_tools
+install+=$(MWGDIR)/share/mshex/shrc/cdhist.sh
+$(MWGDIR)/share/mshex/shrc/cdhist.sh: shrc/cdhist.sh
 	cp -pr $< $@
 install+=$(MWGDIR)/share/mshex/shrc/dict.sh
 $(MWGDIR)/share/mshex/shrc/dict.sh: shrc/dict.sh
