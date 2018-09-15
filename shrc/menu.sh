@@ -194,12 +194,12 @@ function mwg_menu/impl {
 
   local tm_smso tm_rmso tmf_cuu tmf_cud tm_dl1 tm_el
   mwg.dict \
-    tm_smso=mwg_term[smso] \
-    tm_rmso=mwg_term[rmso] \
-    tmf_cuu=mwg_term[f:cuu] \
-    tmf_cud=mwg_term[f:cud] \
-    tm_dl1=mwg_term[dl1] \
-    tm_el=mwg_term[el]
+    'tm_smso=mwg_term[smso]' \
+    'tm_rmso=mwg_term[rmso]' \
+    'tmf_cuu=mwg_term[f:cuu]' \
+    'tmf_cud=mwg_term[f:cud]' \
+    'tm_dl1=mwg_term[dl1]' \
+    'tm_el=mwg_term[el]'
   
   mwg_menu.init "$@"
   mwg_menu.show >&2
@@ -218,7 +218,6 @@ function mwg_menu/impl {
   shopt -s extglob
   while :; do
     mwg_term.readkey key
-
     case "$key" in
     (up|C-p|p)
       a_index=
