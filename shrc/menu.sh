@@ -17,26 +17,26 @@
 ((__mwg_mshex_menu__PragmaOnce>=1)) && return
 __mwg_mshex_menu__PragmaOnce=1
 
-mwg_term.register_key dl1 dl1 '[M'
-mwg_term.register_key el  el  '[K'
+mwg_term.register_key dl1 dl1 $'\e[M'
+mwg_term.register_key el  el  $'\e[K'
 
-mwg_menu.init() {
+function mwg_menu.init {
   mwg_menu_options=("$@")
-  mwg_menu_count="${#mwg_menu_options[*]}"
+  mwg_menu_count=${#mwg_menu_options[*]}
 
   mwg_menu_max_index=$((mwg_menu_count-1))
   mwg_menu_item_fmt="%0${#mwg_menu_max_index}d %s\n"
-  mwg_menu_item_fmt1="$tm_smso${mwg_menu_item_fmt}$tm_rmso"
+  mwg_menu_item_fmt1=$tm_smso${mwg_menu_item_fmt}$tm_rmso
 }
 
 if ((mwg_bash>=30100)); then
   function mwg_menu/printf {
     local buff
     printf -v buff "$@"
-    mwg_menu_stdout+="$buff"
+    mwg_menu_stdout+=$buff
   }
   function mwg_menu/fflush {
-    echo -n "$mwg_menu_stdout"
+    printf %s "$mwg_menu_stdout"
     mwg_menu_stdout=
   }
 else
@@ -49,27 +49,27 @@ fi
 function mwg_menu.show {
   local mwg_menu_stdout i
   for ((i=0;i<mwg_menu_count;i++));do
-    if test $i -eq $mwg_menu_index; then
-      mwg_menu/printf "$mwg_menu_item_fmt1" $i "${mwg_menu_options[$i]}"
+    if ((i==mwg_menu_index)); then
+      mwg_menu/printf "$mwg_menu_item_fmt1" $i "${mwg_menu_options[i]}"
     else
-      mwg_menu/printf "$mwg_menu_item_fmt" $i "${mwg_menu_options[$i]}"
+      mwg_menu/printf "$mwg_menu_item_fmt" $i "${mwg_menu_options[i]}"
     fi
   done
   mwg_menu/printf "$tmf_cuu" $((mwg_menu_count-mwg_menu_index))
   mwg_menu/fflush
 }
-mwg_menu.goto() {
-  local -i new_index="$1"
-  test "$new_index" -eq "$mwg_menu_index" && return
+function mwg_menu.goto {
+  local -i new_index=$1
+  ((new_index==mwg_menu_index)) && return
 
-  if test "$new_index" -ge 0 -a "$new_index" -lt "$mwg_menu_count"; then
+  if ((new_index>=0&&new_index<mwg_menu_count)); then
     local mwg_menu_stdout
-    mwg_menu/printf "$mwg_menu_item_fmt" $mwg_menu_index "${mwg_menu_options[$mwg_menu_index]}"
+    mwg_menu/printf "$mwg_menu_item_fmt" $mwg_menu_index "${mwg_menu_options[mwg_menu_index]}"
 
-    local -i delta=$(($mwg_menu_index-$new_index+1))
-    if test $delta -gt 0; then
+    local -i delta=$((mwg_menu_index-new_index+1))
+    if ((delta>0)); then
       mwg_menu/printf "$tmf_cuu" $delta
-    elif test $delta -lt 0; then
+    elif ((delta<0)); then
       mwg_menu/printf "$tmf_cud" $((-delta))
     fi
 
@@ -82,8 +82,8 @@ mwg_menu.goto() {
   fi
 }
 
-mwg_menu.up() {
-  if test "$mwg_menu_index" -gt 0; then
+function mwg_menu.up {
+  if ((mwg_menu_index>0)); then
     local mwg_menu_stdout
     mwg_menu/printf "$mwg_menu_item_fmt" $mwg_menu_index "${mwg_menu_options[$mwg_menu_index]}"
     mwg_menu/printf "$tmf_cuu" 2
@@ -95,7 +95,7 @@ mwg_menu.up() {
     return 1
   fi
 }
-mwg_menu.down() {
+function mwg_menu.down {
   if ((mwg_menu_index<mwg_menu_count-1)); then
     local mwg_menu_stdout
     mwg_menu/printf "$mwg_menu_item_fmt" $mwg_menu_index "${mwg_menu_options[$mwg_menu_index]}"
@@ -107,13 +107,13 @@ mwg_menu.down() {
     return 1
   fi
 }
-mwg_menu.clear() {
-  test $mwg_menu_index -gt 0 && echo -n "[${mwg_menu_index}A"
-  test $mwg_menu_count -gt 0 && echo -n "[${mwg_menu_count}M"
+function mwg_menu.clear {
+  ((mwg_menu_index>0)) && printf '\e[%dA' "$mwg_menu_index"
+  ((mwg_menu_count>0)) && printf '\e[%dM' "$mwg_menu_count"
 }
 
 function mwg_menu/stdout/redraw {
-  local beg="${beg:-0}" end="${end:-$mwg_menu_count}"
+  local beg=${beg:-0} end=${end:-$mwg_menu_count}
 
   local i
 
@@ -125,7 +125,7 @@ function mwg_menu/stdout/redraw {
   fi
 
   for ((i=beg;i<end;i++));do
-    if test $i -eq $mwg_menu_index; then
+    if ((i==mwg_menu_index)); then
       mwg_menu/printf "$tm_el$mwg_menu_item_fmt1" $i "${mwg_menu_options[$i]}"
     else
       mwg_menu/printf "$tm_el$mwg_menu_item_fmt" $i "${mwg_menu_options[$i]}"
@@ -147,7 +147,7 @@ function mwg_menu/redraw {
 }
 function mwg_menu/delete {
   mwg_menu_options=("${mwg_menu_options[@]::mwg_menu_index}" "${mwg_menu_options[@]:mwg_menu_index+1}")
-  mwg_menu_count="${#mwg_menu_options[*]}"
+  mwg_menu_count=${#mwg_menu_options[*]}
   (((mwg_menu_index>=mwg_menu_count)&&(mwg_menu_index--)))
 
   local mwg_menu_stdout
@@ -181,7 +181,7 @@ function mwg_menu/exch {
 
 function mwg_menu/impl {
   local -a mwg_menu_options
-  local -i mwg_menu_index="${arg_default_index-0}"
+  local -i mwg_menu_index=${arg_default_index-0}
   local -i mwg_menu_count
   local -i mwg_menu_max_index
   local mwg_menu_item_fmt
@@ -227,7 +227,7 @@ function mwg_menu/impl {
       mwg_menu.down >&2;;
     ([0-9])
       a_index="$a_index$key"
-      if test ${#a_index} -ge ${#mwg_menu_max_index}; then
+      if ((${#a_index}>=${#mwg_menu_max_index})); then
         mwg_menu.goto ${a_index} >&2
         a_index=
       fi
@@ -235,7 +235,7 @@ function mwg_menu/impl {
     (RET|C-j|m|eof)
       break;;
     (q|C-g)
-      if test -n "$MWG_MENU_CANCEL"; then
+      if [[ $MWG_MENU_CANCEL ]]; then
         local cancel_flag=1
         break
       else
@@ -244,21 +244,21 @@ function mwg_menu/impl {
     (C-l)
       mwg_menu/redraw ;;
     (*)
-      if test -n "$MWG_MENU_ONREADKEY" && $MWG_MENU_ONREADKEY; then
+      if [[ $MWG_MENU_ONREADKEY ]] && $MWG_MENU_ONREADKEY; then
         continue
       else
-        echo -n $'\a' >&2
+        printf '\a' >&2
       fi ;;
     esac
   done
   
   mwg_menu.clear >&2
 
-  if test -n "$mwg_menu_disabling_echo"; then
+  if [[ $mwg_menu_disabling_echo ]]; then
     stty echo
   fi
 
-  if test -n "$cancel_flag"; then
+  if [[ $cancel_flag ]]; then
     _ret=-1
   else
     _ret=$mwg_menu_index
@@ -267,14 +267,14 @@ function mwg_menu/impl {
 function mwg_menu {
   local _vname=
   local arg_default_index
-  while test "x${1#-}" != "x$1"; do
+  while [[ $1 == -* ]]; do
     case "$1" in
     (-i)
       # echo "debug: arg_defualt_index=$2" >&2
-      arg_default_index="$2"
+      arg_default_index=$2
       shift 2 ;;
     (-v)
-      _vname="$2"
+      _vname=$2
       shift 2 ;;
     -) break;;
     esac
@@ -283,7 +283,7 @@ function mwg_menu {
   local _ret
   mwg_menu/impl "$@"
   
-  if test -n "$_vname"; then
+  if [[ $_vname ]]; then
     eval "$_vname=\"\$_ret\""
   else
     echo "$_ret"
@@ -291,12 +291,11 @@ function mwg_menu {
 }
 
 function mwg_menu.select {
-  local varname="$1"
+  local varname=$1
   shift
   local -a options=("$@")
 
   local index
   mwg_menu -v index "${options[@]}"
-  printf -v "$varname" %s "${options[$index]}"
+  printf -v "$varname" %s "${options[index]}"
 }
-  
