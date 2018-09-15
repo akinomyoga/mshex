@@ -612,9 +612,9 @@ function mshex/set-prompt {
   *)
       local label='['"$title_host"'] <jobs> <pwd> @ <pwp>'
 #%%if mode=="zsh"
-      local title="$(mwg_term.set_title "$label")";
+      local title="$(mshex/term/set_title "$label")";
 #%%else
-      local title="$(mwg_term.set_title.escaped "$label")";
+      local title="$(mshex/term/set_title.escaped "$label")";
 #%%end
       ;;
   esac
@@ -644,8 +644,8 @@ function mwg_bashrc.PS1.set { mshex/set-prompt "$@"; }
 function mwg_bashrc_set_prompt2 {
   local A=$1
   local Z=$2
-  test -n "$A" || mshex/dict 'A=mwg_term[fDG]'
-  test -n "$Z" || mshex/dict 'Z=mwg_term[sgr0]'
+  test -n "$A" || mshex/dict 'A=_mshex_term[fDG]'
+  test -n "$Z" || mshex/dict 'Z=_mshex_term[sgr0]'
   mwg_bashrc.PS1.set "$A" "$Z"
 }
 function mwg.windowtitle { mshex/set-window-title "$@"; }

@@ -17,8 +17,8 @@
 #------------------------------------------------------------------------------
 # mshex/menu/.select
 
-mwg_term.register_key smso smso $'\e[7m'
-mwg_term.register_key rmso rmso $'\e[m'
+mshex/term/register-key smso smso $'\e[7m'
+mshex/term/register-key rmso rmso $'\e[m'
 
 source "${MWGDIR:-$HOME/.mwg}/share/mshex/shrc/menu.sh"
 

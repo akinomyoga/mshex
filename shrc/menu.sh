@@ -17,8 +17,8 @@
 ((_mshex_menu_PragmaOnce>=1)) && return
 _mshex_menu_PragmaOnce=1
 
-mwg_term.register_key dl1 dl1 $'\e[M'
-mwg_term.register_key el  el  $'\e[K'
+mshex/term/register-key dl1 dl1 $'\e[M'
+mshex/term/register-key el  el  $'\e[K'
 
 function mshex/menu/.init {
   _mshex_menu_options=("$@")
@@ -194,12 +194,12 @@ function mshex/menu/.impl {
 
   local tm_smso tm_rmso tmf_cuu tmf_cud tm_dl1 tm_el
   mshex/dict \
-    'tm_smso=mwg_term[smso]' \
-    'tm_rmso=mwg_term[rmso]' \
-    'tmf_cuu=mwg_term[f:cuu]' \
-    'tmf_cud=mwg_term[f:cud]' \
-    'tm_dl1=mwg_term[dl1]' \
-    'tm_el=mwg_term[el]'
+    'tm_smso=_mshex_term[smso]' \
+    'tm_rmso=_mshex_term[rmso]' \
+    'tmf_cuu=_mshex_term[f:cuu]' \
+    'tmf_cud=_mshex_term[f:cud]' \
+    'tm_dl1=_mshex_term[dl1]' \
+    'tm_el=_mshex_term[el]'
   
   mshex/menu/.init "$@"
   mshex/menu/.show >&2
@@ -217,7 +217,7 @@ function mshex/menu/.impl {
   local a_index=
   shopt -s extglob
   while :; do
-    mwg_term.readkey key
+    mshex/term/readkey key
     case "$key" in
     (up|C-p|p)
       a_index=

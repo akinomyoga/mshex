@@ -205,6 +205,9 @@ function mshex/dict {
   done
 }
 
+# obsoleted name (used in cache)
+function mwg.dict { mshex/dict "$@"; }
+
 # eval "$(mshex/dict new:hash new:hoge new:season)"
 # mshex/dict 'hash[key]=value'
 # mshex/dict 'hoge[koge]=fdaaa'
