@@ -440,7 +440,7 @@ if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
 fi
 #%%elif mode=="bash"
 declare -i mwg_bashrc_bindx_count=0
-declare "${mwg_dict_declare[@]//DICTNAME/mwg_bashrc_bindx_dict}"
+declare "${_mshex_dict_declare[@]//DICTNAME/mwg_bashrc_bindx_dict}"
 
 if ((_ble_bash)); then
   function mshex/util/bind {

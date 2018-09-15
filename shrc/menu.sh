@@ -14,30 +14,30 @@
 # source "$MWGDIR/share/mshex/shrc/term.sh"
 #------------------------------------------------------------------------------
 
-((__mwg_mshex_menu__PragmaOnce>=1)) && return
-__mwg_mshex_menu__PragmaOnce=1
+((_mshex_menu_PragmaOnce>=1)) && return
+_mshex_menu_PragmaOnce=1
 
 mwg_term.register_key dl1 dl1 $'\e[M'
 mwg_term.register_key el  el  $'\e[K'
 
 function mshex/menu/.init {
-  mshex_menu_options=("$@")
-  mshex_menu_count=${#mshex_menu_options[*]}
+  _mshex_menu_options=("$@")
+  _mshex_menu_count=${#_mshex_menu_options[*]}
 
-  mshex_menu_max_index=$((mshex_menu_count-1))
-  mshex_menu_item_fmt="%0${#mshex_menu_max_index}d %s\n"
-  mshex_menu_item_fmt1=$tm_smso${mshex_menu_item_fmt}$tm_rmso
+  _mshex_menu_max_index=$((_mshex_menu_count-1))
+  _mshex_menu_item_fmt="%0${#_mshex_menu_max_index}d %s\n"
+  _mshex_menu_item_fmt1=$tm_smso${_mshex_menu_item_fmt}$tm_rmso
 }
 
 if ((mwg_bash>=30100)); then
   function mshex/menu/.printf {
     local buff
     printf -v buff "$@"
-    mshex_menu_stdout+=$buff
+    _mshex_menu_stdout+=$buff
   }
   function mshex/menu/.fflush {
-    printf %s "$mshex_menu_stdout"
-    mshex_menu_stdout=
+    printf %s "$_mshex_menu_stdout"
+    _mshex_menu_stdout=
   }
 else
   function mshex/menu/.printf {
@@ -47,34 +47,34 @@ else
 fi
 
 function mshex/menu/.show {
-  local mshex_menu_stdout i
-  for ((i=0;i<mshex_menu_count;i++));do
-    if ((i==mshex_menu_index)); then
-      mshex/menu/.printf "$mshex_menu_item_fmt1" $i "${mshex_menu_options[i]}"
+  local _mshex_menu_stdout i
+  for ((i=0;i<_mshex_menu_count;i++));do
+    if ((i==_mshex_menu_index)); then
+      mshex/menu/.printf "$_mshex_menu_item_fmt1" $i "${_mshex_menu_options[i]}"
     else
-      mshex/menu/.printf "$mshex_menu_item_fmt" $i "${mshex_menu_options[i]}"
+      mshex/menu/.printf "$_mshex_menu_item_fmt" $i "${_mshex_menu_options[i]}"
     fi
   done
-  mshex/menu/.printf "$tmf_cuu" $((mshex_menu_count-mshex_menu_index))
+  mshex/menu/.printf "$tmf_cuu" $((_mshex_menu_count-_mshex_menu_index))
   mshex/menu/.fflush
 }
 function mshex/menu/.goto {
   local -i new_index=$1
-  ((new_index==mshex_menu_index)) && return
+  ((new_index==_mshex_menu_index)) && return
 
-  if ((new_index>=0&&new_index<mshex_menu_count)); then
-    local mshex_menu_stdout
-    mshex/menu/.printf "$mshex_menu_item_fmt" $mshex_menu_index "${mshex_menu_options[mshex_menu_index]}"
+  if ((new_index>=0&&new_index<_mshex_menu_count)); then
+    local _mshex_menu_stdout
+    mshex/menu/.printf "$_mshex_menu_item_fmt" $_mshex_menu_index "${_mshex_menu_options[_mshex_menu_index]}"
 
-    local -i delta=$((mshex_menu_index-new_index+1))
+    local -i delta=$((_mshex_menu_index-new_index+1))
     if ((delta>0)); then
       mshex/menu/.printf "$tmf_cuu" $delta
     elif ((delta<0)); then
       mshex/menu/.printf "$tmf_cud" $((-delta))
     fi
 
-    mshex_menu_index=$new_index
-    mshex/menu/.printf "$mshex_menu_item_fmt1" $mshex_menu_index "${mshex_menu_options[$mshex_menu_index]}"
+    _mshex_menu_index=$new_index
+    mshex/menu/.printf "$_mshex_menu_item_fmt1" $_mshex_menu_index "${_mshex_menu_options[$_mshex_menu_index]}"
     mshex/menu/.printf "$tmf_cuu" 1
     mshex/menu/.fflush
   else
@@ -83,12 +83,12 @@ function mshex/menu/.goto {
 }
 
 function mshex/menu/.up {
-  if ((mshex_menu_index>0)); then
-    local mshex_menu_stdout
-    mshex/menu/.printf "$mshex_menu_item_fmt" $mshex_menu_index "${mshex_menu_options[$mshex_menu_index]}"
+  if ((_mshex_menu_index>0)); then
+    local _mshex_menu_stdout
+    mshex/menu/.printf "$_mshex_menu_item_fmt" $_mshex_menu_index "${_mshex_menu_options[$_mshex_menu_index]}"
     mshex/menu/.printf "$tmf_cuu" 2
-    let mshex_menu_index--
-    mshex/menu/.printf "$mshex_menu_item_fmt1" $mshex_menu_index "${mshex_menu_options[$mshex_menu_index]}"
+    let _mshex_menu_index--
+    mshex/menu/.printf "$_mshex_menu_item_fmt1" $_mshex_menu_index "${_mshex_menu_options[$_mshex_menu_index]}"
     mshex/menu/.printf "$tmf_cuu" 1
     mshex/menu/.fflush
   else
@@ -96,11 +96,11 @@ function mshex/menu/.up {
   fi
 }
 function mshex/menu/.down {
-  if ((mshex_menu_index<mshex_menu_count-1)); then
-    local mshex_menu_stdout
-    mshex/menu/.printf "$mshex_menu_item_fmt" $mshex_menu_index "${mshex_menu_options[$mshex_menu_index]}"
-    let mshex_menu_index++
-    mshex/menu/.printf "$mshex_menu_item_fmt1" $mshex_menu_index "${mshex_menu_options[$mshex_menu_index]}"
+  if ((_mshex_menu_index<_mshex_menu_count-1)); then
+    local _mshex_menu_stdout
+    mshex/menu/.printf "$_mshex_menu_item_fmt" $_mshex_menu_index "${_mshex_menu_options[$_mshex_menu_index]}"
+    let _mshex_menu_index++
+    mshex/menu/.printf "$_mshex_menu_item_fmt1" $_mshex_menu_index "${_mshex_menu_options[$_mshex_menu_index]}"
     mshex/menu/.printf "$tmf_cuu" 1
     mshex/menu/.fflush
   else
@@ -108,51 +108,51 @@ function mshex/menu/.down {
   fi
 }
 function mshex/menu/.clear {
-  ((mshex_menu_index>0)) && printf '\e[%dA' "$mshex_menu_index"
-  ((mshex_menu_count>0)) && printf '\e[%dM' "$mshex_menu_count"
+  ((_mshex_menu_index>0)) && printf '\e[%dA' "$_mshex_menu_index"
+  ((_mshex_menu_count>0)) && printf '\e[%dM' "$_mshex_menu_count"
 }
 
 function mshex/menu/.stdout/redraw {
-  local beg=${beg:-0} end=${end:-$mshex_menu_count}
+  local beg=${beg:-0} end=${end:-$_mshex_menu_count}
 
   local i
 
   mshex/menu/.printf ""
-  if ((beg<mshex_menu_index)); then
-    mshex/menu/.printf "$tmf_cuu" $((mshex_menu_index-beg))
-  elif ((beg>mshex_menu_index)); then
-    mshex/menu/.printf "$tmf_cud" $((beg-mshex_menu_index))
+  if ((beg<_mshex_menu_index)); then
+    mshex/menu/.printf "$tmf_cuu" $((_mshex_menu_index-beg))
+  elif ((beg>_mshex_menu_index)); then
+    mshex/menu/.printf "$tmf_cud" $((beg-_mshex_menu_index))
   fi
 
   for ((i=beg;i<end;i++));do
-    if ((i==mshex_menu_index)); then
-      mshex/menu/.printf "$tm_el$mshex_menu_item_fmt1" $i "${mshex_menu_options[$i]}"
+    if ((i==_mshex_menu_index)); then
+      mshex/menu/.printf "$tm_el$_mshex_menu_item_fmt1" $i "${_mshex_menu_options[$i]}"
     else
-      mshex/menu/.printf "$tm_el$mshex_menu_item_fmt" $i "${mshex_menu_options[$i]}"
+      mshex/menu/.printf "$tm_el$_mshex_menu_item_fmt" $i "${_mshex_menu_options[$i]}"
     fi
   done
 
-  if ((end<mshex_menu_index)); then
-    mshex/menu/.printf "$tmf_cud" $((mshex_menu_index-end))
-  elif ((end>mshex_menu_index)); then
-    mshex/menu/.printf "$tmf_cuu" $((end-mshex_menu_index))
+  if ((end<_mshex_menu_index)); then
+    mshex/menu/.printf "$tmf_cud" $((_mshex_menu_index-end))
+  elif ((end>_mshex_menu_index)); then
+    mshex/menu/.printf "$tmf_cuu" $((end-_mshex_menu_index))
   fi
   mshex/menu/.fflush
 }
 
 function mshex/menu/.redraw {
-  local mshex_menu_stdout
+  local _mshex_menu_stdout
   mshex/menu/.stdout/redraw "$@"
   mshex/menu/.fflush
 }
 function mshex/menu/delete {
-  mshex_menu_options=("${mshex_menu_options[@]::mshex_menu_index}" "${mshex_menu_options[@]:mshex_menu_index+1}")
-  mshex_menu_count=${#mshex_menu_options[*]}
-  (((mshex_menu_index>=mshex_menu_count)&&(mshex_menu_index--)))
+  _mshex_menu_options=("${_mshex_menu_options[@]::_mshex_menu_index}" "${_mshex_menu_options[@]:_mshex_menu_index+1}")
+  _mshex_menu_count=${#_mshex_menu_options[*]}
+  (((_mshex_menu_index>=_mshex_menu_count)&&(_mshex_menu_index--)))
 
-  local mshex_menu_stdout
+  local _mshex_menu_stdout
   mshex/menu/.printf "$tm_dl1"
-  mshex/menu/.stdout/redraw "$mshex_menu_index"
+  mshex/menu/.stdout/redraw "$_mshex_menu_index"
   mshex/menu/.fflush
 }
 
@@ -160,18 +160,18 @@ function mshex/menu/exch {
   local index="$1"
   ((0<index&&index<_mshex_cdhist_count)) || return 1
 
-  local mshex_menu_stdout
+  local _mshex_menu_stdout
 
-  mshex_menu_options=(
-    "${mshex_menu_options[@]::index-1}"
-    "${mshex_menu_options[index]}"
-    "${mshex_menu_options[index-1]}"
-    "${mshex_menu_options[@]:index+1}")
-  if ((index==mshex_menu_index)); then
-    let mshex_menu_index--
+  _mshex_menu_options=(
+    "${_mshex_menu_options[@]::index-1}"
+    "${_mshex_menu_options[index]}"
+    "${_mshex_menu_options[index-1]}"
+    "${_mshex_menu_options[@]:index+1}")
+  if ((index==_mshex_menu_index)); then
+    let _mshex_menu_index--
     mshex/menu/.printf "$tmf_cuu" 1
-  elif ((index-1==mshex_menu_index)); then
-    let mshex_menu_index++
+  elif ((index-1==_mshex_menu_index)); then
+    let _mshex_menu_index++
     mshex/menu/.printf "$tmf_cud" 1
   fi
 
@@ -180,12 +180,12 @@ function mshex/menu/exch {
 }
 
 function mshex/menu/.impl {
-  local -a mshex_menu_options
-  local -i mshex_menu_index=${arg_default_index-0}
-  local -i mshex_menu_count
-  local -i mshex_menu_max_index
-  local mshex_menu_item_fmt
-  local mshex_menu_item_fmt1
+  local -a _mshex_menu_options
+  local -i _mshex_menu_index=${arg_default_index-0}
+  local -i _mshex_menu_count
+  local -i _mshex_menu_max_index
+  local _mshex_menu_item_fmt
+  local _mshex_menu_item_fmt1
 
   if test $# -eq 0; then
     echo -1
@@ -205,9 +205,9 @@ function mshex/menu/.impl {
   mshex/menu/.show >&2
   
   if stty | grep '-echo\b' &>/dev/null; then
-    mshex_menu_disabling_echo=
+    _mshex_menu_disabling_echo=
   else
-    mshex_menu_disabling_echo=1
+    _mshex_menu_disabling_echo=1
     trap 'stty echo' INT
     trap 'stty echo' TERM
     trap 'stty echo' KILL
@@ -227,7 +227,7 @@ function mshex/menu/.impl {
       mshex/menu/.down >&2;;
     ([0-9])
       a_index="$a_index$key"
-      if ((${#a_index}>=${#mshex_menu_max_index})); then
+      if ((${#a_index}>=${#_mshex_menu_max_index})); then
         mshex/menu/.goto ${a_index} >&2
         a_index=
       fi
@@ -254,14 +254,14 @@ function mshex/menu/.impl {
   
   mshex/menu/.clear >&2
 
-  if [[ $mshex_menu_disabling_echo ]]; then
+  if [[ $_mshex_menu_disabling_echo ]]; then
     stty echo
   fi
 
   if [[ $cancel_flag ]]; then
     _ret=-1
   else
-    _ret=$mshex_menu_index
+    _ret=$_mshex_menu_index
   fi
 }
 function mshex/menu {

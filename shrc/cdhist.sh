@@ -118,20 +118,20 @@ function mshex/cdhist/.readkey {
   case "$key" in
   (delete)
     if ((_mshex_cdhist_count>1)); then
-      _mshex_cdhist=("${_mshex_cdhist[@]::mshex_menu_index}" "${_mshex_cdhist[@]:mshex_menu_index+1}")
+      _mshex_cdhist=("${_mshex_cdhist[@]::_mshex_menu_index}" "${_mshex_cdhist[@]:_mshex_menu_index+1}")
       ((_mshex_cdhist_count--))
-      (((_mshex_cdhist_level>mshex_menu_index)&&(_mshex_cdhist_level--)))
+      (((_mshex_cdhist_level>_mshex_menu_index)&&(_mshex_cdhist_level--)))
       mshex/menu/delete
       return 0
     fi ;;
   (,)
-    if ((mshex_menu_index>0)); then
-      mshex/cdhist/.readkey/exch "$mshex_menu_index"
+    if ((_mshex_menu_index>0)); then
+      mshex/cdhist/.readkey/exch "$_mshex_menu_index"
       return 0
     fi ;;
   (.)
-    if ((mshex_menu_index+1<_mshex_cdhist_count)); then
-      mshex/cdhist/.readkey/exch $((mshex_menu_index+1))
+    if ((_mshex_menu_index+1<_mshex_cdhist_count)); then
+      mshex/cdhist/.readkey/exch $((_mshex_menu_index+1))
       return 0
     fi ;;
   esac

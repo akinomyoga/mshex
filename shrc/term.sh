@@ -20,8 +20,8 @@
 ((__mwg_mshex_term__PragmaOnce>=2)) && return
 __mwg_mshex_term__PragmaOnce=2
 
-declare "${mwg_dict_declare[@]//DICTNAME/mwg_term}"
-declare "${mwg_dict_declare[@]//DICTNAME/mwg_term_keymap}"
+declare "${_mshex_dict_declare[@]//DICTNAME/mwg_term}"
+declare "${_mshex_dict_declare[@]//DICTNAME/mwg_term_keymap}"
 
 #------------------------------------------------------------------------------
 # mwg_term
