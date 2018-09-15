@@ -94,7 +94,7 @@ function mwg.String.Lowercase.__get {
       local c=${text:i:1}
       local index_tmp=${mwg_String_table_ualpha%%$c*}
       local index=${#index_tmp}
-      if test $index -lt 26; then
+      if ((index<26)); then
         return=$return${mwg_String_table_lalpha:index:1}
       else
         return=$return$c
@@ -193,7 +193,7 @@ function mwg.String.Base64Encode.__get {
   for ((i=0;i<${#text};i+=3)); do
     local cook=${text:i:3}
 
-    let s=0
+    ((s=0))
     for ((j=0;j<3;j++));do
       mwg.Char.ToCharCode.__get "${cook:j:1}"
       ((s=s*256+return))

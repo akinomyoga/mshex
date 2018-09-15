@@ -6,16 +6,16 @@
 #   eval "$(mshex/dict new:h)"
 #     declares the dictionary variable
 #
-#   mshex/dict h[key]=val
+#   mshex/dict 'h[key]=val'
 #     associates `val' with the specified `key'.
 #
-#   mshex/dict h[key]
+#   mshex/dict 'h[key]'
 #     prints the value associated with the `key'.
 #
-#   mshex/dict var=h[key]
+#   mshex/dict 'var=h[key]'
 #     sets the value associated with the `key' to the variable `var'.
 #
-#   mshex/dict unset:h[key]
+#   mshex/dict 'unset:h[key]'
 #     NOT YET IMPLEMENTED
 #
 # ChangeLog
@@ -133,7 +133,7 @@ else
     local script='
       local i
       for ((i=0;i<${#__mwg_hash__HNAME__key[@]};i++)); do
-        if test "${__mwg_hash__HNAME__key[$i]}" == "$key"; then
+        if [[ ${__mwg_hash__HNAME__key[i]} == "$key" ]]; then
           VNAME="${__mwg_hash__HNAME__val[$i]}"
           break
         fi
@@ -157,7 +157,7 @@ function mshex/dict {
     (new:?*|declare:?*|local:?*) # new:hname[key]=value
       local hname=${expr#*:}
       local decl=${expr%%:*}
-      test $decl = new && decl=declare
+      [[ $decl == new ]] && decl=declare
       mshex/dict/.new "$decl" "$hname"
       hname_=$hname ;;
     (set:?*) # hname:

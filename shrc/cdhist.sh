@@ -7,7 +7,7 @@
 ## 
 ## .shrc settings specific to bash
 ##
-# if test -n "$_mshex_include_cdhist_sh"; then
+# if [[ $_mshex_include_cdhist_sh ]]; then
 #   _mshex_include_cdhist_sh=1
 #HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 

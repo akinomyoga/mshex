@@ -245,9 +245,9 @@ function mshex/term/readkey/.impl {
       local seq=${key:1}
       if [[ $s == "$seq" ]]; then
         skey=$key
-        let m++
+        ((m++))
       elif [[ $seq == "$s"* ]]; then
-        let m+=2
+        ((m+=2))
       fi
     done
     

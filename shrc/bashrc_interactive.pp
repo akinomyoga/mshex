@@ -274,7 +274,7 @@ function g {
 
     (dist)
       local name="${PWD##*/}"
-      test -d dist || mkdir -p dist
+      [[ -d dist ]] || mkdir -p dist
       local archive="dist/$name-$(date +%Y%m%d).tar.xz"
       git archive --format=tar --prefix="./$name/" HEAD | xz > "$archive"
       ;;
@@ -392,12 +392,12 @@ mwg/display/.login
 mshex_bind_fg () {
   echo -n $'\e['"${COLUMNS:-80}"'D\e[2K'
   setopt no_beep
-  fg "$@" ; local r="$?"
+  fg "$@" ; local r=$?
   setopt beep
-  if test $r = 18; then
+  if ((r==18)); then
     # suspended
     #echo -n $'\e[3A\e[2M\e[1B'
-  elif test $r = 1; then
+  elif ((r==1)); then
     # no such job
     echo $'\e[2A\e[M\e[B' ; zle redisplay
   else
@@ -439,7 +439,7 @@ if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
   mshex_bind_fg9 () { mshex_bind_fg %9; } ; zle -N mshex_bind_fg9 ; bindkey '[57;5^' mshex_bind_fg9
 fi
 #%%elif mode=="bash"
-declare -i mwg_bashrc_bindx_count=0
+declare -i _mshex_bindx_count=0
 declare "${_mshex_dict_declare[@]//DICTNAME/mwg_bashrc_bindx_dict}"
 
 if ((_ble_bash)); then
@@ -465,11 +465,11 @@ else
     else
       local id; mshex/dict "id=mwg_bashrc_bindx_dict[$cmd]"
       if [[ ! $id ]]; then
-        let mwg_bashrc_bindx_count++
-        if test $mwg_bashrc_bindx_count -eq 10; then
-          let mwg_bashrc_bindx_count++
+        ((_mshex_bindx_count++))
+        if ((_mshex_bindx_count==10)); then
+          ((_mshex_bindx_count++))
         fi
-        id=$mwg_bashrc_bindx_count
+        id=$_mshex_bindx_count
         mshex/dict "mwg_bashrc_bindx_dict[$cmd]=$id"
       fi
 
@@ -578,7 +578,7 @@ fi
 #%%m set_prompt
 function mshex/set-prompt {
   # prompt
-  if test -n "$1" -a -n "$2"; then
+  if [[ $1 && $2 ]]; then
     local A='<A>'"$1"'<Z>';
     local Z='<A>'"$2"'<Z>';
   else
@@ -588,9 +588,9 @@ function mshex/set-prompt {
   local _prompt='['"$A"'<user>@<host>'"$Z"' <jobs> <pwd>]<pchar> '
 
   # title_host
-  if test -z "$SSH_CLIENT"; then
+  if [[ ! $SSH_CLIENT ]]; then
     local title_host=''
-  elif test -n "$PROGRAMFILES"; then
+  elif [[ $PROGRAMFILES ]]; then
     local title_host='<host>'
   else
     local title_host='<user>@<host>'
@@ -644,8 +644,8 @@ function mwg_bashrc.PS1.set { mshex/set-prompt "$@"; }
 function mwg_bashrc_set_prompt2 {
   local A=$1
   local Z=$2
-  test -n "$A" || mshex/dict 'A=_mshex_term[fDG]'
-  test -n "$Z" || mshex/dict 'Z=_mshex_term[sgr0]'
+  [[ $A ]] || mshex/dict 'A=_mshex_term[fDG]'
+  [[ $Z ]] || mshex/dict 'Z=_mshex_term[sgr0]'
   mwg_bashrc.PS1.set "$A" "$Z"
 }
 function mwg.windowtitle { mshex/set-window-title "$@"; }

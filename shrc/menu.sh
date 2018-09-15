@@ -87,7 +87,7 @@ function mshex/menu/.up {
     local _mshex_menu_stdout
     mshex/menu/.printf "$_mshex_menu_item_fmt" $_mshex_menu_index "${_mshex_menu_options[$_mshex_menu_index]}"
     mshex/menu/.printf "$tmf_cuu" 2
-    let _mshex_menu_index--
+    ((_mshex_menu_index--))
     mshex/menu/.printf "$_mshex_menu_item_fmt1" $_mshex_menu_index "${_mshex_menu_options[$_mshex_menu_index]}"
     mshex/menu/.printf "$tmf_cuu" 1
     mshex/menu/.fflush
@@ -99,7 +99,7 @@ function mshex/menu/.down {
   if ((_mshex_menu_index<_mshex_menu_count-1)); then
     local _mshex_menu_stdout
     mshex/menu/.printf "$_mshex_menu_item_fmt" $_mshex_menu_index "${_mshex_menu_options[$_mshex_menu_index]}"
-    let _mshex_menu_index++
+    ((_mshex_menu_index++))
     mshex/menu/.printf "$_mshex_menu_item_fmt1" $_mshex_menu_index "${_mshex_menu_options[$_mshex_menu_index]}"
     mshex/menu/.printf "$tmf_cuu" 1
     mshex/menu/.fflush
@@ -168,10 +168,10 @@ function mshex/menu/exch {
     "${_mshex_menu_options[index-1]}"
     "${_mshex_menu_options[@]:index+1}")
   if ((index==_mshex_menu_index)); then
-    let _mshex_menu_index--
+    ((_mshex_menu_index--))
     mshex/menu/.printf "$tmf_cuu" 1
   elif ((index-1==_mshex_menu_index)); then
-    let _mshex_menu_index++
+    ((_mshex_menu_index++))
     mshex/menu/.printf "$tmf_cud" 1
   fi
 
@@ -187,7 +187,7 @@ function mshex/menu/.impl {
   local _mshex_menu_item_fmt
   local _mshex_menu_item_fmt1
 
-  if test $# -eq 0; then
+  if (($#==0)); then
     echo -1
     return 1
   fi
