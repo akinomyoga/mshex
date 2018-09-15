@@ -24,7 +24,7 @@
 
 source "$MWGDIR/share/mshex/shrc/dict.sh"
 
-# 141ms = (ファイル読み取り 62ms) + (mwg.dict 操作 47ms)
+# 141ms = (ファイル読み取り 62ms) + (mshex/dict 操作 47ms)
 source "$MWGDIR/share/mshex/shrc/term.sh"
 
 #==============================================================================
@@ -463,14 +463,14 @@ else
         bind -x "$q$seq$q:$cmd"
       fi
     else
-      local id; mwg.dict "id=mwg_bashrc_bindx_dict[$cmd]"
+      local id; mshex/dict "id=mwg_bashrc_bindx_dict[$cmd]"
       if [[ ! $id ]]; then
         let mwg_bashrc_bindx_count++
         if test $mwg_bashrc_bindx_count -eq 10; then
           let mwg_bashrc_bindx_count++
         fi
         id=$mwg_bashrc_bindx_count
-        mwg.dict "mwg_bashrc_bindx_dict[$cmd]=$id"
+        mshex/dict "mwg_bashrc_bindx_dict[$cmd]=$id"
       fi
 
       local hex seq2
@@ -644,8 +644,8 @@ function mwg_bashrc.PS1.set { mshex/set-prompt "$@"; }
 function mwg_bashrc_set_prompt2 {
   local A=$1
   local Z=$2
-  test -n "$A" || mwg.dict 'A=mwg_term[fDG]'
-  test -n "$Z" || mwg.dict 'Z=mwg_term[sgr0]'
+  test -n "$A" || mshex/dict 'A=mwg_term[fDG]'
+  test -n "$Z" || mshex/dict 'Z=mwg_term[sgr0]'
   mwg_bashrc.PS1.set "$A" "$Z"
 }
 function mwg.windowtitle { mshex/set-window-title "$@"; }

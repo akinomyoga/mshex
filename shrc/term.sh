@@ -43,13 +43,13 @@ mwg_term/.cache.fname(){
   local cache="$cachedir/mwg_term.$TERM"
   if test ! -s "$cache"; then
     cat <<EOF > "$cache"
-mwg.dict 'mwg_term[f:cuu]=[%dA'
-mwg.dict 'mwg_term[f:cud]=[%dB'
-mwg.dict 'mwg_term[f:cuf]=[%dC'
-mwg.dict 'mwg_term[f:cub]=[%dD'
-mwg.dict 'mwg_term[f:il]=[%dL'
-mwg.dict 'mwg_term[f:dl]=[%dM'
-mwg.dict 'mwg_term[f:cup]=[%d;%dH'
+mshex/dict 'mwg_term[f:cuu]=[%dA'
+mshex/dict 'mwg_term[f:cud]=[%dB'
+mshex/dict 'mwg_term[f:cuf]=[%dC'
+mshex/dict 'mwg_term[f:cub]=[%dD'
+mshex/dict 'mwg_term[f:il]=[%dL'
+mshex/dict 'mwg_term[f:dl]=[%dM'
+mshex/dict 'mwg_term[f:cup]=[%d;%dH'
 EOF
   fi
 
@@ -69,24 +69,24 @@ mwg_term/.cache.set() {
   local fcache
   mwg_term/.cache.fname -v fcache
 
-  mwg.dict "mwg_term[$1]=$2"
-  echo "mwg.dict 'mwg_term[$1]=$2'" >> "$fcache"
+  mshex/dict "mwg_term[$1]=$2"
+  echo "mshex/dict 'mwg_term[$1]=$2'" >> "$fcache"
 }
 mwg_term.echo(){
-  mwg.dict "mwg_term[$1]"
+  mshex/dict "mwg_term[$1]"
 }
 mwg_term.register_key() {
   local name="$1"
   local tiargs="$2"
   local def="$3"
-  if mwg.dict -z:"mwg_term[$name]"; then
+  if mshex/dict -z:"mwg_term[$name]"; then
     mwg_term/.cache.set "$name" "$(tput $tiargs 2>/dev/null || echo -n "$def")"
   fi
 }
 mwg_term.register_cap() {
   local name="$1"
   local tiargs="$2"
-  if mwg.dict -z:"mwg_term[$name]"; then
+  if mshex/dict -z:"mwg_term[$name]"; then
     if tput $tiargs &>/dev/null; then
       mwg_term/.cache.set "$name" 1 # true
     else
@@ -102,7 +102,7 @@ mwg_term/.cache.load
 # mwg_term.color
 
 mwg_term.color.init(){
-  if mwg.dict -z:'mwg_term[sgr0]'; then
+  if mshex/dict -z:'mwg_term[sgr0]'; then
     echo -n "initializing mwg_term colors... " >&2
     mwg_term.register_key fDR   'setaf 1'  '[31m'
     mwg_term.register_key fDG   'setaf 2'  '[32m'
@@ -152,7 +152,7 @@ mwg_term.color.init
 function mwg_term_keymap.def {
   local kseq="$1"
   local kname="$2"
-  mwg.dict.set mwg_term_keymap "x$kseq" "$kname"
+  mshex/dict/.set mwg_term_keymap "x$kseq" "$kname"
 }
 
 function mwg_term_keymap.tdef {
@@ -162,8 +162,8 @@ function mwg_term_keymap.tdef {
   mwg_term.register_key "$tname" "$tname" "$default"
 
   local kseq
-  mwg.dict "kseq=mwg_term[$tname]"
-  mwg.dict.set mwg_term_keymap "x$kseq" "$kname"
+  mshex/dict "kseq=mwg_term[$tname]"
+  mshex/dict/.set mwg_term_keymap "x$kseq" "$kname"
 }
 
 # 47ms
@@ -239,7 +239,7 @@ function mwg_term/.readkey-impl {
     s="$s$c"
 
     local key skey keys m=0
-    mwg.dict 'keys=(!mwg_term_keymap[@])'
+    mshex/dict 'keys=(!mwg_term_keymap[@])'
     for key in "${keys[@]}"; do
       local seq="${key:1}"
       if test "$s" == "$seq"; then
@@ -251,7 +251,7 @@ function mwg_term/.readkey-impl {
     done
     
     if ((m==1)); then
-      mwg.dict "_ret=mwg_term_keymap[$skey]"
+      mshex/dict "_ret=mwg_term_keymap[$skey]"
       return 0
     elif ((m==0)); then
       _ret="$s"
@@ -279,9 +279,9 @@ mwg_term.set_title() {
   screen*)
     echo -n "]0;${title}""k${title}\\";;
   *)
-    local hs; mwg.dict 'hs=mwg_term[hs]'
+    local hs; mshex/dict 'hs=mwg_term[hs]'
     if test "$hs" == 1; then
-      local tsl fsl; mwg.dict 'tsl=mwg_term[tsl]' 'fsl=mwg_term[fsl]'
+      local tsl fsl; mshex/dict 'tsl=mwg_term[tsl]' 'fsl=mwg_term[fsl]'
       echo -n "$tsl${title}$fsl"
     fi
     ;;
@@ -295,9 +295,9 @@ mwg_term.set_title.escaped() {
   screen*)
     echo -n "]0;${title}""k${title}\\\\";;
   *)
-    local hs; mwg.dict 'hs=mwg_term[hs]'
+    local hs; mshex/dict 'hs=mwg_term[hs]'
     if test "$hs" == 1; then
-      local tsl fsl; mwg.dict 'tsl=mwg_term[tsl]' 'fsl=mwg_term[fsl]'
+      local tsl fsl; mshex/dict 'tsl=mwg_term[tsl]' 'fsl=mwg_term[fsl]'
       tsl=${tsl//"$bs"/"$bs$bs"}
       fsl=${fsl//"$bs"/"$bs$bs"}
       echo -n "$tsl${title}$fsl"

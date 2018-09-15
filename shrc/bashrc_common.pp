@@ -57,7 +57,7 @@ if [[ $- == *i* ]]; then
     ((_ble_bash)) && return
 
     local tmp1 tmp2
-    mwg.dict 'tmp1=mwg_term[fHR]' 'tmp2=mwg_term[sgr0]'
+    mshex/dict 'tmp1=mwg_term[fHR]' 'tmp2=mwg_term[sgr0]'
     trap "echo \"$tmp1[trap: exit \$?]$tmp2\"" ERR
   }
   mshex/.settrap

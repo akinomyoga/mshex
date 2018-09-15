@@ -193,7 +193,7 @@ function mwg_menu/impl {
   fi
 
   local tm_smso tm_rmso tmf_cuu tmf_cud tm_dl1 tm_el
-  mwg.dict \
+  mshex/dict \
     'tm_smso=mwg_term[smso]' \
     'tm_rmso=mwg_term[rmso]' \
     'tmf_cuu=mwg_term[f:cuu]' \
