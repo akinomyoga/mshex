@@ -31,7 +31,7 @@
 #     + 重複しているパス要素を常に全て削除する様に変更。
 #
 
-test -n "${MSHEX_LIB_PATH_SH+1}" && return
+[[ ${MSHEX_LIB_PATH_SH+1} ]] && return
 MSHEX_LIB_PATH_SH=1
 
 MSHEX_LIB_PATH_SH_localVariables=(
@@ -48,33 +48,33 @@ function PATH._readArguments {
   _PATH_sep=:
   _PATH_flags=-
   _PATH_paths=()
-  while test $# -gt 0; do
+  while (($#)); do
     case "$1" in
     (-v) # variable name
-      _PATH_varname="$2"
+      _PATH_varname=$2
       shift 2 ;;
     (-v*)
-      _PATH_varname="${2:2}"
+      _PATH_varname=${2:2}
       shift 1 ;;
     (-F) # field separater
-      _PATH_sep="$2"
+      _PATH_sep=$2
       shift 2 ;;
     (-F*)
-      _PATH_sep="${2:2}"
+      _PATH_sep=${2:2}
       shift 1 ;;
     (-n)
-      _PATH_flags="${_PATH_flags}n" ;;
+      _PATH_flags=${_PATH_flags}n ;;
     (--help)
       echo "usage: $_PATH_cmdname [-v VARNAME] [-F SEP] [-n] PATHS..."
-      _PATH_flags="${_PATH_flags}x"
+      _PATH_flags=${_PATH_flags}x
       return ;;
     (-*)
       echo "$_PATH_cmdname: unknown option" >&2
       echo "usage: $_PATH_cmdname [-v VARNAME] [-F SEP] [-n] PATHS..." >&2
-      _PATH_flags="${_PATH_flags}e"
+      _PATH_flags=${_PATH_flags}e
       return ;;
     (*)
-      IFS="$_PATH_sep" eval "_PATH_paths=(\"\${_PATH_paths[@]}\" \$1)"
+      IFS=$_PATH_sep eval "_PATH_paths=(\"\${_PATH_paths[@]}\" \$1)"
       shift ;;
     esac
   done
@@ -83,23 +83,23 @@ function PATH._readArguments {
 }
 
 function PATH._canonicalizeImpl {
-  local IFS="$_PATH_sep"
+  local IFS=$_PATH_sep
   local path ret= chk=
   for path in $_PATH_value; do
-    test -z "$path" && continue
-    test "${chk/$_PATH_sep$path$_PATH_sep/}" != "$chk" && continue
-    chk="$chk$_PATH_sep$path$_PATH_sep"
-    ret="$ret$_PATH_sep$path"
+    [[ ! $path ]] && continue
+    [[ ${chk/$_PATH_sep$path$_PATH_sep/} != "$chk" ]] && continue
+    chk=$chk$_PATH_sep$path$_PATH_sep
+    ret=$ret$_PATH_sep$path
   done
-  _PATH_value="${ret:1}"
+  _PATH_value=${ret:1}
 }
 
 function PATH.canonicalize {
   local "${MSHEX_LIB_PATH_SH_localVariables[@]}"
   local _PATH_cmdname=PATH.canonicalize
   PATH._readArguments "$@"
-  test -z "${_PATH_flags/*x*/}" && return
-  test -z "${_PATH_flags/*e*/}" && return 1
+  [[ $_PATH_flags == *x* ]] && return
+  [[ $_PATH_flags == *e* ]] && return 1
   
   PATH._canonicalizeImpl
   eval "export $_PATH_varname='$_PATH_value'"
@@ -109,15 +109,15 @@ function PATH.remove {
   local "${MSHEX_LIB_PATH_SH_localVariables[@]}"
   local _PATH_cmdname=PATH.remove
   PATH._readArguments "$@"
-  test -z "${_PATH_flags/*x*/}" && return
-  test -z "${_PATH_flags/*e*/}" && return 1
+  [[ $_PATH_flags == *x* ]] && return
+  [[ $_PATH_flags == *e* ]] && return 1
 
   local _PATH_path
   for _PATH_path in "${_PATH_paths[@]}"; do
-    _PATH_value="${_PATH_value//$_PATH_sep$_PATH_path$_PATH_sep/$_PATH_sep}"
-    _PATH_value="${_PATH_value#$_PATH_path$_PATH_sep}"
-    _PATH_value="${_PATH_value%$_PATH_sep$_PATH_path}"
-    if test "$_PATH_value" == "$_PATH_path"; then
+    _PATH_value=${_PATH_value//$_PATH_sep$_PATH_path$_PATH_sep/$_PATH_sep}
+    _PATH_value=${_PATH_value#$_PATH_path$_PATH_sep}
+    _PATH_value=${_PATH_value%$_PATH_sep$_PATH_path}
+    if [[ $_PATH_value == $_PATH_path ]]; then
       _PATH_value=''
       break
     fi
@@ -131,13 +131,13 @@ function PATH.prepend {
   local "${MSHEX_LIB_PATH_SH_localVariables[@]}"
   local _PATH_cmdname=PATH.prepend
   PATH._readArguments "$@"
-  test -z "${_PATH_flags/*x*/}" && return
-  test -z "${_PATH_flags/*e*/}" && return 1
+  [[ $_PATH_flags == *x* ]] && return
+  [[ $_PATH_flags == *e* ]] && return 1
 
   local _PATH_path _PATH_cpath=
   for _PATH_path in "${_PATH_paths[@]}"; do
-    test -z "${_PATH_flags/*n*/}" -a ! -e "$_PATH_path" && continue
-    _PATH_cpath="$_PATH_cpath$_PATH_path$_PATH_sep"
+    [[ $_PATH_flags == *n* && ! -e $_PATH_path ]] && continue
+    _PATH_cpath=$_PATH_cpath$_PATH_path$_PATH_sep
   done
   _PATH_value="$_PATH_cpath$_PATH_value"
 
@@ -149,13 +149,13 @@ function PATH.append {
   local "${MSHEX_LIB_PATH_SH_localVariables[@]}"
   local _PATH_cmdname=PATH.append
   PATH._readArguments "$@"
-  test -z "${_PATH_flags/*x*/}" && return
-  test -z "${_PATH_flags/*e*/}" && return 1
+  [[ $_PATH_flags == *x* ]] && return
+  [[ $_PATH_flags == *e* ]] && return 1
 
   local _PATH_path
   for _PATH_path in "${_PATH_paths[@]}"; do
-    test -z "${_PATH_flags/*n*/}" -a ! -e "$_PATH_path" && continue
-    _PATH_value="$_PATH_value$_PATH_sep$_PATH_path"
+    [[ $_PATH_flags == *n* && ! -e $_PATH_path ]] && continue
+    _PATH_value=$_PATH_value$_PATH_sep$_PATH_path
   done
 
   PATH._canonicalizeImpl
@@ -163,6 +163,6 @@ function PATH.append {
 }
 
 function PATH.show {
-  local name="${1-PATH}"
-  eval "echo \"\${$name}\""|sed 's/:/\n/g'
+  local name=${1-PATH}
+  eval "echo \"\${$name}\"" | sed 's/:/\n/g'
 }
