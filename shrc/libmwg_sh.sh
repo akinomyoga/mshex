@@ -1,34 +1,33 @@
 #!/bin/bash
 # -*- mode:sh;coding:utf-8 -*-
 
-
 # shell functions
 
 # bash-version
 declare -i mwg_bash=$((${BASH_VERSINFO[0]}*10000+${BASH_VERSINFO[1]}*100+${BASH_VERSINFO[2]}))
 
-source_if() { test -e "$1" && source "$@" >/dev/null; }
+function source_if { [[ -e $1 ]] && source "$@" >/dev/null; }
 
-mkd () { test -d "$1" || mkdir -p "$1"; }
+function mkd { [[ -d $1 ]] || mkdir -p "$1"; }
 
 #------------------------------------------------------------------------------
 # PATH : environmental variable
 
-mwg.PATH.add() {
+function mwg.PATH.add {
   mwg.PATH.remove "$@"
 
-  local name="$1"; shift
+  local name=$1; shift
   local paths; eval "paths=\${$name}"
   for p in "$@"; do
-    paths="$p${paths:+:}$paths"
+    paths=$p${paths:+:}$paths
   done
   eval "export $name='$paths'"
 }
 
-mwg.PATH.append() {
+function mwg.PATH.append {
   mwg.PATH.remove "$@"
 
-  local name="$1"; shift
+  local name=$1; shift
   local paths; eval "paths=\${$name}"
   for p in "$@"; do
     paths="$paths${paths:+:}$p"
@@ -36,14 +35,14 @@ mwg.PATH.append() {
   eval "export $name='$paths'"
 }
 
-mwg.PATH.remove() {
-  local name="$1"; shift
+function mwg.PATH.remove {
+  local name=$1; shift
   local paths; eval "paths=\${$name}"
   for p in "$@"; do
     paths="${paths//:$p:/:}"
     paths="${paths#$p:}"
     paths="${paths%:$p}"
-    if test "$paths" == "$p"; then
+    if [[ $paths == "$p" ]]; then
       paths=''
       break
     fi
@@ -52,8 +51,8 @@ mwg.PATH.remove() {
   eval "export $name='$paths'"
 }
 
-mwg.PATH.show() {
-  local name="${1-PATH}"|sed 's/:/\n/g'
+function mwg.PATH.show {
+  local name=${1-PATH} | sed 's/:/\n/g'
   eval "echo \"\${$name}\""
 }
 
@@ -62,8 +61,8 @@ mwg.PATH.show() {
 
 mwg_String_table_lalpha='abcdefghijklmnopqrstuvwxyz'
 mwg_String_table_ualpha='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-mwg.String.Uppercase.__get() {
-  if test $mwg_bash -ge 40100; then
+function mwg.String.Uppercase.__get {
+  if ((mwg_bash>=40100)); then
     return="${*^^?}"
   else
     # return="$(echo -n "$*"|tr a-z A-Z)"
@@ -71,20 +70,20 @@ mwg.String.Uppercase.__get() {
     local text="$*" i
     return=
     for ((i=0;i<${#text};i++));do
-      local c="${text:$i:1}"
-      local index_tmp="${mwg_String_table_lalpha%%$c*}"
+      local c=${text:i:1}
+      local index_tmp=${mwg_String_table_lalpha%%$c*}
       local index=${#index_tmp}
-      if test $index -lt 26; then
-        return="$return${mwg_String_table_ualpha:$index:1}"
+      if ((index<26)); then
+        return=$return${mwg_String_table_ualpha:index:1}
       else
-        return="$return$c"
+        return=$return$c
       fi
     done
   fi
 }
 
-mwg.String.Lowercase.__get() {
-  if test $mwg_bash -ge 40100; then
+function mwg.String.Lowercase.__get {
+  if ((mwg_bash >=40100)); then
     return="${*,,?}"
   else
     # return="$(echo -n "$*"|tr a-z A-Z)"
@@ -92,20 +91,20 @@ mwg.String.Lowercase.__get() {
     local text="$*" i
     return=
     for ((i=0;i<${#text};i++));do
-      local c="${text:$i:1}"
-      local index_tmp="${mwg_String_table_ualpha%%$c*}"
+      local c=${text:i:1}
+      local index_tmp=${mwg_String_table_ualpha%%$c*}
       local index=${#index_tmp}
       if test $index -lt 26; then
-        return="$return${mwg_String_table_lalpha:$index:1}"
+        return=$return${mwg_String_table_lalpha:index:1}
       else
-        return="$return$c"
+        return=$return$c
       fi
     done
   fi
 }
 
 declare mwg_Char_ToCharCode_table
-mwg_Char_ToCharCode_table.init() {
+function mwg_Char_ToCharCode_table.init {
   local table00=$'\x3f\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
   local table01=$'\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f'
   local table02=$'\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f'
@@ -125,24 +124,24 @@ mwg_Char_ToCharCode_table.init() {
   mwg_Char_ToCharCode_table="$table00$table01$table02$table03$table04$table05$table06$table07$table08$table09$table0a$table0b$table0c$table0d$table0e$table0f"
 }
 mwg_Char_ToCharCode_table.init
-mwg.Char.ToCharCode.__get() {
+function mwg.Char.ToCharCode.__get {
   local c="${1:0:1}"
-  if test "x$c" == 'x?'; then
+  if [[ "$c" == '?' ]]; then
     return=63
-  elif test "x$c" == 'x*'; then
+  elif [[ "$c" == '*' ]]; then
     return=42
   else
-    local tmp="${mwg_Char_ToCharCode_table%%$c*}"
-    return="${#tmp}"
+    local tmp=${mwg_Char_ToCharCode_table%%$c*}
+    return=${#tmp}
   fi
 
   # 実は printf -v return '%d' "'${1:0:1}" の一行で OK かも
   # <a href="http://stackoverflow.com/questions/890262/integer-ascii-value-to-character-in-bash-using-printf">Integer ASCII value to character in BASH using printf - Stack Overflow</a>
 }
 
-mwg.Char.ToHexCode.__get() {
+function mwg.Char.ToHexCode.__get {
   mwg.Char.ToCharCode.__get "$1"
-  local -i n="$return"
+  local -i n=$return
   local hi=$((n/16))
   local lo=$((n%16))
 
@@ -162,70 +161,70 @@ mwg.Char.ToHexCode.__get() {
   14) lo=e ;;
   15) lo=f ;;
   esac
-  return="$hi$lo"
+  return=$hi$lo
 }
 
-mwg.String.HexEncode.__get() {
+function mwg.String.HexEncode.__get {
   local text="$*"
   local code=
 
   local i
   for ((i=0;i<${#text};i++));do
-    mwg.Char.ToHexCode.__get "${text:$i:1}"
-    code="$code$return"
+    mwg.Char.ToHexCode.__get ${text:i:1}
+    code=$code$return
   done
 
-  return="$code"
+  return=$code
 }
 
 mwg_String_Base64_table='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 if which base64 &>/dev/null; then
   mwg_String_Base64_which=1
 fi
-mwg.String.Base64Encode.__get() {
+function mwg.String.Base64Encode.__get {
   local text="$*" i j s
-  if test "${#text}" -gt 150 -a -n "$mwg_String_Base64_which";then
-    return="$(echo -n "$text" | base64)"
+  if ((${#text}>150)) && [[ $mwg_String_Base64_which ]]; then
+    return=$(echo -n "$text" | base64)
     return
   fi
 
-  unset buff[*]
+  unset 'buff[*]'
   local -a buff=()
   for ((i=0;i<${#text};i+=3)); do
-    local cook="${text:$i:3}"
+    local cook=${text:i:3}
 
     let s=0
     for ((j=0;j<3;j++));do
-      mwg.Char.ToCharCode.__get "${cook:$j:1}"
-      let s=s*256+return
+      mwg.Char.ToCharCode.__get "${cook:j:1}"
+      ((s=s*256+return))
     done
 
     local quartet=
     for ((j=3;j>=0;j--));do
-      if test $j -gt ${#cook}; then
+      if ((j>${#cook})); then
         quartet="=$quartet"
       else
-        quartet="${mwg_String_Base64_table:$((s%64)):1}$quartet"
+        quartet=${mwg_String_Base64_table:$((s%64)):1}$quartet
       fi
-      let s/=64
+      ((s/=64))
     done
 
-    buff[${#buff[*]}]="$quartet"
+    buff[${#buff[*]}]=$quartet
   done
 
   local IFS=
   return="${buff[*]}"
 }
 
-mwg.String.Base64Encode() {
+function mwg.String.Base64Encode {
   local return=
   mwg.String.Base64Encode.__get "$@"
   echo "$return"
 }
 
-mwg.String.EndsWith() {
-  test "${1%$2}" != "$1"
+function mwg.String.EndsWith {
+  [[ $1 == *"$2" ]]
 }
-mwg.String.StartsWith() {
-  test "${1#$2}" != "$1"
+function mwg.String.StartsWith {
+  [[ $1 == "$2"* ]]
 }
