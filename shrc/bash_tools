@@ -11,14 +11,14 @@
 #   mwg_bashrc_include_bash_tools=1
 #HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 
-# : ${MWGDIR=$HOME/.mwg}
+# : ${MWGDIR="$HOME"/.mwg}
 # . $HOME/.mwg/echox &>/dev/null||:
 
 #------------------------------------------------------------------------------
 # mshex/menu/.select
 
-mwg_term.register_key smso smso '[7m'
-mwg_term.register_key rmso rmso '[m'
+mwg_term.register_key smso smso $'\e[7m'
+mwg_term.register_key rmso rmso $'\e[m'
 
 source "${MWGDIR:-$HOME/.mwg}/share/mshex/shrc/menu.sh"
 
@@ -26,69 +26,73 @@ source "${MWGDIR:-$HOME/.mwg}/share/mshex/shrc/menu.sh"
 # cd
 
 if [[ ! $mwg_cdhist_level ]]; then
-  declare -a mwg_cdhist
   mwg_cdhist=("$PWD")
-  declare -i mwg_cdhist_level=0
-  declare -i mwg_cdhist_count=1
+  mwg_cdhist_level=0
+  mwg_cdhist_count=1
 fi
 
-mwg_cdhist.indexof() {
+## 関数 mwg_cdhist.indexof path
+##   @param[in] path
+##   @var[out] ret
+function mwg_cdhist.indexof {
   local i
-  for((i=0;i<${#mwg_cdhist};i++));do
-    if test "$1" == "${mwg_cdhist[$i]}"; then
-      echo $i
+  for ((i=0;i<${#mwg_cdhist};i++)); do
+    if [[ $1 == "${mwg_cdhist[i]}" ]]; then
+      ret=$i
       return
     fi
   done
 
   return 1
 }
-mwg_cdhist.remove() {
-  local -i i1="$1"
-  local -i i2="${2-$((i1+1))}"
-  test $i1 -lt 0 && i1=0
-  test $i2 -gt $mwg_cdhist_count && i2=$mwg_cdhist_count
+function mwg_cdhist.remove {
+  local -i i1=$1
+  local -i i2=${2-$((i1+1))}
+  ((i1<0)) && i1=0
+  ((i2>mwg_cdhist_count)) && i2=$mwg_cdhist_count
 
   local -i i
-  for((i=0;i<i2-i1;i++));do
-    mwg_cdhist[$((i1+i))]="${mwg_cdhist[$((i2+i))]}"
+  for ((i=0;i<i2-i1;i++));do
+    mwg_cdhist[i1+i]=${mwg_cdhist[i2+i]}
   done
 
-  let mwg_cdhist_count-=i2-i1
-  for((i="${#mwg_cdhist[*]}"-1;i>=$mwg_cdhist_count;i--));do
-    unset mwg_cdhist[$i]
+  ((mwg_cdhist_count-=i2-i1))
+  for ((i=${#mwg_cdhist[*]}-1;i>=mwg_cdhist_count;i--)); do
+    unset "mwg_cdhist[i]"
   done
 }
-mwg_cdhist.bubble() {
-  local i iN="$1"
-  local value="${mwg_cdhist[$iN]}"
-  for((i="$iN";i>0;i--));do
-    mwg_cdhist[$i]="${mwg_cdhist[$((i-1))]}"
+function mwg_cdhist.bubble {
+  local i iN=$1
+  local value=${mwg_cdhist[iN]}
+  for ((i=iN;i>0;i--)); do
+    mwg_cdhist[i]=${mwg_cdhist[i-1]}
   done
-  mwg_cdhist[0]="$value"
+  mwg_cdhist[0]=$value
 }
-mwg_cdhist.push() {
-  if test -n "$mwg_cdhist_config_DiscardBranch"; then
-    if test $mwg_cdhist_level -gt 0; then
+function mwg_cdhist.push {
+  if [[ $mwg_cdhist_config_DiscardBranch ]]; then
+    if ((mwg_cdhist_level>0)); then
       mwg_cdhist.remove 0 $mwg_cdhist_level
     fi
   fi
 
-  if test -n "$mwg_cdhist_config_BubbleHist" -a "$mwg_cdhist_level" -ge 0; then
+  if [[ $mwg_cdhist_config_BubbleHist && $mwg_cdhist_level -ge 0 ]]; then
     mwg_cdhist.bubble $mwg_cdhist_level
   fi
   mwg_cdhist_level=0
 
-  local index i
-  if ! index=$(mwg_cdhist.indexof "$1"); then
-    index="$mwg_cdhist_count"
-    let mwg_cdhist_count++
-    mwg_cdhist[$index]="$1"
+  local ret
+  if mwg_cdhist.indexof "$1"; then
+    local index=$ret
+  else
+    local index=$mwg_cdhist_count
+    ((mwg_cdhist_count++))
+    mwg_cdhist[index]=$1
   fi
 
   mwg_cdhist.bubble "$index"
 }
-mwg_cdhist.list() {
+function mwg_cdhist.list {
   echo "${mwg_cdhist[@]//$HOME/~}"
 }
 
@@ -102,9 +106,9 @@ function mwg_cdhist.select/readkey/exch {
     "${mwg_cdhist[index-1]}"
     "${mwg_cdhist[@]:index+1}")
   if((index==mwg_cdhist_level)); then
-    let mwg_cdhist_level--
+    ((mwg_cdhist_level--))
   elif((index==mwg_cdhist_level)); then
-    let mwg_cdhist_level++
+    ((mwg_cdhist_level++))
   fi
 
   mshex/menu/exch "$index"
@@ -115,7 +119,7 @@ function mwg_cdhist.select/readkey {
   (delete)
     if ((mwg_cdhist_count>1)); then
       mwg_cdhist=("${mwg_cdhist[@]::mshex_menu_index}" "${mwg_cdhist[@]:mshex_menu_index+1}")
-      let mwg_cdhist_count--
+      ((mwg_cdhist_count--))
       (((mwg_cdhist_level>mshex_menu_index)&&(mwg_cdhist_level--)))
       mshex/menu/delete
       return 0
@@ -127,7 +131,7 @@ function mwg_cdhist.select/readkey {
     fi ;;
   (.)
     if ((mshex_menu_index+1<mwg_cdhist_count)); then
-      mwg_cdhist.select/readkey/exch "$((mshex_menu_index+1))"
+      mwg_cdhist.select/readkey/exch $((mshex_menu_index+1))
       return 0
     fi ;;
   esac
@@ -135,63 +139,63 @@ function mwg_cdhist.select/readkey {
 }
 
 function mwg_cdhist.onChangeLevel {
-  local d="${mwg_cdhist[$mwg_cdhist_level]}"
-  if test "$d" != "$PWD"; then
+  local d=${mwg_cdhist[mwg_cdhist_level]}
+  if [[ $d != "$PWD" ]]; then
     echo "[cd: $d]"
     builtin cd "$d"
   fi
 }
 
-mwg_cdhist.select() {
+function mwg_cdhist.select {
   local -i index
   local MWG_MENU_ONREADKEY=mwg_cdhist.select/readkey
   local MWG_MENU_CANCEL=1
   mshex/menu -v index -i "$mwg_cdhist_level" "${mwg_cdhist[@]//$HOME/~}"
 
   if((index>=0)); then
-    mwg_cdhist_level="$index"
+    mwg_cdhist_level=$index
     mwg_cdhist.onChangeLevel
   fi
 }
-mwg_cdhist.next() {
-  if test $mwg_cdhist_level -gt 0; then
-    let mwg_cdhist_level--
+function mwg_cdhist.next {
+  if ((mwg_cdhist_level>0)); then
+    ((mwg_cdhist_level--))
     mwg_cdhist.onChangeLevel
   fi
 }
-mwg_cdhist.prev() {
-  if test $mwg_cdhist_level -lt $((mwg_cdhist_count-1)); then
-    let mwg_cdhist_level++
+function mwg_cdhist.prev {
+  if ((mwg_cdhist_level<mwg_cdhist_count-1)); then
+    ((mwg_cdhist_level++))
     mwg_cdhist.onChangeLevel
   fi
 }
 
-mwg_cdhist.cd() {
+function mwg_cdhist.cd {
   # read arguments
   local -a args=()
   local dst=
   local fForce=
-  while(($#)); do
+  while (($#)); do
     case "$1" in
     (-f) fForce=1 ;;
     (-)
-      dst="$OLDPWD"
+      dst=$OLDPWD
       mshex/array#push args "$1" ;;
     (-*)
       mshex/array#push args "$1" ;;
     (*)
-      : ${dst:=$1}
+      : ${dst:="$1"}
       mshex/array#push args "$1" ;;
     esac
     shift
   done
 
-  if test -n "$fForce"; then
-    : ${dst:=$HOME}
-    test -e "$dst" || mkdir -p "$dst"
+  if [[ $fForce ]]; then
+    : ${dst:="$HOME"}
+    [[ -e $dst ]] || mkdir -p "$dst"
   fi
 
-  if test "x$dst" != "x$PWD"&& builtin cd "${args[@]}"; then
+  if [[ $dst != "$PWD" ]] && builtin cd "${args[@]}"; then
     mwg_cdhist.push "$PWD" &>/dev/null
   fi
 }
