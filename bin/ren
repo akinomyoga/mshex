@@ -1,5 +1,55 @@
 #!/bin/bash
 
+#------------------------------------------------------------------------------
+# util
+
+function ble/string#common-prefix {
+  local a=$1 b=$2
+  ((${#a}>${#b})) && local a=$b b=$a
+  b=${b::${#a}}
+  if [[ $a == "$b" ]]; then
+    ret=$a
+    return
+  fi
+
+  local l=0 u=${#a} m
+  while ((l+1<u)); do
+    ((m=(l+u)/2))
+    if [[ ${a::m} == "${b::m}" ]]; then
+      ((l=m))
+    else
+      ((u=m))
+    fi
+  done
+
+  ret=${a::l}
+}
+
+function ble/string#common-suffix {
+  local a=$1 b=$2
+  ((${#a}>${#b})) && local a=$b b=$a
+  b=${b:${#b}-${#a}}
+  if [[ $a == "$b" ]]; then
+    ret=$a
+    return
+  fi
+
+  # l < 解 <= u, (${a:l}: 一致しない, ${a:u} 一致する)
+  local l=0 u=${#a} m
+  while ((l+1<u)); do
+    ((m=(l+u+1)/2))
+    if [[ ${a:m} == "${b:m}" ]]; then
+      ((u=m))
+    else
+      ((l=m))
+    fi
+  done
+
+  ret=${a:u}
+}
+
+#------------------------------------------------------------------------------
+
 function show_help {
   local bold=$'\e[1m'
   local ul=$'\e[4m'
@@ -251,21 +301,34 @@ function _ren {
     srclist=()
     dstlist=()
 
-    local q=\' Q=\'\\\'\'
-  
+    local q=\' Q="'\''"
+    local sgr0=$'\e[m'
+    local sgr1=$'\e[;31m' sgr2=$'\e[;32m'
+    local sgrR=$'\e[;31;48;5;218m' sgrA=$'\e[;32;48;5;154m'
     while read -r src && read -r dst; do
       [[ -e "$src" ]] || continue
   
       [[ $fEval ]] && IFS= GLOBIGNORE=\* eval "dst=($dst)"
   
+
       local qsrc=${src//$q/$Q}
       local qdst=${dst//$q/$Q}
-  
       check_overwrite || continue
   
       srclist+=("$src")
       dstlist+=("$dst")
-      printf "mv '%s' '%s'\n" "$qsrc" "$qdst"
+
+      # simple diff
+      local ret
+      ble/string#common-prefix "$src" "$dst"
+      local common_prefix=$ret beg=${#ret}
+      ble/string#common-suffix "${src:beg}" "${dst:beg}"
+      local common_suffix=$ret
+      local end1=$((${#src}-${#common_suffix}))
+      local end2=$((${#dst}-${#common_suffix}))
+      local dsrc=$sgr1$common_prefix$sgrR${src:beg:end1-beg}$sgr1$common_suffix$sgr0
+      local ddst=$sgr2$common_prefix$sgrA${dst:beg:end2-beg}$sgr2$common_suffix$sgr0
+      printf "mv '%s' '%s'\n" "${dsrc//$q/$Q}" "${ddst//$q/$Q}"
     done
   
     if ((${#srclist[@]}==0)); then
