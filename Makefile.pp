@@ -21,6 +21,7 @@ install+=%name%
 #%x dir.r|%name%|$(MWGDIR)|
 #%x dir.r|%name%|$(MWGDIR)/bin|
 #%x dir.r|%name%|$(MWGDIR)/share/mshex/shrc|
+#%x dir.r|%name%|$(MWGDIR)/share/mshex/libexec|
 
 #------------------------------------------------------------------------------
 # directory shrc
@@ -104,10 +105,22 @@ out/bin/%file%: bin/%file% | out/bin
 #%x bin_file.r|%file%|czless|
 #%x bin_file.r|%file%|pass|
 #%x bin_file.r|%file%|passgen|
-#%x bin_file.r|%file%|ren|
+#%x bin_pp.r|%file%|ren|
 #%x bin_file.r|%file%|ifold|
 #%x bin_file.r|%file%|refact|
 #%x bin_file.r|%file%|tarc|
+
+#------------------------------------------------------------------------------
+# directory libexec
+
+install += $(MWGDIR)/share/mshex/libexec/ren-mv.exe
+compile += out/libexec/ren-mv.exe
+$(MWGDIR)/share/mshex/libexec/ren-mv.exe: out/libexec/ren-mv.exe
+	cp $< $@
+out/libexec/ren-mv.exe: src/ren-mv.c | out/libexec
+	gcc -o $@ $<
+out/libexec:
+	mkdir -p $@
 
 #------------------------------------------------------------------------------
 # directory source-highlight

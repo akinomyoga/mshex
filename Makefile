@@ -22,6 +22,9 @@ $(MWGDIR)/bin:
 install+=$(MWGDIR)/share/mshex/shrc
 $(MWGDIR)/share/mshex/shrc:
 	mkdir -p $@
+install+=$(MWGDIR)/share/mshex/libexec
+$(MWGDIR)/share/mshex/libexec:
+	mkdir -p $@
 
 #------------------------------------------------------------------------------
 # directory shrc
@@ -142,9 +145,12 @@ $(MWGDIR)/bin/pass: bin/pass
 install+=$(MWGDIR)/bin/passgen
 $(MWGDIR)/bin/passgen: bin/passgen
 	./make-install_script.sh copy -s $< $@
+compile+=out/bin/ren
 install+=$(MWGDIR)/bin/ren
-$(MWGDIR)/bin/ren: bin/ren
+$(MWGDIR)/bin/ren: out/bin/ren
 	./make-install_script.sh copy -s $< $@
+out/bin/ren: bin/ren | out/bin
+	$(MWGPP) $< > $@ && chmod +x $@
 install+=$(MWGDIR)/bin/ifold
 $(MWGDIR)/bin/ifold: bin/ifold
 	./make-install_script.sh copy -s $< $@
@@ -154,6 +160,18 @@ $(MWGDIR)/bin/refact: bin/refact
 install+=$(MWGDIR)/bin/tarc
 $(MWGDIR)/bin/tarc: bin/tarc
 	./make-install_script.sh copy -s $< $@
+
+#------------------------------------------------------------------------------
+# directory libexec
+
+install += $(MWGDIR)/share/mshex/libexec/ren-mv.exe
+compile += out/libexec/ren-mv.exe
+$(MWGDIR)/share/mshex/libexec/ren-mv.exe: out/libexec/ren-mv.exe
+	cp $< $@
+out/libexec/ren-mv.exe: src/ren-mv.c | out/libexec
+	gcc -o $@ $<
+out/libexec:
+	mkdir -p $@
 
 #------------------------------------------------------------------------------
 # directory source-highlight
