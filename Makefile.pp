@@ -118,7 +118,7 @@ compile += out/libexec/ren-mv.exe
 $(MWGDIR)/share/mshex/libexec/ren-mv.exe: out/libexec/ren-mv.exe
 	cp $< $@
 out/libexec/ren-mv.exe: src/ren-mv.c | out/libexec
-	gcc -o $@ $<
+	gcc -std=gnu99 -o $@ $<
 out/libexec:
 	mkdir -p $@
 
