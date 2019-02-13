@@ -2,7 +2,7 @@
 
 # settings
 
-dir="$HOME/.recycle"
+dir=$HOME/.recycle
 
 : ${VISUAL:=less}
 [[ ${VISUAL##*/} == less ]] && VISUAL=("$VISUAL" -XSF)
@@ -12,25 +12,24 @@ dir="$HOME/.recycle"
 
 shopt -s nullglob
 
-mkd () { test -d "$1" || mkdir -p "$1"; }
+mkd () { [[ -d $1 ]] || mkdir -p "$1"; }
 
 # < yn.sh >
 #%include "../functions/yn.sh"
 # </ yn.sh >
 
-function upvar { unset "$1" && eval "$1=\"\$2\""; }
+function upvar { unset "$1" && eval "$1=\$2"; }
 
-path_separator_pattern='[/\\]'
 function escape_filename {
   local var=
   if [[ $1 == -v ]]; then
-    var="$2"
+    var=$2
     shift 2
   fi
 
-  local value="$1"
-  value="${value//%/%25}"
-  value="${value//$path_separator_pattern/%2F}"
+  local value=$1 path_sep='\/'
+  value=${value//'%'/'%25'}
+  value=${value//["$path_sep"]/'%2F'}
 
   if [[ $var ]]; then
     local "$var" && upvar "$var" "$value"
@@ -42,13 +41,13 @@ function escape_filename {
 function unescape_filename {
   local var=
   if [[ $1 == -v ]]; then
-    var="$2"
+    var=$2
     shift 2
   fi
 
-  local value="$1"
-  value="${value//%2F/'/'}"
-  value="${value//%25/%}"
+  local value=$1
+  value=${value//'%2F'/'/'}
+  value=${value//'%25'/'%'}
 
   if [[ $var ]]; then
     local "$var" && upvar "$var" "$value"
@@ -129,37 +128,37 @@ E_ovwrt=$'\e[1;30m'
 sgr0=$'\e[m'
 
 function subcommand:list-garbages/color-filename {
-  _file="$file"
+  _file=$file
   if [[ $iscolor ]]; then
     if [[ -d $gfile ]]; then
-      _file="$a_dir$file$sgr0"
+      _file=$a_dir$file$sgr0
     elif [[ -h $gfile ]]; then
-      _file="$a_link$file$sgr0"
+      _file=$a_link$file$sgr0
     elif [[ -p $gfile ]]; then
-      _file="$a_pipe$file$sgr0"
+      _file=$a_pipe$file$sgr0
     elif [[ -S $gfile ]]; then
-      _file="$a_sock$file$sgr0"
+      _file=$a_sock$file$sgr0
     elif [[ -b $gfile ]]; then
-      _file="$a_block$file$sgr0"
+      _file=$a_block$file$sgr0
     elif [[ -x $gfile ]]; then
       if [[ -k $gfile ]]; then
-        _file="$a_stick$file$sgr0"
+        _file=$a_stick$file$sgr0
       else
-        _file="$a_exec$file$sgr0"
+        _file=$a_exec$file$sgr0
       fi
     else
-      _file="$a_file$file$sgr0"
+      _file=$a_file$file$sgr0
     fi
   fi
 }
 
 function subcommand:list-garbages/color-directory {
-  _wdir="$wdir"
+  _wdir=$wdir
   if [[ $iscolor ]]; then
     if [[ -d $wdir ]]; then
-      _wdir="$a_dir$wdir$sgr0"
+      _wdir=$a_dir$wdir$sgr0
     else
-      _wdir="$E_miss$wdir$sgr0"
+      _wdir=$E_miss$wdir$sgr0
     fi
   fi
 }
@@ -180,15 +179,15 @@ function subcommand:list-garbages {
   local date time gfile wdir
   local rtime file opath
   local _wdir _file
-  for entry in $dir/wait/*; do
+  for entry in "$dir"/wait/*; do
     [[ -e $entry ]] || continue
-    entry="${entry#"$dir/wait/"}"
+    entry=${entry#"$dir/wait/"}
 
     if [[ $entry == ????????-??????-* ]]; then
-      date="${entry::8}"
-      time="${entry:9:6}"
-      gfile="$dir/wait/$entry"
-      file="${entry:16}"
+      date=${entry::8}
+      time=${entry:9:6}
+      gfile=$dir/wait/$entry
+      file=${entry:16}
       unescape_filename -v file "$file"
 
       rtime="${date::4}-${date:4:2}-${date:6} ${time::2}:${time:2:2}:${time:4}"
@@ -196,9 +195,9 @@ function subcommand:list-garbages {
       subcommand:list-garbages/check-newfile "$file"
       echo "$rtime $_file"
     elif [[ $entry == ????????-??????@* ]]; then
-      date="${entry::8}"
-      time="${entry:9:6}"
-      wdir="${entry:16}"
+      date=${entry::8}
+      time=${entry:9:6}
+      wdir=${entry:16}
       unescape_filename -v wdir "$wdir"
       [[ -d $wdir ]] && local wdir_exists=1
 
@@ -207,7 +206,7 @@ function subcommand:list-garbages {
       echo "$rtime $_wdir"
 
       for gfile in "$dir/wait/$entry"/{*,.*}; do
-        file="${gfile#"$dir/wait/$entry"/}"
+        file=${gfile#"$dir/wait/$entry"/}
         [[ $file == . || $file == .. ]] && continue
         unescape_filename -v file "$file"
 
@@ -237,7 +236,7 @@ function subcommand.set {
     echo "mshex/remove:(arg:$arg -> $subcommand): multiple subcommands are specified." >&2
     subcommand=error
   else
-    subcommand="$1"
+    subcommand=$1
   fi
 }
 
@@ -245,7 +244,7 @@ fError=
 files=()
 
 while (($#)); do
-  declare arg="$1" i
+  declare arg=$1 i
   shift
   case "$arg" in
   (--help)          subcommand.set help ;;
@@ -281,7 +280,7 @@ while (($#)); do
       esac
     done ;;
   (*)
-    files[${#files[@]}]="$arg" ;;
+    files[${#files[@]}]=$arg ;;
   esac
 done
 
@@ -366,9 +365,9 @@ fi
 
 #------------------------------------------------------------------------------
 # create backup directory
-now="$(date +%Y%m%d-%H%M%S)"
+now=$(date +%Y%m%d-%H%M%S)
 
-delete_waiting_files () {
+function delete_waiting_files {
   [[ -d $dir/wait ]] || return
 
   local -a gomigomi=()
@@ -435,10 +434,10 @@ function interactive_confirm_file {
 ## @var[in] files[]
 function remove_impl {
   if ((${#files[@]}==1)); then
-    local src="${files[0]%/}" dst esc
+    local src=${files[0]%/} dst esc
     interactive_confirm_file "$src" || return
     escape_filename -v esc "$PWD/$src"
-    dst="$destination/$now-$esc"
+    dst=$destination/$now-$esc
     while [[ -e $dst ]]; do dst="$dst+"; done
     mv $fV -- "$src" "$dst"
   elif ((${#files[@]}>=2)); then
@@ -446,8 +445,8 @@ function remove_impl {
 
     # prepare dst directory
     escape_filename -v esc "$PWD"
-    dst="$destination/$now@$esc"
-    while [[ -e $dst ]]; do dst="$dst+"; done
+    dst=$destination/$now@$esc
+    while [[ -e $dst ]]; do dst=$dst+; done
     mkdir "$dst"
 
     local file
@@ -458,7 +457,7 @@ function remove_impl {
       if [[ $esc != "$file" ]]; then
         mv $fV -- "$file" "$dst/$esc"
       else
-        raws[${#raws[@]}]="$file"
+        raws[${#raws[@]}]=$file
       fi
     done
     ((${#raws[@]})) && mv $fV -- "${raws[@]}" "$dst"/
