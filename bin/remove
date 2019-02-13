@@ -327,7 +327,7 @@ function check_files_are_on_the_same_disk {
     # シンボリックリンクがリンク先のディレクトリに解決されるのを防ぐ
     dffiles=()
     for file in "${files[@]}"; do
-      if [[ -h $file ]]; then
+      if [[ -h $file || -p $file || -s $file || -b $file || -c $file || -S $file ]]; then
         if [[ $file == */* ]]; then
           file=${file%/*}/
         else
