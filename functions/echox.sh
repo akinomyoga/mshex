@@ -1,46 +1,40 @@
-#!/bin/bash
-# bash.source
+# bash source -*- mode: sh; mode: sh-bash -*-
 
-#-------------------------------------------------------------------------------
-#  utils
-#-------------------------------------------------------------------------------
-istest=false
-mwg_echox_prog="$0"
-mwg_echox_indent=0
-mwg_echox_indent_text=''
-mwg_echox_indent_stk[0]=''
-mwg_term_sgr0=$'[m'
+mshex_echox_prog="$0"
+mshex_echox_indent=0
+mshex_echox_indent_text=''
+mshex_echox_indent_stk[0]=''
 
-echox () {
+function echox {
   if test "x${1:0:2}" == x-e -o "x${1:0:2}" == x-n; then
     local opt="$1"
     shift
   else
     local opt=''
   fi
-  echo $opt "[94m$mwg_echox_prog\$[m $mwg_echox_indent_text[34m$*[m"
+  echo $opt "[94m$mshex_echox_prog\$[m $mshex_echox_indent_text[34m$*[m"
 }
-echoe () {
+function echoe {
   if test "x${1:0:2}" == x-e -o "x${1:0:2}" == x-n; then
     local opt="$1"
     shift
   else
     local opt=''
   fi
-  echo $opt "[91m$mwg_echox_prog![m $mwg_echox_indent_text$*"
+  echo $opt "[91m$mshex_echox_prog![m $mshex_echox_indent_text$*"
 }
-echom () {
+function echom {
   if test "x${1:0:2}" == x-e -o "x${1:0:2}" == x-n; then
     local opt="$1"
     shift
   else
     local opt=''
   fi
-  echo $opt "[34m$mwg_echox_prog:[m $mwg_echox_indent_text$*"
+  echo $opt "[34m$mshex_echox_prog:[m $mshex_echox_indent_text$*"
 }
-echor () {
+function echor {
   local var="$1"
-  local msg=$'\e[34m'"$mwg_echox_prog: $mwg_echox_indent_text"$'\e[32m'"$2"$'\e[m'
+  local msg=$'\e[34m'"$mshex_echox_prog: $mshex_echox_indent_text"$'\e[32m'"$2"$'\e[m'
   local def="$3"
   test -n "$def" && msg="$msg"$' [\e[35m'"$def"$'\e[m]'
   read -e -i "$def" -p "$msg"$'\e[34m ? \e[m' "$var"
@@ -49,20 +43,20 @@ echor () {
   fi
 }
 
-echox_push () {
+function echox_push {
   local indent="$1"
   if test -z "$indent"; then
     indent='[90m- '
   fi
 
-  mwg_echox_indent_stk[$mwg_echox_indent]=$mwg_echox_indent_text
-  mwg_echox_indent=$((mwg_echox_indent+1))
-  mwg_echox_indent_text="$mwg_echox_indent_text$indent"$'\e[m'
+  mshex_echox_indent_stk[$mshex_echox_indent]=$mshex_echox_indent_text
+  mshex_echox_indent=$((mshex_echox_indent+1))
+  mshex_echox_indent_text="$mshex_echox_indent_text$indent"$'\e[m'
 }
 
-echox_pop () {
-  if test "$mwg_echox_indent" -gt 0; then
-    mwg_echox_indent=$((mwg_echox_indent-1))
-    mwg_echox_indent_text=${mwg_echox_indent_stk[$mwg_echox_indent]}
+function echox_pop {
+  if test "$mshex_echox_indent" -gt 0; then
+    mshex_echox_indent=$((mshex_echox_indent-1))
+    mshex_echox_indent_text=${mshex_echox_indent_stk[$mshex_echox_indent]}
   fi
 }
