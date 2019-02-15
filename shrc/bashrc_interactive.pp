@@ -112,7 +112,7 @@ elif type -t open &>/dev/null; then
 fi
 
 if [[ $OSTYPE == linux-gnu ]]; then
-    alias p='ps uaxf'
+  alias p='ps uaxf'
 elif type -t psforest &>/dev/null; then
   if [[ $(tput colors) -ge 256 ]]; then
     alias p='psforest'
@@ -682,6 +682,7 @@ shopt -s histappend
 shopt -s histreedit
 shopt -s no_empty_cmd_completion
 shopt -u hostcomplete
+shopt -s failglob
 
 #%%)
 
