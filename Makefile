@@ -106,9 +106,12 @@ $(MWGDIR)/bin/makepp: bin/makepp
 install+=$(MWGDIR)/bin/mwgbk
 $(MWGDIR)/bin/mwgbk: bin/mwgbk
 	./make-install_script.sh copy -s $< $@
+compile+=out/bin/msync
 install+=$(MWGDIR)/bin/msync
-$(MWGDIR)/bin/msync: bin/msync
+$(MWGDIR)/bin/msync: out/bin/msync
 	./make-install_script.sh copy -s $< $@
+out/bin/msync: bin/msync | out/bin
+	$(MWGPP) $< > $@ && chmod +x $@
 compile+=out/bin/remove
 install+=$(MWGDIR)/bin/remove
 $(MWGDIR)/bin/remove: out/bin/remove
