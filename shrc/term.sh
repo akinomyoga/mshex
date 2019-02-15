@@ -218,7 +218,7 @@ mshex/term/readkey/keymap-tdef kpp   $'\e[5~' prev
 mshex/term/readkey/keymap-tdef knp   $'\e[6~' next
 
 ## function mshex/term/readkey/.readchar
-if ((mwg_bash>=40100)); then
+if ((mshex_bash>=40100)); then
   # -N は 40100 以降
   function mshex/term/readkey/.readchar {
     IFS= read -srN 1 "$1"

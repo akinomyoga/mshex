@@ -36,7 +36,7 @@
 ((_mshex_dict_PragmaOnce>=1)) && return
 _mshex_dict_PragmaOnce=1
 
-if [[ $ZSH_VERSION || $mwg_bash -ge 40000 ]]; then
+if [[ $ZSH_VERSION || $mshex_bash -ge 40000 ]]; then
   _mshex_dict_declare=(-A DICTNAME)
   function mshex/dict/.new {
     local declare=$1
@@ -82,12 +82,12 @@ if [[ $ZSH_VERSION || $mwg_bash -ge 40000 ]]; then
   #   done
   # }
 else
-  _mshex_dict_declare=(-a __mwg_hash__DICTNAME__key __mwg_hash__DICTNAME__val)
+  _mshex_dict_declare=(-a _mshex_hash__DICTNAME__key _mshex_hash__DICTNAME__val)
   function mshex/dict/.new {
     local declare=$1
     local hname=$2
-    echo "$declare -a '__mwg_hash__${hname}__key'"
-    echo "$declare -a '__mwg_hash__${hname}__val'"
+    echo "$declare -a '_mshex_hash__${hname}__key'"
+    echo "$declare -a '_mshex_hash__${hname}__val'"
   }
   function mshex/dict/.set {
     # mshex/dict/.set hash key value
@@ -96,16 +96,16 @@ else
     local value=$3
     local script='
       local i
-      for ((i=0;i<${#__mwg_hash__HNAME__key[@]};i++)); do
-        if [[ ${__mwg_hash__HNAME__key[i]} == "$key" ]]; then
-          __mwg_hash__HNAME__val[i]=$value
+      for ((i=0;i<${#_mshex_hash__HNAME__key[@]};i++)); do
+        if [[ ${_mshex_hash__HNAME__key[i]} == "$key" ]]; then
+          _mshex_hash__HNAME__val[i]=$value
           break
         fi
       done
       
-      if ((i==${#__mwg_hash__HNAME__key[@]})); then
-        __mwg_hash__HNAME__key[i]=$key
-        __mwg_hash__HNAME__val[i]=$value
+      if ((i==${#_mshex_hash__HNAME__key[@]})); then
+        _mshex_hash__HNAME__key[i]=$key
+        _mshex_hash__HNAME__val[i]=$value
       fi
     '
   
@@ -116,9 +116,9 @@ else
     local key=$2
     local script='
       local i
-      for ((i=0;i<${#__mwg_hash__HNAME__key[@]};i++)); do
-        if [[ ${__mwg_hash__HNAME__key[i]} == "$key" ]]; then
-          echo "${__mwg_hash__HNAME__val[i]}"
+      for ((i=0;i<${#_mshex_hash__HNAME__key[@]};i++)); do
+        if [[ ${_mshex_hash__HNAME__key[i]} == "$key" ]]; then
+          echo "${_mshex_hash__HNAME__val[i]}"
           break
         fi
       done
@@ -132,9 +132,9 @@ else
     local key=$3
     local script='
       local i
-      for ((i=0;i<${#__mwg_hash__HNAME__key[@]};i++)); do
-        if [[ ${__mwg_hash__HNAME__key[i]} == "$key" ]]; then
-          VNAME="${__mwg_hash__HNAME__val[$i]}"
+      for ((i=0;i<${#_mshex_hash__HNAME__key[@]};i++)); do
+        if [[ ${_mshex_hash__HNAME__key[i]} == "$key" ]]; then
+          VNAME="${_mshex_hash__HNAME__val[$i]}"
           break
         fi
       done
@@ -144,7 +144,7 @@ else
     eval "${script//HNAME/$hname}"
   }
   function mshex/dict/.getkeys {
-    eval "$1=(\"\${__mwg_hash__${2}__key[@]}\")"
+    eval "$1=(\"\${_mshex_hash__${2}__key[@]}\")"
   }
 fi
 

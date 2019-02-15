@@ -29,7 +29,7 @@ function mshex/menu/.init {
   _mshex_menu_item_fmt1=$tm_smso${_mshex_menu_item_fmt}$tm_rmso
 }
 
-if ((mwg_bash>=30100)); then
+if ((mshex_bash>=30100)); then
   function mshex/menu/.printf {
     local buff
     printf -v buff "$@"

@@ -38,8 +38,8 @@ export MWGDIR MWG_LOGINTERM
 
 if [[ $- == *i* ]]; then
 #%%if mode=="bash" (
-  mwg_bash=$((${BASH_VERSINFO[0]}*10000+${BASH_VERSINFO[1]}*100+${BASH_VERSINFO[2]}))
-  if ((mwg_bash>=30100)); then
+  mshex_bash=$((${BASH_VERSINFO[0]}*10000+${BASH_VERSINFO[1]}*100+${BASH_VERSINFO[2]}))
+  if ((mshex_bash>=30100)); then
     function mshex/array#push { eval "$1+=(\"\${@:2}\")"; }
   else
     function mshex/array#push {

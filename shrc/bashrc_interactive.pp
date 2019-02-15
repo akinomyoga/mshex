@@ -144,31 +144,30 @@ type -P la &>/dev/null || alias la='ls -la'
 #-------------------------------------------------------------------------------
 # functions
 
-if ((mwg_bash>=40200)); then
-  function d { printf $'%(\e[94m%F (%a) %T %Z\e[m\n\e[32m%x %r\e[m\n%Y%m%d-%H%M%S)T\n\n' -1; cal; }
+if ((mshex_bash>=40200)); then
+  function mshex/alias:date { printf $'%(\e[94m%F (%a) %T %Z\e[m\n\e[32m%x %r\e[m\n%Y%m%d-%H%M%S)T\n\n' -1; cal; }
 else
-  function d { date +$'\e[94m%F (%a) %T %Z\e[m\n%Y%m%d-%H%M%S'; echo; cal; }
+  function mshex/alias:date { date +$'\e[94m%F (%a) %T %Z\e[m\n%Y%m%d-%H%M%S'; echo; cal; }
 fi
-
+alias d=mshex/alias:date
 
 if type source-highlight &>/dev/null; then
-  function v/less-highlight { source-highlight -o STDOUT -f esc256-light_background --style-file=my.style "$@" | less -SRFX; }
+  function mshex/alias:view/less-highlight { source-highlight -o STDOUT -f esc256-light_background --style-file=my.style "$@" | less -SRFX; }
 else
-  function v/less-highlight { less -SRFX; }
+  function mshex/alias:view/less-highlight { less -SRFX; }
 fi
-
-function v {
+function mshex/alias:view {
   if (($#==1)) && [[ ( $1 == *.o || $1 == *.obj || $1 == *.exe ) && -f $1 ]]; then
-    #objdump -CDM intel "$1" | v/less-highlight -s asm
-    objdump -CDM intel "$1" | v/less-highlight --lang-def=$HOME/.mwg/share/mshex/source-highlight/x86.lang
+    #objdump -CDM intel "$1" | mshex/alias:view/less-highlight -s asm
+    objdump -CDM intel "$1" | mshex/alias:view/less-highlight --lang-def=$HOME/.mwg/share/mshex/source-highlight/x86.lang
   fi
 }
+alias v=mshex/alias:view
 
-# alias m=make
-function m/sub:t {
+function mshex/alias:make/sub:t {
   sed -n '/^\.PHONY:/ { s/\.PHONY:[[:space:]]*\|[[:space:]]$//g ; s/[[:space:]]\{1,\}/\n/g ; p }' "$1" | sort -u
 }
-function m {
+function mshex/alias:make {
   local fHere= arg regex
   for arg in "$@"; do
     regex='^(-C|-f)' && [[ $arg =~ $regex ]] && fHere=1
@@ -179,8 +178,8 @@ function m {
       mwg_pp.awk Makefile.pp > Makefile || return
     fi
 
-    if [[ -f Makefile && $1 == ? ]] && declare -f m/"sub:$1" >/dev/null ; then
-      m/"sub:$1" Makefile "${@:2}"
+    if [[ -f Makefile && $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null ; then
+      mshex/alias:make/"sub:$1" Makefile "${@:2}"
     else
       make "$@"
     fi
@@ -188,8 +187,8 @@ function m {
     local dir="${PWD%/}"
     while :; do
       if [[ -f $dir/Makefile ]]; then
-        if [[ $1 == ? ]] && declare -f m/"sub:$1" >/dev/null; then
-          m/"sub:$1" "$dir/Makefile" "${@:2}"
+        if [[ $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
+          mshex/alias:make/"sub:$1" "$dir/Makefile" "${@:2}"
         else
           make -C "${dir:-/}" "$@"
         fi
@@ -198,29 +197,29 @@ function m {
         make "$@"
         return
       else
-        dir="${dir%/*}"
+        dir=${dir%/*}
       fi
     done
   fi
 }
+alias m=mshex/alias:make
 
-function h {
+function mshex/alias:history {
   if (($#)); then
     history "$@"
   else
     history 10 | awk '{printf("!%-3d !%s\n", NR - 11, $0);}'
   fi
 }
+alias h=mshex/alias:history
 
-# alias g=git
-
-function g/apply-commit-time-to-mtime {
+function mshex/alias:git/apply-commit-time-to-mtime {
   # modified version from http://stackoverflow.com/questions/2458042/restore-files-modification-time-in-git
   git log --pretty=%at --name-status |
     perl -ane '($x,$f)=@F;next if !$x;$t=$x,next if !defined($f);next if $s{$f};$s{$f}=utime($t,$t,$f),next if $x=~/[AM]/;'
 }
 
-function g/check-commit-arguments {
+function mshex/alias:git/check-commit-arguments {
   while (($#)); do
     local arg="$1"; shift
     local msg=
@@ -238,7 +237,7 @@ function g/check-commit-arguments {
 
   return
 }
-function g {
+function mshex/alias:git {
   if (($#==0)); then
     ( # printf '\e[1m$ git status\e[m\n'
       git -c color.status=always status || exit
@@ -345,10 +344,10 @@ function g {
           ifold -s -w "$COLUMNS" --indent="$indent"
       fi ;;
 
-    (commit) g/check-commit-arguments && git "$@" ;;
+    (commit) mshex/alias:git/check-commit-arguments && git "$@" ;;
 
     (set-mtime)
-      g/apply-commit-time-to-mtime ;;
+      mshex/alias:git/apply-commit-time-to-mtime ;;
 
     (*) default=1 ;;
     esac
@@ -356,36 +355,41 @@ function g {
     [[ ! $default ]] || git "$@"
   fi
 }
+alias g=mshex/alias:git
 
-function mwg/mkd {
+function mshex/mkd {
   [[ -d "$1" ]] || mkdir -p "$1"
 }
-mwg_tmp="$MWGDIR/tmp"
-mwg/mkd "$mwg_tmp"
+mshex_tmpdir="$MWGDIR/tmp"
+mshex/mkd "$mshex_tmpdir"
 
 # setup DISPLAY
 
-function mwg/display {
-  local fsshtty="$mwg_tmp/SSH_TTY"
+function mshex/display {
+  local fsshtty="$mshex_tmpdir/SSH_TTY"
   if [[ -s $fsshtty ]]; then
     export DISPLAY=$(< "$fsshtty")
   fi
 }
 
-function mwg/display/.save {
+function mshex/display/save {
   if [[ ! $STY && $SSH_TTY && $DISPLAY ]]; then
     if [[ $(tty) == "$SSH_TTY" ]]; then
-      <<< "$DISPLAY" sed 's/^127\.0\.0\.1:/:/;s/^localhost:/:/' > "$mwg_tmp/SSH_TTY"
+      <<< "$DISPLAY" sed 's/^127\.0\.0\.1:/:/;s/^localhost:/:/' > "$mshex_tmpdir/SSH_TTY"
     fi
   fi
 }
 
-function mwg/display/.login {
-  [[ ! $STY && $DISPLAY ]] && mwg/display/.save
-  [[ $STY && ! $DISPLAY ]] && mwg/display
+function mshex/display/.login {
+  [[ ! $STY && $DISPLAY ]] && mshex/display/save
+  [[ $STY && ! $DISPLAY ]] && mshex/display
 }
 
-mwg/display/.login
+mshex/display/.login
+
+# old names
+function mwg/display { mshex/display; }
+function mwg/display/.save { mshex/display/save; }
 
 #------------------------------------------------------------------------------
 #%%if mode=="zsh" (
@@ -440,7 +444,7 @@ if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then
 fi
 #%%elif mode=="bash"
 declare -i _mshex_bindx_count=0
-declare "${_mshex_dict_declare[@]//DICTNAME/mwg_bashrc_bindx_dict}"
+declare "${_mshex_dict_declare[@]//DICTNAME/mshex_bashrc_bindx_dict}"
 
 if ((_ble_bash)); then
   function mshex/util/bind {
@@ -463,18 +467,18 @@ else
         bind -x "$q$seq$q:$cmd"
       fi
     else
-      local id; mshex/dict "id=mwg_bashrc_bindx_dict[$cmd]"
+      local id; mshex/dict "id=mshex_bashrc_bindx_dict[$cmd]"
       if [[ ! $id ]]; then
         ((_mshex_bindx_count++))
         if ((_mshex_bindx_count==10)); then
           ((_mshex_bindx_count++))
         fi
         id=$_mshex_bindx_count
-        mshex/dict "mwg_bashrc_bindx_dict[$cmd]=$id"
+        mshex/dict "mshex_bashrc_bindx_dict[$cmd]=$id"
       fi
 
       local hex seq2
-      if ((mwg_bash>=40100)); then
+      if ((mshex_bash>=40100)); then
         printf -v hex  '\\x%x' "$id"
         printf -v seq2 "\\x1E$hex"
       else

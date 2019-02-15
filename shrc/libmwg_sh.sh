@@ -4,7 +4,7 @@
 # shell functions
 
 # bash-version
-declare -i mwg_bash=$((${BASH_VERSINFO[0]}*10000+${BASH_VERSINFO[1]}*100+${BASH_VERSINFO[2]}))
+mshex_bash=$((${BASH_VERSINFO[0]}*10000+${BASH_VERSINFO[1]}*100+${BASH_VERSINFO[2]}))
 
 function source_if { [[ -e $1 ]] && source "$@" >/dev/null; }
 
@@ -62,7 +62,7 @@ function mwg.PATH.show {
 mwg_String_table_lalpha='abcdefghijklmnopqrstuvwxyz'
 mwg_String_table_ualpha='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 function mwg.String.Uppercase.__get {
-  if ((mwg_bash>=40100)); then
+  if ((mshex_bash>=40100)); then
     return="${*^^?}"
   else
     # return="$(echo -n "$*"|tr a-z A-Z)"
@@ -83,7 +83,7 @@ function mwg.String.Uppercase.__get {
 }
 
 function mwg.String.Lowercase.__get {
-  if ((mwg_bash >=40100)); then
+  if ((mshex_bash >=40100)); then
     return="${*,,?}"
   else
     # return="$(echo -n "$*"|tr a-z A-Z)"
@@ -103,7 +103,7 @@ function mwg.String.Lowercase.__get {
   fi
 }
 
-declare mwg_Char_ToCharCode_table
+mwg_Char_ToCharCode_table=
 function mwg_Char_ToCharCode_table.init {
   local table00=$'\x3f\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f'
   local table01=$'\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f'

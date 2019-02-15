@@ -26,10 +26,10 @@ if [[ $- == *i* ]]; then
     )
   fi
 
-  # #mwg_bashrc_ecl_sock=/tmp/emacs$(id -u)/server
-  # mwg_bashrc_ecl_sock=/tmp/emacs$UID/server
+  # #mshex_bashrc_ecl_sock=/tmp/emacs$(id -u)/server
+  # mshex_bashrc_ecl_sock=/tmp/emacs$UID/server
   # function ecl(){
-  #   if [[ ! -e $mwg_bashrc_ecl_sock ]]; then
+  #   if [[ ! -e $mshex_bashrc_ecl_sock ]]; then
   #     emacs --daemon
   #   fi
   #   emacsclient -nw "$@"
