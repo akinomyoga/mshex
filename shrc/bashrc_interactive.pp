@@ -230,7 +230,7 @@ function mshex/alias:git/check-commit-arguments {
 
     if [[ $msg == COMMIT || $msg != *' '* && -f $msg ]]; then
       #  誤って g commit -F file を g commit -m file とする事が頻発なのでチェックする。
-      echo "mshex/g: The commit message is too simple, and there is a file with that name. Did you mean \`-F $msg' (but not \`-m $msg')?" >&2
+      echo "mshex/alias:g: The commit message is too simple, and there is a file with that name. Did you mean \`-F $msg' (but not \`-m $msg')?" >&2
       return 1
     fi
   done
@@ -246,7 +246,7 @@ function mshex/alias:git {
       printf '\n\e[1m$ git remote\e[m\n'
       git -c color.ui=always remote -v
       printf '\n\e[1m$ git log -n 5\e[m\n'
-      g t -n 5
+      mshex/alias:git t -n 5
     ) | less -FSRX
   else
     local default=
