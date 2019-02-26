@@ -100,6 +100,9 @@ The default color mode is \`${ul}auto${sgr0}'.
         show this help
 
   ${bold}-r, --recursive${sgr0}
+        search files to remove recursively
+  ${bold}-b, --remove-backup${sgr0}
+        remove also backup files
 
   ${bold}-i, --interactive${red}[${sgr39}=always${red}]${sgr0}
         prompt before every removal
@@ -227,6 +230,7 @@ fI=
 fF=
 fV=
 fS=
+fBackup= # remove-backup
 
 fColor=auto
 
@@ -260,6 +264,7 @@ while (($#)); do
   (--color=*)       fColor=${arg#*=}
                     : ${fColor:=always} ;;
   (--list-garbages) subcommand.set list-garbages ;;
+  (--remove-backup) fBackup=1 ;;
   (--*)
     fError=1
     echo "mshex/remove: unrecognized option \`$arg'." >&2 ;;
@@ -273,6 +278,7 @@ while (($#)); do
       (f) fF=1  ;;
       (v) fV=-v ;;
       (s) fS=1  ;;
+      (b) fBackup=1 ;;
       (l) subcommand.set list-garbages ;;
       (*)
         fError=1
@@ -299,6 +305,21 @@ fi
 if ((${#files[@]}==0)); then
   echo "mshex/remove: no files to remove are specified" >&2
   exit 1
+fi
+
+function register_backup_files {
+  local file backup_file backup_files
+  backup_files=()
+  for file in "${files[@]}"; do
+    local backup_file=$file~
+    if [[ -e $file && -f $backup_file ]]; then
+      backup_files[${#backup_files[@]}]=$backup_file
+    fi
+  done
+  files=("${files[@]}" "${backup_files[@]}")
+}
+if [[ $fBackup ]]; then
+  register_backup_files
 fi
 
 function check_files_are_removable_files {
@@ -402,7 +423,7 @@ if [[ $fI == once ]]; then
 fi
 
 function interactive_confirm_file {
-  local file="$1"
+  local file=$1
   [[ ! $fI ]] && return 0
 
   local ft='an unknown-type file'
