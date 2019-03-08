@@ -244,50 +244,57 @@ function subcommand.set {
   fi
 }
 
+fLiteral=
 fError=
 files=()
 
 while (($#)); do
   declare arg=$1 i
   shift
-  case "$arg" in
-  (--help)          subcommand.set help ;;
-  (--recursive)     fR=1 ;;
-  (--force)         fF=1 ;;
-  (--verbose)       fV=1 ;;
-  (--interactive)   fI=always ;;
-  (--interactive=*) fI=${arg#*=}
-                    : ${fI:=always}
-                    [[ $fI == none ]] && fI=
-                    ;;
-  (--color)         fColor=always ;;
-  (--color=*)       fColor=${arg#*=}
-                    : ${fColor:=always} ;;
-  (--list-garbages) subcommand.set list-garbages ;;
-  (--remove-backup) fBackup=1 ;;
-  (--*)
-    fError=1
-    echo "mshex/remove: unrecognized option \`$arg'." >&2 ;;
-  (-?*)
-    for ((i=1;i<${#arg};i++)); do
-      case "${arg:i:1}" in
-      ('?') subcommand.set help ;;
-      (i) fI=always ;;
-      (I) fI=once   ;;
-      (r) fR=1  ;;
-      (f) fF=1  ;;
-      (v) fV=-v ;;
-      (s) fS=1  ;;
-      (b) fBackup=1 ;;
-      (l) subcommand.set list-garbages ;;
-      (*)
-        fError=1
-        echo "mshex/remove: unrecognized option \`-${arg:i:1}'" >&2 ;;
-      esac
-    done ;;
-  (*)
-    files[${#files[@]}]=$arg ;;
-  esac
+
+  if [[ ! $fLiteral ]]; then
+    case "$arg" in
+    (--help)          subcommand.set help; continue ;;
+    (--recursive)     fR=1; continue ;;
+    (--force)         fF=1; continue ;;
+    (--verbose)       fV=1; continue ;;
+    (--interactive)   fI=always; continue ;;
+    (--interactive=*) fI=${arg#*=}
+                      : ${fI:=always}
+                      [[ $fI == none ]] && fI=
+                      continue ;;
+    (--color)         fColor=always; continue ;;
+    (--color=*)       fColor=${arg#*=}
+                      : ${fColor:=always}; continue ;;
+    (--list-garbages) subcommand.set list-garbages; continue ;;
+    (--remove-backup) fBackup=1; continue ;;
+    (--) fLiteral=1; continue ;;
+    (--*)
+      fError=1
+      echo "mshex/remove: unrecognized option \`$arg'." >&2
+      continue ;;
+    (-?*)
+      for ((i=1;i<${#arg};i++)); do
+        case "${arg:i:1}" in
+        ('?') subcommand.set help ;;
+        (i) fI=always ;;
+        (I) fI=once   ;;
+        (r) fR=1  ;;
+        (f) fF=1  ;;
+        (v) fV=-v ;;
+        (s) fS=1  ;;
+        (b) fBackup=1 ;;
+        (l) subcommand.set list-garbages ;;
+        (*)
+          fError=1
+          echo "mshex/remove: unrecognized option \`-${arg:i:1}'" >&2 ;;
+        esac
+      done
+      continue ;;
+    esac
+  fi
+
+  files[${#files[@]}]=$arg
 done
 
 [[ $fError ]] && exit 1
@@ -358,7 +365,7 @@ function check_files_are_on_the_same_disk {
       dffiles[${#dffiles[@]}]=$file
     done
 
-    { df "$dir" "${dffiles[@]}" | awk '
+    { df -- "$dir" "${dffiles[@]}" | awk '
       BEGIN {root_synonym = ENVIRON["root_synonym"];}
       function normalize(path){return path == root_synonym? "/": path;}
       NR==2{mount_point=normalize($NF);next;}
