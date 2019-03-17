@@ -41,7 +41,21 @@ function mshex/less/initialize {
 }
 mshex/less/initialize
 
-function mshex/less {
+function advice:nocasematch-off {
+  local opt_nocasematch=
+  if shopt -q nocasematch &>/dev/null; then
+    opt_nocasematch=1
+    shopt -u nocasematch
+  fi
+
+  "$@"; local ret=$?
+
+  [[ $opt_nocasematch ]] && shopt -s nocasematch
+
+  return "$ret"
+}
+
+function mshex/less.impl {
   local -a files=()
   local -a options=()
   local fREST=
@@ -132,6 +146,10 @@ function mshex/less {
   else
     command less "${options[@]}" "${files[@]}"
   fi
+}
+
+function mshex/less {
+  advice:nocasematch-off mshex/less.impl "$@"
 }
 
 alias less=mshex/less
