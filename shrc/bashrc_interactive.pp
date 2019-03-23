@@ -357,6 +357,23 @@ function mshex/alias:git {
 }
 alias g=mshex/alias:git
 
+function mshex/alias:yes {
+  local opt_help= arg
+  for arg in "$@"; do
+    [[ $arg == --version || $arg == --help ]] || continue
+    opt_help=1
+    break
+  done
+
+  if [[ $opt_help || ! -t 1 ]]; then
+    command yes "$@"
+  else
+    echo "yes: trying to output strings to terminal. canceled." >&2
+    return 1
+  fi
+}
+alias yes=mshex/alias:yes
+
 function mshex/mkd {
   [[ -d "$1" ]] || mkdir -p "$1"
 }
