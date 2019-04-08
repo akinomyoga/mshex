@@ -66,7 +66,8 @@ if [[ $- == *i* ]]; then
   alias cd=mshex/cdhist/cd
 
   function mshex/bashrc/bind-keys {
-    mshex/util/bind M-c    $'\ec'    mshex/cdhist/select
+    mshex/util/bind next   $'\e[6~'  mshex/cdhist/select
+    #mshex/util/bind M-c    $'\ec'    mshex/cdhist/select
     mshex/util/bind M-up   $'\e\e[D' mshex/cdhist/prev
     mshex/util/bind M-down $'\e\e[C' mshex/cdhist/next
     if [[ $TERM == rosaterm || $MWG_LOGINTERM == rosaterm ]]; then

@@ -513,7 +513,7 @@ fi
 function mshex/my-key-bindings {
   mshex/util/bind M-z $'\ez' 'fg'
   # mshex/util/bind M-c $'\ec' 'pushd -0'
-  mshex/util/bind M-l $'\el' l
+  # mshex/util/bind M-l $'\el' l
 
   if ((_ble_bash)); then
     if [[ -o emacs ]]; then
