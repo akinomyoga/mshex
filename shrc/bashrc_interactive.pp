@@ -164,6 +164,37 @@ function mshex/alias:view {
 }
 alias v=mshex/alias:view
 
+function mshex/alias:make/nproc {
+  ret=
+  if [[ -e /proc/cpuinfo ]]; then
+    # /proc/cpuinfo がある時はそれを読む
+    local -a buffer
+    if declare -f ble/util/mapfile &>/dev/null; then
+      ble/util/mapfile buffer < /proc/cpuinfo
+    elif type -t mapfile &>/dev/null; then
+      mapfile buffer < /proc/cpuinfo
+    else
+      buffer=$(< /proc/cpuinfo)
+      IFS=$'\n' eval 'buffer=($buffer)'
+    fi
+    local line count=0
+    for line in "${buffer[@]}"; do
+      [[ $line == 'processor'[$' \t']* ]] || continue
+      ((count++))
+    done
+    ret=$count
+  elif type -t nproc &>/dev/null; then
+    # nproc がある時はそれを実行する
+    if declare -f ble/util/assign &>/dev/null; then
+      ble/util/assign ret nproc
+    else
+      ret=$(nproc)
+    fi 
+  else
+    # 他の時は不明なので 1
+    ret=1
+  fi
+}
 function mshex/alias:make/sub:t {
   sed -n '/^\.PHONY:/ { s/\.PHONY:[[:space:]]*\|[[:space:]]$//g ; s/[[:space:]]\{1,\}/\n/g ; p }' "$1" | sort -u
 }
@@ -173,6 +204,10 @@ function mshex/alias:make {
     regex='^(-C|-f)' && [[ $arg =~ $regex ]] && fHere=1
   done
 
+  local -a make_options=()
+  local ret; mshex/alias:make/nproc; local nproc=$ret
+  mshex/array#push make_options -j $((nproc*3/2))
+
   if [[ $fHere || -f Makefile || -f Makefile.pp ]]; then
     if [[ Makefile -ot Makefile.pp ]]; then
       mwg_pp.awk Makefile.pp > Makefile || return
@@ -181,7 +216,7 @@ function mshex/alias:make {
     if [[ -f Makefile && $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null ; then
       mshex/alias:make/"sub:$1" Makefile "${@:2}"
     else
-      make "$@"
+      make "${make_options[@]}" "$@"
     fi
   else
     local dir="${PWD%/}"
@@ -190,11 +225,11 @@ function mshex/alias:make {
         if [[ $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
           mshex/alias:make/"sub:$1" "$dir/Makefile" "${@:2}"
         else
-          make -C "${dir:-/}" "$@"
+          make "${make_options[@]}" -C "${dir:-/}" "$@"
         fi
         return
       elif [[ $dir != */* ]]; then
-        make "$@"
+        make "${make_options[@]}" "$@"
         return
       else
         dir=${dir%/*}
