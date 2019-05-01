@@ -732,9 +732,10 @@ shopt -s checkwinsize
 shopt -s histappend
 #shopt -s histverify
 shopt -s histreedit
-shopt -s no_empty_cmd_completion
 shopt -u hostcomplete
 shopt -s failglob
+((_ble_bash)) ||
+  shopt -s no_empty_cmd_completion
 
 #%%)
 
