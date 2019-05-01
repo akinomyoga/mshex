@@ -4,7 +4,7 @@
 # TODO: *.tar.xz などのアーカイブファイルを除去する設定
 #
 
-RAR=/unix/koichi/prog/wrar371j/WinRAR
+RAR=$HOME/opt/wrar371j/WinRAR
 
 usage() {
   if [[ ${0:0:1} == '.' ]]; then
