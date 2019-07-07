@@ -53,14 +53,17 @@ grep options
   -C NUMBER
   -U, --binary
   -F. --fixed-strings
+  -i, --ignore-case
 
 findsrc options:
 
   -x, --extension=EXTENSIONS
-  -a
-  -b
+  -a, -A
+  -b, -B
   -t, --type=SRCTYPE
   --exclude=PATTERN
+
+  --excludes-default
 
 EOF
     exit
@@ -70,7 +73,7 @@ EOF
     shift 1 ;;
   (-C?*)
     array#push grep_opts -C "${arg:2}" ;;
-  (-U|--binary|-F|--fixed-strings)
+  (-U|--binary|-F|--fixed-strings|-i|--ignore-case)
     array#push grep_opts "$arg" ;;
   (--color)
     color_option=--color=always ;;
