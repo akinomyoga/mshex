@@ -15,11 +15,11 @@ else
   }
 fi
 
-GetExtension:() {
+function GetExtension: {
   local _slash=/
-  local v="$1"; shift
-  local cand="${1##*.}"
-  if test "$cand" != "$1" -a "${cand/$_slash/}" == "$cand"; then
+  local v=$1; shift
+  local cand=${1##*.}
+  if [[ $cand != "$1" && ${cand/$_slash/} == "$cand" ]]; then
     eval "$v='.${1##*.}'"
   else
     eval "$v=''"
@@ -36,7 +36,7 @@ regexp=
 declare fDefaultExcludes=
 
 while (($#)); do
-  declare arg="$1"
+  declare arg=$1
   shift
   case "$arg" in
   (--help)
@@ -109,9 +109,9 @@ EOF
           continue ;;
         esac
       fi
-      grep_files[${#grep_files[@]}]="$arg"
+      grep_files[${#grep_files[@]}]=$arg
     else
-      regexp="$arg"
+      regexp=$arg
     fi ;;
   esac
 done
@@ -122,7 +122,7 @@ if [[ -z $regexp ]]; then
 fi
 
 if ((${#grep_files[@]}==0)); then
-  grep_files=($(findsrc "${findsrc_args[@]}"))
+  GLOBIGNORE=* IFS=$'\n' eval 'grep_files=($(findsrc "${findsrc_args[@]}"))'
 fi
 
 if ((${#grep_files[@]}>=1)); then
