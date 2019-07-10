@@ -3,13 +3,13 @@
 declare fRecursive=
 
 declare -a files=()
-while test $# -gt 0; do
+while (($#)); do
   case "$1" in
-  -r)
+  (-r)
     # recursive
     fRecursive=1
     ;;
-  (-'?'|--help)
+  ('-?'|--help)
     cat <<EOF
 usage: modmod [files...]
 
@@ -18,36 +18,35 @@ OPTIONS
   -? --help  print help
 
 EOF
-    exit 0
-    ;;
-  -*)
+    exit 0 ;;
+  (-*)
     echo "unknown option '$1'" >&2
-    exit 1
-    ;;
-  *)
-    files+=("$1")
-    ;;
+    exit 1 ;;
+  (*)
+    files+=("$1") ;;
   esac
   shift
 done
 
-if [ "${#files[@]}" -eq 0 ]; then
-  if test -n "$fRecursive"; then
+if ((${#files[@]}==0)); then
+  if [[ $fRecursive ]]; then
     find
   else
+    declare file
     for file in *; do
       echo "$file"
     done
   fi
 else
-  if test -n "$fRecursive"; then
+  if [[ $fRecursive ]]; then
     find "${files[@]}" | sort -u
   else
+    declare file
     for file in "${files[@]}"; do
       echo "$file"
     done
   fi
-fi|awk '
+fi | awk '
   /\.(dll|ocx|so|lib|a|la|exe|bat|com|cmd|sh|awk|ws[hf]|vb[es]|hta|tt[fc])\~?$/{
     # jse?
     print "x" $0;
@@ -72,30 +71,30 @@ fi|awk '
   END{
     print "E";
   }
-'|while read line ; do
+' | while read line ; do
   declare -a file755
   declare -a file644
   
   add_to_755 () {
-    file755[${#file755[*]}]="$1";
+    file755[${#file755[*]}]=$1;
   }
   
   add_to_644 () {
-    file644[${#file644[*]}]="$1";
+    file644[${#file644[*]}]=$1;
   }
 
-  mark="${line:0:1}"
-  file="${line:1}"
-  if [ "$mark" == 'E' ]; then
-    test "${#file755[@]}" -gt 0 && chmod 755 "${file755[@]}" >/dev/null 2>&1
-    test "${#file644[@]}" -gt 0 && chmod 644 "${file644[@]}" >/dev/null 2>&1
-  elif [ "$mark" == 'x' ] || [ -d "$file" ]; then
+  mark=${line::1}
+  file=${line:1}
+  if [[ $mark == E ]]; then
+    ((${#file755[@]})) && chmod 755 "${file755[@]}" >/dev/null 2>&1
+    ((${#file644[@]})) && chmod 644 "${file644[@]}" >/dev/null 2>&1
+  elif [[ $mark == x || -d $file ]]; then
     #echo "755 $line"
     add_to_755 "$file"
-  elif [ "$mark" == 'o' ] && test -f "$file" -o -d "$file"; then
+  elif [[ $mark == o && ( -f $file || -d $file ) ]]; then
     declare permission=$(stat -c %a "$file")
-    if ((permission==0)) || ((permission==777)) && test ! -h "$file"; then
-      if test -d "$file" -o "$(head -c 2 "$file" 2>&1)" == '#!'; then
+    if ((permission==0||permission==777)) && [[ ! -h $file ]]; then
+      if [[ -d $file || $(head -c 2 "$file" 2>&1) == '#!' ]]; then
         add_to_755 "$file"
       else
         add_to_644 "$file"
@@ -111,17 +110,17 @@ exit 0
 #-------------------------------------------------------------------------------
 # old
 if false; then
-  if [ "$1" == '' ]; then
+  if [[ $1 == '' ]]; then
     chmod 644 * >/dev/null 2>&1
     chmod 755 *.{dll,so,lib,a,la,exe,bat,com,sh} >/dev/null 2>&1
     chmod 755 */ >/dev/null 2>&1
   else
-    for file in "$@"; do
+    for file; do
       ext=${file##*.}
       ext_x=$(echo $ext|egrep '^(dll|so|lib|a|la|exe|bat|com|cmd|sh|awk|ws[hf]|jse?|vb[es]|hta)$')
-      if [ -d "$file" ]; then
+      if [[ -d $file ]]; then
         chmod 755 "$file" >/dev/null 2>&1
-      elif [ "$ext" == "$ext_x" ]; then
+      elif [[ $ext == "$ext_x" ]]; then
         chmod 755 "$file" >/dev/null 2>&1
       else
         chmod 644 "$file" >/dev/null 2>&1
