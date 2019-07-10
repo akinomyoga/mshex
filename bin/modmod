@@ -48,7 +48,7 @@ else
     done
   fi
 fi|awk '
-  /\.(dll|so|lib|a|la|exe|bat|com|cmd|sh|awk|ws[hf]|vb[es]|hta|tt[fc])\~?$/{
+  /\.(dll|ocx|so|lib|a|la|exe|bat|com|cmd|sh|awk|ws[hf]|vb[es]|hta|tt[fc])\~?$/{
     # jse?
     print "x" $0;
     next;
