@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if ! type mwgbk &>/dev/null; then
+  echo "hist_uniq: \"mwgbk\" command not found."
+  exit 1
+fi
+
 #------------------------------------------------------------------------------
 # read arguments
 
@@ -52,21 +57,25 @@ fi
 
 umask 066
 
-fnInv="$HOME/hist_uniq.invalid.tmp"
+fnInv=$HOME/hist_uniq.invalid.tmp
 
-tac "$target" | {
+tac "$target" | if [[ ! $check_syntax ]]; then
+  awk '!arr[$0]++'
+else
   declare -A lines
-  declare line
-  while read -r line; do
-    test -n "${lines[x$line]}" && continue
+  declare line=
+  declare count=0
+  while read -r line || [[ $line ]]; do
+    [[ ${lines[x$line]} ]] && continue
     lines["x$line"]=1
-    if [[ $check_syntax ]] && ! echo "$line" | bash -n &>/dev/null; then
+    if ! bash -n &>/dev/null <<< "$line"; then
       echo "$line" >> "$fnInv"
       continue
     fi
+    ((++count%37==0)) && [[ -t 2 ]] && echo -n "hist_uniq: processed $count..." >&2
     echo "$line"
   done
-} | tac | grep -v '^#' > "$HOME/1.tmp"
+fi | tac | grep -v '^#' > "$HOME/1.tmp"
 
 mwgbk -m "$target" && mv "$HOME/1.tmp" "$target"
 
