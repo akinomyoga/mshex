@@ -37,12 +37,13 @@ declare fDefaultExcludes=
 
 optflags=
 
-while (($#)); do
-  declare arg=$1
-  shift
-  case "$arg" in
-  (--help)
-    cat <<EOF
+function process-arguments {
+  while (($#)); do
+    local arg=$1
+    shift
+    case "$arg" in
+    (--help)
+      cat <<EOF
 usage: grc [options] pattern [files...]
 
 options
@@ -70,57 +71,59 @@ findsrc options:
   --excludes-default
 
 EOF
-    exit
-    ;;
-  (-C)
-    array#push grep_opts -C "$1"
-    shift 1 ;;
-  (-C?*)
-    array#push grep_opts -C "${arg:2}" ;;
-  (-U|--binary|-F|--fixed-strings|-i|--ignore-case)
-    array#push grep_opts "$arg" ;;
-  (--color)
-    color_option=--color=always ;;
-  (-o|--only-matching) optflags=o$optflags ;;
-  (-h|--no-filename) optflags=h$optflags ;;
-  (-x)
-    array#push findsrc_args "$arg" "$1"
-    shift 1 ;;
-  (-[abAB]|--exclude=*|--type=*|--exntesion=*)
-    array#push findsrc_args "$arg" ;;
-  (-t) # findsrc type
-    array#push findsrc_args "$arg" "$1"
-    shift 1 ;;
-  (-t*) # findsrc type
-    array#push findsrc_args -t "${arg:2}" ;;
-  (-*)
-    echo "$0: unknown option ($arg)" >&2
-    exit 1 ;;
-  ('')
-    echo "$0: empty argument is invalid" >&2
-    exit 1 ;;
-  (--excludes-default)
-    fDefaultExcludes=1 ;;
-  (*)
-    if [[ $regexp ]]; then
-      if [[ $fDefaultExcludes ]]; then
-        [[ $arg == *'~' ]] && continue
+      exit
+      ;;
+    (-C)
+      array#push grep_opts -C "$1"
+      shift 1 ;;
+    (-C?*)
+      array#push grep_opts -C "${arg:2}" ;;
+    (-U|--binary|-F|--fixed-strings|-i|--ignore-case)
+      array#push grep_opts "$arg" ;;
+    (--color)
+      color_option=--color=always ;;
+    (-o|--only-matching) optflags=o$optflags ;;
+    (-h|--no-filename) optflags=h$optflags ;;
+    (-x)
+      array#push findsrc_args "$arg" "$1"
+      shift 1 ;;
+    (-[abAB]|--exclude=*|--type=*|--exntesion=*)
+      array#push findsrc_args "$arg" ;;
+    (-t) # findsrc type
+      array#push findsrc_args "$arg" "$1"
+      shift 1 ;;
+    (-t*) # findsrc type
+      array#push findsrc_args -t "${arg:2}" ;;
+    (-*)
+      echo "$0: unknown option ($arg)" >&2
+      exit 1 ;;
+    ('')
+      echo "$0: empty argument is invalid" >&2
+      exit 1 ;;
+    (--excludes-default)
+      fDefaultExcludes=1 ;;
+    (*)
+      if [[ $regexp ]]; then
+        if [[ $fDefaultExcludes ]]; then
+          [[ $arg == *'~' ]] && continue
 
-        declare ext
-        GetExtension: ext "$arg"
-        case "$ext" in
-        (.c|.cpp|.cc|.C|.cxx|.h|.hpp|.hxx|.hh|.inl) ;;
-        (.js|.ctx|.css) ;;
-        (*)
-          continue ;;
-        esac
-      fi
-      grep_files[${#grep_files[@]}]=$arg
-    else
-      regexp=$arg
-    fi ;;
-  esac
-done
+          local ext
+          GetExtension: ext "$arg"
+          case "$ext" in
+          (.c|.cpp|.cc|.C|.cxx|.h|.hpp|.hxx|.hh|.inl) ;;
+          (.js|.ctx|.css) ;;
+          (*)
+            continue ;;
+          esac
+        fi
+        grep_files[${#grep_files[@]}]=$arg
+      else
+        regexp=$arg
+      fi ;;
+    esac
+  done
+}
+process-arguments "$@"
 
 if [[ -z $regexp ]]; then
   echo "$0: pattern is not specified!" >&2
