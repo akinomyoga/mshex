@@ -35,6 +35,8 @@ regexp=
 
 declare fDefaultExcludes=
 
+optflags=
+
 while (($#)); do
   declare arg=$1
   shift
@@ -52,8 +54,10 @@ grep options
   --color
   -C NUMBER
   -U, --binary
-  -F. --fixed-strings
+  -F, --fixed-strings
   -i, --ignore-case
+  -o, --only-matching
+  -h, --no-filename
 
 findsrc options:
 
@@ -77,6 +81,8 @@ EOF
     array#push grep_opts "$arg" ;;
   (--color)
     color_option=--color=always ;;
+  (-o|--only-matching) optflags=o$optflags ;;
+  (-h|--no-filename) optflags=h$optflags ;;
   (-x)
     array#push findsrc_args "$arg" "$1"
     shift 1 ;;
@@ -126,5 +132,9 @@ if ((${#grep_files[@]}==0)); then
 fi
 
 if ((${#grep_files[@]}>=1)); then
-  grep -E $color_option -n -H "${grep_opts[@]}" "$regexp" "${grep_files[@]}"
+  [[ $optflags == *o* ]] && array#push grep_opts -o
+  [[ $optflags == *h* ]] && array#push grep_opts -h
+  [[ $optflags == *n* || $optflags != *[ho]* ]] && array#push grep_opts -n
+  [[ $optflags != *[ho]* ]] && array#push grep_opts -H
+  grep -E $color_option "${grep_opts[@]}" "$regexp" "${grep_files[@]}"
 fi
