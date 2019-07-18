@@ -15,6 +15,13 @@ else
   }
 fi
 
+function string#split {
+  set -f
+  IFS=$2 builtin eval "$1=(\${*:3}\$2)"
+  set +f
+}
+
+
 function GetExtension: {
   local _slash=/
   local v=$1; shift
@@ -59,6 +66,7 @@ grep options
   -i, --ignore-case
   -o, --only-matching
   -h, --no-filename
+  -Wg OPTIONS
 
 findsrc options:
 
@@ -80,6 +88,17 @@ EOF
       array#push grep_opts -C "${arg:2}" ;;
     (-U|--binary|-F|--fixed-strings|-i|--ignore-case)
       array#push grep_opts "$arg" ;;
+    (-Wg*)
+      local oparg=${arg#-Wg} args=
+      if [[ $oparg ]]; then
+        oparg=${oparg#,}
+      else
+        oparg=$1
+        shift 1
+      fi
+      string#split args , "$oparg"
+      array#push grep_opts "${args[@]}" ;;
+
     (--color)
       color_option=--color=always ;;
     (-o|--only-matching) optflags=o$optflags ;;
