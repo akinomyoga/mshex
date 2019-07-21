@@ -47,18 +47,18 @@ else
     done
   fi
 fi | awk '
-  /\.(dll|ocx|so|lib|a|la|exe|bat|com|cmd|sh|awk|ws[hf]|vb[es]|hta|tt[fc])\~?$/{
+  /\.(dll|ocx|so|lib|a|la|exe|bat|com|cmd|sh|awk|ws[hf]|vb[es]|hta|tt[fc])~?$/ {
     # jse?
     print "x" $0;
     next;
   }
 
-  /^a,out$/{
+  /^a,out$/ {
     print "x" $0;
     next;
   }
 
-  /^(.*\/)?[^./]+$/{
+  /^(.*\/)?[^./]+$/ {
     print "o" $0;
     next;
   }
@@ -68,7 +68,7 @@ fi | awk '
     next;
   }
 
-  END{
+  END {
     print "E";
   }
 ' | while read line ; do
