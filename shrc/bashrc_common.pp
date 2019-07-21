@@ -77,11 +77,7 @@ if [[ $- == *i* ]]; then
       mshex/util/bind 'C-+' $'\e[43;5^' mshex/cdhist/next # C-+
     fi
   }
-  if ((_ble_bash)); then
-    ble/array#push _ble_keymap_default_load_hook mshex/bashrc/bind-keys
-  else
-    mshex/bashrc/bind-keys
-  fi
+  mshex/util/eval-after-load mshex/bashrc/bind-keys
 
   # - () { mshex/cdhist/prev; }
   # + () { mshex/cdhist/next; }

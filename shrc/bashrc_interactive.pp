@@ -620,11 +620,19 @@ function mshex/my-key-bindings {
   fi
 }
 
-if ((_ble_bash)); then
-  ble/array#push _ble_keymap_default_load_hook mshex/my-key-bindings
-else
-  mshex/my-key-bindings
-fi
+function mshex/util/eval-after-load {
+  local function_name=$1
+  if ((_ble_bash)); then
+    if ((_ble_version>=400)); then
+      blehook/eval-after-load keymap "$function_name"
+    else
+      ble/array#push _ble_keymap_load_hook "$function_name"
+    fi
+  else
+    "$function_name"
+  fi
+}
+mshex/util/eval-after-load mshex/my-key-bindings
 
 #%%)
 
