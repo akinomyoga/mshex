@@ -5,7 +5,7 @@
 dir=$HOME/.recycle
 
 : ${VISUAL:=less}
-[[ ${VISUAL##*/} == less ]] && VISUAL=("$VISUAL" -XSF)
+[[ ${VISUAL##*/} == less ]] && VISUAL=("$VISUAL" -XSFr)
 
 #------------------------------------------------------------------------------
 # utils
@@ -422,7 +422,12 @@ mkd "$destination"
 if [[ $fI == once ]]; then
   {
     echo '-- filelist --'
-    find -- "${files[@]%/}"
+    if type colored &>/dev/null; then
+      colored ls -ld "${files[@]%/}"
+    else
+      #find -- "${files[@]%/}"
+      ls -ld "${files[@]%/}"
+    fi
   } | "${VISUAL[@]}"
 
   mshex.yn -n "mshex/remove: remove the above files?" || exit 2
