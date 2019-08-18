@@ -4,7 +4,14 @@
 # TODO: *.tar.xz などのアーカイブファイルを除去する設定
 #
 
-RAR=$HOME/opt/wrar371j/WinRAR
+function has-command { type "$1" &>/dev/null; }
+
+RAR=
+if [[ -x $HOME/opt/wrar371j/WinRAR ]]; then
+  RAR=$HOME/opt/wrar371j/WinRAR
+elif has-command rar; then
+  RAR=rar
+fi
 
 usage() {
   if [[ ${0:0:1} == '.' ]]; then
@@ -38,7 +45,7 @@ if [[ -e $dst ]]; then
   exit 1
 fi
 
-if [[ -x $RAR ]]; then
+if [[ $RAR ]]; then
   case "$dst" in
   (*.exe)
     if [[ -d $src ]]; then
@@ -57,26 +64,35 @@ if [[ -x $RAR ]]; then
   esac
 fi
 
-if type tar &>/dev/null; then
+if has-command tar; then
   case "$dst" in
-  (*.lzma|*.tlz)
-    tar --lzma -cvf "$dst" "$src"
-    exit ;;
-  (*.bz2|*.tbz)
+  (*.tar.lzma|*.tlz)
+    if has-command lzma; then
+      tar --lzma -cvf "$dst" "$src"
+      exit
+    fi ;;
+  (*.tar.bz2|*.tbz)
     tar cjvf "$dst" "$src"
     exit ;;
-  (*.gz|*.tgz)
+  (*.tar.gz|*.tgz)
     tar czvf "$dst" "$src"
     exit ;;
-  (*.xz|*.txz)
-    #tar cvf - "$src" | xz -7 > "$dst"
-    tar --xz -cvf "$@"
-    exit ;;
+  (*.tar.xz|*.txz)
+    if has-command xz; then
+      #tar cvf - "$src" | xz -7 > "$dst"
+      tar --xz -cvf "$@"
+      exit
+    fi ;;
+  (*.tar.Z|*.taz)
+    if has-command compress; then
+      tar cZvf "$dst" "$src"
+      exit
+    fi ;;
   esac
 fi
 
 if [[ $dst == *.zip ]]; then
-  if type zip &>/dev/null; then
+  if has-command zip; then
     if [[ -d $src ]]; then
       cd "$src"
       [[ $dst != /* ]] && dst=../$dst
@@ -89,7 +105,7 @@ if [[ $dst == *.zip ]]; then
 fi
 
 if [[ $dst == *.lzh ]]; then
-  if type lha &>/dev/null; then
+  if has-command lha; then
     if [[ -d $src ]]; then
       cd "$src"
       [[ $dst != /* ]] && dst=../$dst
