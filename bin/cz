@@ -1,7 +1,19 @@
 #!/bin/bash
 
-function openssl/encrypt { openssl enc -e -des3 -md md5 "${@:3}" -in "$1" -out "$2"; }
-function openssl/decrypt { openssl enc -d -des3 -md md5 "${@:3}" -in "$1" -out "$2"; }
+function openssl/encrypt {
+  if [[ $2 == *.cz ]]; then
+    openssl enc -e -des3 -md md5 "${@:3}" -in "$1" -out "$2"
+  else
+    openssl enc -e -aes-256-cbc -md sha512 -pbkdf2 -iter 1000 -salt "${@:3}" -in "$1" -out "$2"
+  fi
+}
+function openssl/decrypt {
+  if [[ $1 == *.cz ]]; then
+    openssl enc -d -des3 -md md5 "${@:3}" -in "$1" -out "$2"
+  else
+    openssl enc -d -aes-256-cbc -md sha512 -pbkdf2 -iter 1000 -salt "${@:3}" -in "$1" -out "$2"
+  fi
+}
 
 function rmbk {
   local file=$1
@@ -16,56 +28,15 @@ function rmbk {
   mv "$file" "$out$ext"
 }
 
-input_filename=
-fRemoveBackup=1
-flag_edit=
-function read_arguments {
-  local flag_error=
-  while (($#)); do
-    local arg=$1; shift
-    case "$arg" in
-    (--edit) flag_edit=1 ;;
-    (-b)
-      # don't remove the backup file
-      fRemoveBackup=
-      ;;
-    (-*)
-      flag_error=1
-      echo "cz: unknown option $arg" >&2 ;;
-    ('')
-      flag_error=1
-      echo "cz: an empty argument is specified" >&2 ;;
-    (*)
-      if [[ $input_filename ]]; then
-        flag_error=1
-        echo "cz: input filename is already specified" >&2
-        continue
-      fi
-
-      input_filename=$arg
-      if [[ ! -f $input_filename ]]; then
-        flag_error=1
-        echo "cz: the file \"$input_filename\" does not exist!" >&2
-        continue
-      fi ;;
-    esac
-  done
-
-  if [[ ! $input_filename ]]; then
-    flag_error=1
-    echo "inputfile is not specified!" >&2
+function cz/edit {
+  local in=$1 opts=$2
+  if [[ $1 != *.cz && $1 != *.cz2 ]]; then
+    echo 'cz: the input file for --edit should be *.cz or *.cz2.' >&2
+    return 2
   fi
+  local tmp=${1%.*} out=${1%.*}.cz2
 
-  [[ ! $flag_error ]]
-}
-
-read_arguments "$@" || exit 1
-
-function command:edit {
-  local tmp=${input_filename%.cz}
-  local in=$tmp.cz
   local p=
-
   if [[ -e $in ]]; then
     if [[ -e $tmp && -s $tmp ]]; then
       echo "cz: the file \"$tmp\" already exists." >&2
@@ -102,66 +73,118 @@ function command:edit {
   fi
 
   # 暗号化
-  if ! xz -c "$tmp" | openssl/encrypt /dev/stdin "$in" ${p:+-pass pass:"$p"}; then
+  if ! xz -c "$tmp" | openssl/encrypt /dev/stdin "$out" ${p:+-pass pass:"$p"}; then
     echo "cz: failed to encrypt the file \"$tmp\"!" >&2
     return 2
-  elif [[ ! -s $in ]]; then
+  elif [[ ! -s $out ]]; then
     echo "cz: failed to encrypt the file \"$tmp\"!" >&2
     return 2
   fi
 
   /bin/rm -f "$tmp"
-  if [[ $fRemoveBackup && -f $tmp~ ]]; then
+  if [[ :$opts: == *:remove-backup:* && -f $tmp~ ]]; then
     /bin/rm -f "$tmp~"
   fi
 
   return 0
 }
 
-if [[ $flag_edit ]]; then
-  command:edit
-elif [[ $input_filename == *.cz ]]; then
-  in=$input_filename
-  out=${input_filename%.cz}
+function cz/encrypt1 {
+  local in=$1 out=$2
 
   if [[ -e $out ]]; then
     echo "output file already exists!" >&2
-    exit 1
-  fi
-
-  if ! openssl/encrypt "$in" /dev/stdout | xz -d - > "$out"; then
-    echo 'failed to decrypt!' >&2
-    /bin/rm "$out"
-    exit 1
-  fi
-
-  if [[ ! -s $out ]]; then
-    echo 'failed to decrypt!' >&2
-    exit 1
-  fi
-
-  rmbk "$in"
-else
-  in=$input_filename
-  out=$input_filename.cz
-
-  if [[ -e $out ]]; then
-    echo "output file already exists!" >&2
-    exit 1
+    return 1
   fi
 
   if ! xz -c "$in" | openssl/encrypt /dev/stdin "$out"; then
     echo 'failed to encrypt!' >&2
-    exit 1
+    return 1
   fi
 
   if [[ ! -s $out ]]; then
     echo 'failed to encrypt!' >&2
-    exit 1
+    return 1
   fi
 
   /bin/rm -f "$in"
-  if [[ $fRemoveBackup && -f $in~ ]]; then
+  if [[ :$arg_opts: == *:remove-backup:* && -f $in~ ]]; then
     /bin/rm -f "$in~"
   fi
+  return 0
+}
+
+function cz/decrypt1 {
+  local in=$1 out=$2
+
+  if [[ -e $out ]]; then
+    echo "output file already exists!" >&2
+    return 1
+  fi
+
+  if ! openssl/decrypt "$in" /dev/stdout | xz -d - > "$out"; then
+    echo 'failed to decrypt!' >&2
+    /bin/rm "$out"
+    return 1
+  fi
+
+  if [[ ! -s $out ]]; then
+    echo 'failed to decrypt!' >&2
+    return 1
+  fi
+
+  rmbk "$in"
+  return 0
+}
+
+arg_opts=
+flag_edit=
+input_filename=
+function read_arguments {
+  local flag_error=
+  while (($#)); do
+    local arg=$1; shift
+    case "$arg" in
+    (--edit) flag_edit=1 ;;
+    (-b)
+      # don't remove the backup file
+      arg_opts=$arg_opts:remove-backup ;;
+    (-*)
+      flag_error=1
+      echo "cz: unknown option $arg" >&2 ;;
+    ('')
+      flag_error=1
+      echo "cz: an empty argument is specified" >&2 ;;
+    (*)
+      if [[ $input_filename ]]; then
+        flag_error=1
+        echo "cz: input filename is already specified" >&2
+        continue
+      fi
+
+      input_filename=$arg
+      if [[ ! -f $input_filename ]]; then
+        flag_error=1
+        echo "cz: the file \"$input_filename\" does not exist!" >&2
+        continue
+      fi ;;
+    esac
+  done
+
+  if [[ ! $input_filename ]]; then
+    flag_error=1
+    echo "inputfile is not specified!" >&2
+  fi
+
+  [[ ! $flag_error ]]
+}
+
+read_arguments "$@" || exit 1
+
+if [[ $flag_edit ]]; then
+  cz/edit "$input_filename" "$arg_opts"
+elif [[ $input_filename == *.cz || $input_filename == *.cz2 ]]; then
+  cz/decrypt1 "$input_filename" "${input_filename%.*}"
+else
+  cz/encrypt1 "$input_filename" "$input_filename.cz2"
 fi

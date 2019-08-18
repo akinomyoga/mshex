@@ -1,9 +1,12 @@
 #!/bin/bash
 
-function openssl/decrypt { openssl enc -d -des3 -md md5 "${@:3}" -in "$1" -out "$2"; }
-
-#data="$(openssl/decrypt "$1" /dev/stdout)"
-#echo "$data" | less
+function openssl/decrypt {
+  if [[ $1 == *.cz ]]; then
+    openssl enc -d -des3 -md md5 "${@:3}" -in "$1" -out "$2"
+  else
+    openssl enc -d -aes-256-cbc -md sha512 -pbkdf2 -iter 1000 -salt "${@:3}" -in "$1" -out "$2"
+  fi
+}
 
 # openssl/decrypt "$1" .tmp
 # xzless .tmp

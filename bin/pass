@@ -1,7 +1,5 @@
 #!/bin/bash
 
-dir=~/.ssh
-
 function print-help {
   printf '%s\n' \
          'usage: pass [options]' \
@@ -12,12 +10,17 @@ function print-help {
          ''
 }
 
+dir=~/.ssh
+filename=$dir/passwd.cz2
+[[ ! -f $filename && -f $dir/passwd.cz ]] &&
+  filename=$dir/passwd.cz
+
 if (($#==0)); then
-  czless --passwd "$dir"/passwd.cz
+  czless --passwd "$filename"
 elif (($#==1)); then
   case $1 in
   (edit|--edit)
-    cz --edit "$dir"/passwd.cz ;;
+    cz --edit "$filename" ;;
   (--help)
     print-help ;;
   (*)
