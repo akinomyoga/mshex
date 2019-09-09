@@ -184,14 +184,14 @@ function mshex/cdhist/cd {
     (-*)
       mshex/array#push args "$1" ;;
     (*)
-      : ${dst:="$1"}
+      [[ $dst ]] || dist=$1
       mshex/array#push args "$1" ;;
     esac
     shift
   done
 
   if [[ $fForce ]]; then
-    : ${dst:="$HOME"}
+    [[ $dst ]] || dst=$HOME
     [[ -e $dst ]] || mkdir -p "$dst"
   fi
 
