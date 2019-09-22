@@ -307,11 +307,13 @@ function mshex/alias:git {
       fi ;;
 
     (dist)
-      local name="${PWD##*/}"
-      [[ -d dist ]] || mkdir -p dist
-      local archive="dist/$name-$(date +%Y%m%d).tar.xz"
-      git archive --format=tar --prefix="./$name/" HEAD | xz > "$archive"
-      ;;
+      (
+        cd "$(git rev-parse --show-toplevel)"
+        local name=${PWD##*/}
+        [[ -d dist ]] || mkdir -p dist
+        local archive="dist/$name-$(date +%Y%m%d).tar.xz"
+        git archive --format=tar --prefix="./$name/" HEAD | xz > "$archive"
+      ) ;;
 
     # diff
     (d*)
