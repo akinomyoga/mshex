@@ -46,13 +46,21 @@ if [[ $- == *i* ]]; then
   # --action=runas from http://inaz2.hatenablog.com/entry/2015/11/12/233356
   _mshex_cygwin_sudo_bash=$(cygpath -w /bin/bash)
   function sudo {
-    if (($#==0)); then
-      /usr/bin/cygstart --action=runas cmd /C "$_mshex_cygwin_sudo_bash" --login
+    if grep -Eq '^[[:space:]]*Host[[:space:]]+localhost([[:space:]]|$)' ~/.ssh/config; then
+      if (($#==0)); then
+        ssh localhost
+      else
+        ssh localhost "$*"
+      fi
     else
-      local script=/tmp/$$.sudo.sh
-      { [[ ! -e $script ]] || /bin/rm "$script"; } &&
-        (umask 077; printf '%q ' "$@" > "$script") &&
-        /usr/bin/cygstart --action=runas cmd /C "$_mshex_cygwin_sudo_bash --login $script & pause"
+      if (($#==0)); then
+        /usr/bin/cygstart --action=runas cmd /C "$_mshex_cygwin_sudo_bash" --login
+      else
+        local script=/tmp/$$.sudo.sh
+        { [[ ! -e $script ]] || /bin/rm "$script"; } &&
+          (umask 077; printf '%q ' "$@" > "$script") &&
+          /usr/bin/cygstart --action=runas cmd /C "$_mshex_cygwin_sudo_bash --login $script & pause"
+      fi
     fi
   }
 
