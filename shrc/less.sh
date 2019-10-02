@@ -138,10 +138,10 @@ function mshex/less.impl {
 
     if ((${#files[@]}==1)); then
       mshex/array#push hiliteopts -i "${files[0]}"
-      { mshex/less/source-highlight "${hiliteopts[@]}" || cat "${files[@]}"; } | command less -R "${options[@]}"
+      { mshex/less/source-highlight "${hiliteopts[@]}" || cat "${files[@]}"; } | command less -r "${options[@]}"
     else
       [[ $fFileTypeSet ]] || mshex/array#push hiliteopts -s "${files[0]%%*.}"
-      cat -- "${files[@]}" | { mshex/less/source-highlight "${hiliteopts[@]}" || cat -- "${files[@]}"; } | command less -R "${options[@]}"
+      cat -- "${files[@]}" | { mshex/less/source-highlight "${hiliteopts[@]}" || cat -- "${files[@]}"; } | command less -r "${options[@]}"
     fi
   else
     command less "${options[@]}" "${files[@]}"
