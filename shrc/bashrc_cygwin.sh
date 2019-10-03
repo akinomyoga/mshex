@@ -47,10 +47,11 @@ if [[ $- == *i* ]]; then
   _mshex_cygwin_sudo_bash=$(cygpath -w /bin/bash)
   function sudo {
     if grep -Eq '^[[:space:]]*Host[[:space:]]+localhost([[:space:]]|$)' ~/.ssh/config; then
+      local q=\' Q="'\''"
       if (($#==0)); then
-        ssh localhost
+        ssh -tq localhost "cd '${PWD//$q/$Q}'; exec bash -i"
       else
-        ssh localhost "$*"
+        ssh -tq localhost "cd '${PWD//$q/$Q}'; $*"
       fi
     else
       if (($#==0)); then
