@@ -210,11 +210,11 @@ function mshex/alias:make {
 
   if [[ $fHere || -f Makefile || -f Makefile.pp ]]; then
     if [[ Makefile -ot Makefile.pp ]]; then
-      if ! type mwg_pp.awk &>/dev/null; then
+      if type mwg_pp.awk &>/dev/null; then
+        mwg_pp.awk Makefile.pp > Makefile || return
+      else
         echo 'Makefile.pp: mwg_pp.awk is not found' &>/dev/null
-        return 1
       fi
-      mwg_pp.awk Makefile.pp > Makefile || return
     fi
 
     if [[ -f Makefile && $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null ; then
@@ -223,7 +223,7 @@ function mshex/alias:make {
       make "${make_options[@]}" "$@"
     fi
   else
-    local dir="${PWD%/}"
+    local dir=${PWD%/}
     while :; do
       if [[ -f $dir/Makefile ]]; then
         if [[ $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
