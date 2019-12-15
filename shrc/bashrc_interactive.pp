@@ -62,8 +62,8 @@ alias scp='scp -p'
 alias cp='cp -ia'
 alias mv='mv -i'
 alias rm='rm -i'
-alias rmi='remove'
 alias grep='grep --color=auto'
+function rmgomi { rm -rf gomi; }
 
 alias s='stty echo -nl'
 
