@@ -242,6 +242,7 @@ function mshex/alias:make {
   fi
 }
 alias m=mshex/alias:make
+function ble/cmdinfo/complete:m { ble/complete/progcomp make; }
 
 function mshex/alias:history {
   if (($#)); then
@@ -397,6 +398,7 @@ function mshex/alias:git {
   fi
 }
 alias g=mshex/alias:git
+function ble/cmdinfo/complete:g { ble/complete/progcomp git; }
 
 function mshex/alias:yes {
   local opt_help= arg
