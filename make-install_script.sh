@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function make:copy {
   local flag_script=
@@ -31,14 +31,14 @@ function make:copy {
       fi
       
       if [[ $bash_path ]]; then
-        sedrules=$sedrules'1{s:/bin/bash:'${bash_path//:/$ascii_bs:}':}'$ascii_nl
+        sedrules=$sedrules'1{s:/bin/bash:'${bash_path//:/$ascii_bs:}':;}'$ascii_nl
       fi
     fi
   fi
 
   [[ -h $dst ]] && rm -f "$dst"
   if [[ $sedrules ]]; then
-    sed '1{s:/bin/bash:'"${bash_path//:/\\:}"':}' "$src" > "$dst"
+    sed '1{s:/bin/bash:'"${bash_path//:/\\:}"':;}' "$src" > "$dst"
 
     # ToDo: touch -r reference file に対応していない場合もある
     touch -r "$src" "$dst" 2>/dev/null
@@ -51,13 +51,15 @@ function make:copy {
 
 function make:initialize-source-highlight {
   local target_dir=$1
-  [[ -d /usr/share/source-highlight ]] || return
+  local source_dir=/usr/share/source-highlight
+  [[ -d $source_dir ]] || source_dir=/usr/local/share/source-highlight
+  [[ -d $source_dir ]] || return
 
   [[ -e $target_dir ]] && rm -rf "$target_dir"
   mkdir "$target_dir"
 
   # create links
-  ln -s /usr/share/source-highlight "$target_dir"/base
+  ln -s "$source_dir" "$target_dir"/base
   local -a files=()
   for file in "$target_dir"/base/*; do
     files[${#files[@]}]=${file#$target_dir/}

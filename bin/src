@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function dispatch:find { findsrc "$@"; }
 function dispatch:wc   { wc $(findsrc "$@"); }

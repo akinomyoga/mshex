@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function impl {
   # これは crun とは別にした方が良いのでは?

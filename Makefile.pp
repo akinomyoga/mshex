@@ -5,7 +5,7 @@
 #   参考: [[とあるエンジニアの備忘log: make の -C オプションについて>http://masahir0y.blogspot.jp/2012/06/make-c.html]]
 
 MWGDIR:=$(HOME)/.mwg
-MWGPP:=$(CURDIR)/ext/mwg_pp.awk
+MWGPP:=gawk -f $(CURDIR)/ext/mwg_pp.awk
 
 all: compile
 .PHONY: all install dist compile

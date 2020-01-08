@@ -124,12 +124,16 @@ else
 fi
 
 if type -t colored &>/dev/null; then
-  alias ls='colored ls --show-control-chars'
+  if [[ $OSTYPE == freebsd* || $OSTYPE == darwin* || $OSTYPE == bsd* ]]; then
+    alias ls='colored ls'
+  else
+    alias ls='colored ls --show-control-chars'
+  fi
 elif [[ $OSTYPE == cygwin || $OSTYPE == msys* ]]; then
   alias ls='ls --color=auto --show-control-chars'
 elif [[ $OSTYPE == linux-gnu ]]; then
   alias ls='ls --color=auto'
-elif [[ $OSTYPE == darwin* || $OSTYPE == freebsd* ]]; then
+elif [[ $OSTYPE == darwin* || $OSTYPE == freebsd*|| $OSTYPE == bsd* ]]; then
   alias ls='ls -G'
 fi
 
@@ -204,6 +208,8 @@ function mshex/alias:make {
     regex='^(-C|-f)' && [[ $arg =~ $regex ]] && fHere=1
   done
 
+  local make=make
+  type gmake &>/dev/null && make=gmake
   local -a make_options=()
   local ret; mshex/alias:make/nproc; local nproc=$ret
   mshex/array#push make_options -j $((nproc*3/2))
@@ -220,7 +226,7 @@ function mshex/alias:make {
     if [[ -f Makefile && $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null ; then
       mshex/alias:make/"sub:$1" Makefile "${@:2}"
     else
-      make "${make_options[@]}" "$@"
+      "$make" "${make_options[@]}" "$@"
     fi
   else
     local dir=${PWD%/}
@@ -229,11 +235,11 @@ function mshex/alias:make {
         if [[ $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
           mshex/alias:make/"sub:$1" "$dir/Makefile" "${@:2}"
         else
-          make "${make_options[@]}" -C "${dir:-/}" "$@"
+          "$make" "${make_options[@]}" -C "${dir:-/}" "$@"
         fi
         return
       elif [[ $dir != */* ]]; then
-        make "${make_options[@]}" "$@"
+        "$make" "${make_options[@]}" "$@"
         return
       else
         dir=${dir%/*}

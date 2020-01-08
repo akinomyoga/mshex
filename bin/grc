@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 _ble_bash=$((BASH_VERSINFO[0]*10000+BASH_VERSINFO[1]*100+BASH_VERSINFO[2]))
 if ((_ble_bash>=30100)); then
-  function array#push { eval "$1+=(\"\${@:2}\")"; }
+  function array#push { IFS=' ' eval "$1+=(\"\${@:2}\")"; }
 else
   function array#push/impl {
     eval "$1[\${#$1[@]}]=\"\$2\""

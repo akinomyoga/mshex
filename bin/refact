@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function mshex.yn {
   local prompt_yn='yes/no'

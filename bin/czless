@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function openssl/decrypt {
   if [[ $1 == *.cz ]]; then
