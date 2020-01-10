@@ -267,6 +267,6 @@ else
   else
     ble/array#push find_options -regextype posix-extended
   fi
-  find "${find_options[@]}" . -type f -and -regex "$rex_find" | \grep -Ev "$rex_grep" | sort
+  find . "${find_options[@]}" -type f -and -regex "$rex_find" | \grep -Ev "$rex_grep" | sort
   # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+' | sort
 fi
