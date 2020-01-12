@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function dispatch:find { findsrc "$@"; }
-function dispatch:wc   { wc $(findsrc "$@"); }
+function dispatch:wc   { findsrc "$@" | xargs wc; }
 function dispatch:grep { grc "$@"; }
 function dispatch:--help {
   echo src subcommand arguments

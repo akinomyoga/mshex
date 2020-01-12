@@ -34,6 +34,7 @@ function GetExtension: {
 }
 
 declare color_option=--color=auto
+[[ -t 1 ]] && color_option=--color=always
 
 declare -a findsrc_args
 declare -a grep_opts=()
@@ -158,5 +159,5 @@ if ((${#grep_files[@]}>=1)); then
   [[ $optflags == *h* ]] && array#push grep_opts -h
   [[ $optflags == *n* || $optflags != *[ho]* ]] && array#push grep_opts -n
   [[ $optflags != *[ho]* ]] && array#push grep_opts -H
-  grep -E $color_option "${grep_opts[@]}" "$regexp" "${grep_files[@]}"
+  printf '%s\n' "${grep_files[@]}" | xargs grep -E $color_option "${grep_opts[@]}" "$regexp"
 fi
