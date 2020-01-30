@@ -1,0 +1,85 @@
+#!/bin/bash
+
+if ! type mwgbk &>/dev/null; then
+  echo "hist_uniq: \"mwgbk\" command not found."
+  exit 1
+fi
+
+#------------------------------------------------------------------------------
+# read arguments
+
+fError=
+check_syntax=
+
+fTargetSet=
+target=
+
+while (($#)); do
+  arg="$1"
+  shift
+  case "$arg" in
+  (--check-syntax)
+    check_syntax=1 ;;
+  (-*)
+    echo "${0##*/}: unrecognized option \`$arg'" >&2
+    fError=1 ;;
+  (*)
+    if [[ -f $arg ]]; then
+      if [[ $fTargetSet ]]; then
+        echo "${0##*/}: multiple target files are specified." >&2
+        fError=1
+      else
+        fTargetSet=1
+        target="$arg"
+      fi
+    elif [[ -e $arg ]]; then
+      echo "${0##*/}: the specified path \`$arg' is not an ordinary file." >&2
+      fError=1
+    else
+      echo "${0##*/}: the specified file \`$arg' does not exist." >&2
+      fError=1
+    fi ;;
+  esac
+done
+
+if [[ ! $fTargetSet ]]; then
+  if [[ -f $HOME/.bash_history ]]; then
+    target="$HOME/.bash_history"
+  else
+    echo "${0##*/}: the default target file \`$HOME/.bash_history' does not exist." >&2
+    fError=1
+  fi
+fi
+
+[[ $fError ]] && exit 1
+
+#------------------------------------------------------------------------------
+
+umask 066
+
+fnInv=$HOME/hist_uniq.invalid.tmp
+
+tac "$target" | if [[ ! $check_syntax ]]; then
+  awk '!arr[$0]++'
+else
+  declare -A lines
+  declare line=
+  declare count=0
+  while read -r line || [[ $line ]]; do
+    [[ ${lines[x$line]} ]] && continue
+    lines["x$line"]=1
+    if ! bash -n &>/dev/null <<< "$line"; then
+      echo "$line" >> "$fnInv"
+      continue
+    fi
+    ((++count%37==0)) && [[ -t 2 ]] && echo -n "hist_uniq: processed $count..." >&2
+    echo "$line"
+  done
+fi | tac | grep -v '^#' > "$HOME/1.tmp"
+
+mwgbk -m "$target" && mv "$HOME/1.tmp" "$target"
+
+if [[ $check_syntax && -s "$fnInv" ]]; then
+  cat "$fnInv" >> "$target.invalid"
+  /bin/rm -f "$fnInv"
+fi
