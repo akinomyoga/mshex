@@ -184,7 +184,7 @@ function mshex/cdhist/cd {
     (-*)
       mshex/array#push args "$1" ;;
     (*)
-      [[ $dst ]] || dist=$1
+      [[ $dst ]] || dst=$1
       mshex/array#push args "$1" ;;
     esac
     shift
