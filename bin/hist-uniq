@@ -15,9 +15,9 @@ fTargetSet=
 target=
 
 while (($#)); do
-  arg="$1"
+  arg=$1
   shift
-  case "$arg" in
+  case $arg in
   (--check-syntax)
     check_syntax=1 ;;
   (-*)
@@ -30,7 +30,7 @@ while (($#)); do
         fError=1
       else
         fTargetSet=1
-        target="$arg"
+        target=$arg
       fi
     elif [[ -e $arg ]]; then
       echo "${0##*/}: the specified path \`$arg' is not an ordinary file." >&2
@@ -44,7 +44,7 @@ done
 
 if [[ ! $fTargetSet ]]; then
   if [[ -f $HOME/.bash_history ]]; then
-    target="$HOME/.bash_history"
+    target=$HOME/.bash_history
   else
     echo "${0##*/}: the default target file \`$HOME/.bash_history' does not exist." >&2
     fError=1
@@ -60,13 +60,17 @@ umask 066
 fnInv=$HOME/hist_uniq.invalid.tmp
 
 tac "$target" | if [[ ! $check_syntax ]]; then
-  awk '!arr[$0]++'
+  awk '
+    { c++; }
+    !arr[$0]++ { u++; print $0; }
+    END { print "hist-uniq: " c " lines -> " u " lines" > "/dev/stderr"; }'
 else
   declare -A lines
   declare line=
-  declare count=0
+  declare count=0 total=0
   while read -r line || [[ $line ]]; do
     [[ ${lines[x$line]} ]] && continue
+    ((++total))
     lines["x$line"]=1
     if ! bash -n &>/dev/null <<< "$line"; then
       echo "$line" >> "$fnInv"
@@ -75,11 +79,17 @@ else
     ((++count%37==0)) && [[ -t 2 ]] && echo -n "hist_uniq: processed $count..." >&2
     echo "$line"
   done
+  echo "hist-uniq: $total lines -> $count lines" >&2
 fi | tac | grep -v '^#' > "$HOME/1.tmp"
+
+if [[ ! -s $HOME/1.tmp ]]; then
+  echo "hist-uniq: failed to generate $HOME/1.tmp"
+  exit 2
+fi
 
 mwgbk -m "$target" && mv "$HOME/1.tmp" "$target"
 
-if [[ $check_syntax && -s "$fnInv" ]]; then
+if [[ $check_syntax && -s $fnInv ]]; then
   cat "$fnInv" >> "$target.invalid"
   /bin/rm -f "$fnInv"
 fi
