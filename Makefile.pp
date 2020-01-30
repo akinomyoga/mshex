@@ -109,6 +109,7 @@ out/bin/%file%: bin/%file% | out/bin
 #%x bin_file.r|%file%|ifold|
 #%x bin_file.r|%file%|refact|
 #%x bin_file.r|%file%|tarc|
+#%x bin_file.r|%file%|hist-uniq|
 
 #------------------------------------------------------------------------------
 # directory libexec

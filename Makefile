@@ -163,6 +163,9 @@ $(MWGDIR)/bin/refact: bin/refact
 install+=$(MWGDIR)/bin/tarc
 $(MWGDIR)/bin/tarc: bin/tarc
 	./make-install_script.sh copy -s $< $@
+install+=$(MWGDIR)/bin/hist-uniq
+$(MWGDIR)/bin/hist-uniq: bin/hist-uniq
+	./make-install_script.sh copy -s $< $@
 
 #------------------------------------------------------------------------------
 # directory libexec
