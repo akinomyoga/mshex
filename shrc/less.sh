@@ -60,9 +60,8 @@ function mshex/less.impl {
   local -a options=()
   local fREST=
   while (($#)); do
-    local arg="$1"
-    shift
-    case "$arg" in
+    local arg=$1; shift
+    case $arg in
     (--) fREST=1
          continue ;;
     (-)  mshex/array#push files "$arg"
@@ -116,17 +115,20 @@ function mshex/less.impl {
 
   # 初めの引数にファイルの種類 (拡張子) を指定している場合
   local fFileTypeSet=
-  if [[ ${files[0]} == .* && ! -f ${files[0]} ]]; then
+  if [[ ${files[0]} == .* && ! -e ${files[0]} ]]; then
     fFileTypeSet=1
     mshex/array#push hiliteopts -s "${files[0]#.}"
     files=("${files[@]:1}")
   fi
 
+  local term_si=$'\x0F'
+
   if ((${#files[@]}==0)) || [[ ${files[0]} == - ]]; then
     command less "${options[@]}"
   elif [[ -d ${files[0]} ]]; then
     if type l &>/dev/null; then
-      l "${files[@]}" | command less -r "${options[@]}"
+      echo ye
+      l "${files[@]}" | sed "s/$term_si//g" | command less -R "${options[@]}"
     else
       command less "${options[@]}" "${files[@]}"
     fi
@@ -138,11 +140,11 @@ function mshex/less.impl {
 
     if ((${#files[@]}==1)); then
       mshex/array#push hiliteopts -i "${files[0]}"
-      { mshex/less/source-highlight "${hiliteopts[@]}" || cat "${files[@]}"; } | command less -r "${options[@]}"
+      mshex/less/source-highlight "${hiliteopts[@]}" || cat "${files[@]}"
     else
       [[ $fFileTypeSet ]] || mshex/array#push hiliteopts -s "${files[0]%%*.}"
-      cat -- "${files[@]}" | { mshex/less/source-highlight "${hiliteopts[@]}" || cat -- "${files[@]}"; } | command less -r "${options[@]}"
-    fi
+      cat -- "${files[@]}" | { mshex/less/source-highlight "${hiliteopts[@]}" || cat -- "${files[@]}"; }
+    fi | sed "s/$term_si//g" | command less -R "${options[@]}"
   else
     command less "${options[@]}" "${files[@]}"
   fi
