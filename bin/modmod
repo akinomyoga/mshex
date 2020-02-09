@@ -78,7 +78,6 @@ fi | awk '
   }
 
   while read -r line; do
-
     mark=${line::1}
     file=${line:1}
     if [[ $mark == E ]]; then
@@ -87,11 +86,12 @@ fi | awk '
     elif [[ $mark == x || -d $file ]]; then
       #echo "755 $line"
       add_to_755 "$file"
-    elif [[ $mark == o && ( -f $file || -d $file ) ]]; then
+    elif [[ $mark == o && ( -f $file || -d $file ) && ( -x $file || ! -r $file ) ]]; then
       declare permission=$(stat -c %a "$file")
-      if ((permission==0||permission==777)) && [[ ! -h $file ]]; then
+      if ((permission==0||permission==777||permission==755)) && [[ ! -h $file ]]; then
         if [[ -d $file || $(head -c 2 "$file" 2>&1) == '#!' ]]; then
-          add_to_755 "$file"
+          ((permission!=755)) &&
+            add_to_755 "$file"
         else
           add_to_644 "$file"
         fi
