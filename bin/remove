@@ -297,6 +297,10 @@ while (($#)); do
   files[${#files[@]}]=$arg
 done
 
+if (($#==0)); then
+  subcommand.set list-garbages
+fi
+
 [[ $fError ]] && exit 1
 
 iscolor=
