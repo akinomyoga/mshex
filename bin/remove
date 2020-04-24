@@ -248,6 +248,10 @@ fLiteral=
 fError=
 files=()
 
+if (($#==0)); then
+  subcommand.set list-garbages
+fi
+
 while (($#)); do
   declare arg=$1 i
   shift
@@ -296,10 +300,6 @@ while (($#)); do
 
   files[${#files[@]}]=$arg
 done
-
-if (($#==0)); then
-  subcommand.set list-garbages
-fi
 
 [[ $fError ]] && exit 1
 
