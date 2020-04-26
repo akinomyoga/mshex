@@ -202,6 +202,17 @@ function mshex/alias:make/nproc {
 function mshex/alias:make/sub:t {
   sed -n '/^\.PHONY:/ { s/\.PHONY:[[:space:]]*\|[[:space:]]$//g ; s/[[:space:]]\{1,\}/\n/g ; p }' "$1" | sort -u
 }
+
+function mshex/alias:make/update-makefile-pp {
+  local name=$1
+  if [[ $name -ot $name.pp ]]; then
+    if type mwg_pp.awk &>/dev/null; then
+      mwg_pp.awk "$name.pp" > "$name" || return
+    else
+      echo "$name.pp: mwg_pp.awk is not found" &>/dev/null
+    fi
+  fi
+}
 function mshex/alias:make {
   local fHere= arg regex
   for arg in "$@"; do
@@ -214,26 +225,35 @@ function mshex/alias:make {
   local ret; mshex/alias:make/nproc; local nproc=$ret
   mshex/array#push make_options -j $((nproc*3/2))
 
-  if [[ $fHere || -f Makefile || -f Makefile.pp ]]; then
-    if [[ Makefile -ot Makefile.pp ]]; then
-      if type mwg_pp.awk &>/dev/null; then
-        mwg_pp.awk Makefile.pp > Makefile || return
-      else
-        echo 'Makefile.pp: mwg_pp.awk is not found' &>/dev/null
-      fi
+  if [[ $fHere || -f Makefile || -f Makefile.pp || -f GNUmakefile || -f GNUmakefile.pp ]]; then
+    mshex/alias:make/update-makefile-pp Makefile
+    mshex/alias:make/update-makefile-pp GNUmakefile
+
+    local makefile=
+    if [[ -f GNUmakefile ]]; then
+      makefile=GNUmakefile
+    elif [[ -f Makefile ]]; then
+      makefile=Makefile
     fi
 
-    if [[ -f Makefile && $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null ; then
-      mshex/alias:make/"sub:$1" Makefile "${@:2}"
+    if [[ $makefile && $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
+      mshex/alias:make/"sub:$1" "$makefile" "${@:2}"
     else
       "$make" "${make_options[@]}" "$@"
     fi
   else
     local dir=${PWD%/}
     while :; do
-      if [[ -f $dir/Makefile ]]; then
+      local makefile=
+      if [[ -f $dir/GNUmakefile ]]; then
+        makefile=$dir/GNUmakefile
+      elif [[ -f $dir/Makefile ]]; then
+        makefile=$dir/Makefile
+      fi
+
+      if [[ $makefile ]]; then
         if [[ $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
-          mshex/alias:make/"sub:$1" "$dir/Makefile" "${@:2}"
+          mshex/alias:make/"sub:$1" "$makefile" "${@:2}"
         else
           "$make" "${make_options[@]}" -C "${dir:-/}" "$@"
         fi
