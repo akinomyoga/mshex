@@ -13,11 +13,11 @@ all: compile
 Makefile: Makefile.pp
 	$(MWGPP) $< > $@
 
-#%m dir (
+#%m dir
 install+=%name%
 %name%:
 	mkdir -p $@
-#%)
+#%end
 #%x dir.r|%name%|$(MWGDIR)|
 #%x dir.r|%name%|$(MWGDIR)/bin|
 #%x dir.r|%name%|$(MWGDIR)/share/mshex/shrc|
@@ -110,6 +110,7 @@ out/bin/%file%: bin/%file% | out/bin
 #%x bin_file.r|%file%|refact|
 #%x bin_file.r|%file%|tarc|
 #%x bin_file.r|%file%|hist-uniq|
+#%x bin_file.r|%file%|iostat.sh|
 
 #------------------------------------------------------------------------------
 # directory libexec

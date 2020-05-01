@@ -4,3 +4,6 @@ out
 
 # for edit
 /COMMIT
+
+# backup files
+*~

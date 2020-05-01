@@ -166,6 +166,9 @@ $(MWGDIR)/bin/tarc: bin/tarc
 install+=$(MWGDIR)/bin/hist-uniq
 $(MWGDIR)/bin/hist-uniq: bin/hist-uniq
 	./make-install_script.sh copy -s $< $@
+install+=$(MWGDIR)/bin/iostat.sh
+$(MWGDIR)/bin/iostat.sh: bin/iostat.sh
+	./make-install_script.sh copy -s $< $@
 
 #------------------------------------------------------------------------------
 # directory libexec
