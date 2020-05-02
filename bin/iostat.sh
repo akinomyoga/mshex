@@ -26,46 +26,89 @@ function load-stat {
   done
 }
 
+disks=()
+ndisk_per_line=5
 function initialize {
-  disks=(/sys/block/*/stat)
-  disks=("${disks[@]%/stat}")
-  disks=("${disks[@]#/sys/block/}")
+  disks=()
 
-  local i sec
-  for ((i=0;i<${#disks[@]};i++)); do
-    local disk=${disks[i]}
+  local -a disk_names
+  disk_names=(/sys/block/*/stat)
+  disk_names=("${disk_names[@]%/stat}")
+  disk_names=("${disk_names[@]#/sys/block/}")
+
+  local i=0 sec disk
+  local -a out=()
+  for disk in "${disk_names[@]}"; do
+    [[ $disk == loop* ]] && continue
+
     read sec < /sys/block/$disk/queue/physical_block_size
     sector_size[i]=$sec
 
     local "${varnames[@]}"
     load-stat "$disk"
+    ((rprev[i]!=0&&wprev[i]!=0)) || continue
+    disks+=("$disk")
+    ((i++))
   done
+
+  local w=$(((COLUMNS-1)/14))
+  local nline=$(((${#disks[@]}+w-1)/w))
+  ndisk_per_line=$(((${#disks[@]}+nline-1)/nline))
 }
 
 function hread {
   local value=$1
-  ret=${value}B
+  ret=${value}B sgr=
   ((${#ret}<=6)) && return
-  ret=$((value/=1024))KB
+  ret=$((value/=1024))KB sgr=$'\e[34m'
   ((${#ret}<=6)) && return
-  ret=$((value/=1024))MB
+  ret=$((value/=1024))MB sgr=$'\e[32m'
   ((${#ret}<=6)) && return
-  ret=$((value/=1024))GB
+  ret=$((value/=1024))GB sgr=$'\e[31m'
+  ((${#ret}<=6)) && return
+  ret=$((value/=1024))TB sgr=$'\e[91m'
+}
+function print-disk-line {
+  local i disk out=
+  for ((i=0;i<${#disks[@]};i++)); do
+    local disk=${disks[i]}
+    printf -v disk '%6s' "$disk"
+    printf -v disk '%-13s' "$disk"
+    out=$out"$disk "
+    (((i+1)%ndisk_per_line==0)) && out=$out$'\n'
+  done
+  out=$out
+  if ((${#disks[@]}%ndisk_per_line!=0)); then
+    out=$out$'\n'
+  fi
+
+  local line=${out%%$'\n'*}; line=${line//?/-}
+  echo "$line"
+  printf %s "$out"
 }
 
+update_count=0
 function update {
-  local i disk ret
-  printf '%s\n' --------------------
+  local i disk ret sgr sgr0=$'\e[m'
+
+  ((update_count++%20==0)) &&
+    print-disk-line
+
+  local read write out=
   for ((i=0;i<${#disks[@]};i++)); do
     disk=${disks[i]}
 
     local "${varnames[@]}"
     load-stat "$disk"
-    hread $((rs*sector_size[i])); local read=$ret
-    hread $((ws*sector_size[i])); local write=$ret
-    [[ $disk != loop* ]] && ((rprev[i]!=0&&wprev[i]!=0)) &&
-      printf '%5s R/W %6s/%-6s\n' "$disk" "$read" "$write" #"$q:$qw:$qt,$rt/$wt,(rw=$r/$w,m=$rm/$wm)"
+    hread $((rs*sector_size[i])); printf -v read '%s%6s%s' "$sgr" "$ret" "$sgr0"
+    hread $((ws*sector_size[i])); printf -v write '%s%-6s%s' "$sgr" "$ret" "$sgr0"
+    out=$out"$read/$write "
+    (((i+1)%ndisk_per_line==0)) && out=$out$'\n'
   done
+  if ((${#disks[@]}%ndisk_per_line!=0)); then
+    out=$out$'\n'
+  fi
+  printf %s "$out"
 }
 
 initialize
