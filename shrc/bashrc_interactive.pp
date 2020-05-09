@@ -111,14 +111,14 @@ elif type -t open &>/dev/null; then
   alias o=open
 fi
 
-if [[ $OSTYPE == linux-gnu ]]; then
-  alias p='ps uaxf'
-elif type -t psforest &>/dev/null; then
+if type -t psforest &>/dev/null; then
   if [[ $(tput colors) -ge 256 ]]; then
     alias p='psforest'
   else
     alias p='psforest --color=never'
   fi
+elif [[ $OSTYPE == linux-gnu ]]; then
+  alias p='ps uaxf'
 else
   alias p='ps uax'
 fi
