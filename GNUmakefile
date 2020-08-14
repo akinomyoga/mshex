@@ -6,6 +6,7 @@
 
 MWGDIR:=$(HOME)/.mwg
 MWGPP:=gawk -f $(CURDIR)/ext/mwg_pp.awk
+MKCMD := ./make_command.sh
 
 all: compile
 .PHONY: all install dist compile
@@ -76,7 +77,7 @@ $(eval $(call install/copy,shrc/bashrc.cygwin,bashrc.cygwin))
 define install/bin/copy
   install += $(MWGDIR)/bin/$1
   $(MWGDIR)/bin/$1: bin/$1
-	./make-install_script.sh copy -s $$< $$@
+	$(MKCMD) copy -s $$< $$@
 endef
 define install/bin/mwgpp
   compile += out/bin/$1
@@ -84,7 +85,7 @@ define install/bin/mwgpp
   out/bin/$1: bin/$1 | out/bin
 	$(MWGPP) $$< > $$@ && chmod +x $$@
   $(MWGDIR)/bin/$1: out/bin/$1
-	./make-install_script.sh copy -s $$< $$@
+	$(MKCMD) copy -s $$< $$@
 endef
 
 $(eval $(call install/bin/copy,modmod))
@@ -128,12 +129,12 @@ ifneq ($(shell which source-highlight 2>/dev/null),)
 srchilite_dir := $(MWGDIR)/share/mshex/source-highlight
 install += $(srchilite_dir)
 $(srchilite_dir):
-	./make-install_script.sh initialize-source-highlight $@
+	$(MKCMD) initialize-source-highlight $@
 
 define install/source-highlight/copy
 install += $(srchilite_dir)/$1
 $(srchilite_dir)/$1: source-highlight/$1 | $(srchilite_dir)
-	test -d $(srchilite_dir) && ./make-install_script.sh copy $$< $$@
+	test -d $(srchilite_dir) && $(MKCMD) copy $$< $$@
 endef
 $(eval $(call install/source-highlight/copy,bash_simple_expansion.lang))
 $(eval $(call install/source-highlight/copy,esc256-light_background.outlang))
@@ -148,7 +149,7 @@ endif
 compile: $(compile)
 install: pre_install $(install)
 pre_install:
-	./update.sh
+	$(MKCMD) update
 
 dist:
 	cd .. && tar cavf mshex.`date +%Y%m%d`.tar.xz ./mshex --exclude=*/backup --exclude=*~ --exclude=./mshex/.git --exclude=./mshex/shrc/out
