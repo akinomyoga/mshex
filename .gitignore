@@ -1,9 +1,10 @@
 # generated files
-#Makefile
-out
+
+/out
 
 # for edit
 /COMMIT
 
 # backup files
 *~
+/archive
