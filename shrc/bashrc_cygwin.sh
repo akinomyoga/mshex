@@ -2,7 +2,8 @@
 
 # Paths & Envs
 #export CYGWIN='server error_start=dumper'
-export CYGWIN='server'
+# https://cygwin.com/ml/cygwin/2020-02/msg00125.html
+export CYGWIN='server disable_pcon'
 : ${DISPLAY:=:0.0}
 export DISPLAY
 export EXEEXT='.exe'
