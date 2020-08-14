@@ -4,8 +4,9 @@
 #   -C だと $(PWD) は設定されないので $(CURDIR) を用いる。
 #   参考: [[とあるエンジニアの備忘log: make の -C オプションについて>http://masahir0y.blogspot.jp/2012/06/make-c.html]]
 
-MWGDIR:=$(HOME)/.mwg
-MWGPP:=gawk -f $(CURDIR)/ext/mwg_pp.awk
+PREFIX := $(MWGDIR)
+MWGDIR := $(PREFIX)
+MWGPP := gawk -f $(CURDIR)/ext/mwg_pp.awk
 MKCMD := ./make_command.sh
 
 all: compile
