@@ -2,8 +2,7 @@
 
 This is a repository for my personal shell scripts.
 The name `mshex` comes from the abbreviation of "my shell extensions".
-
-Copyright (c) 2010-2017 K. Murase, All rights reserved.
+The license is [MIT License](LICENSE).
 
 ## Install
 
