@@ -114,7 +114,7 @@ function option/type:c++ {
 function option/type:js  { option/extension js:css; }
 function option/type:f   { option/extension f:inc; }
 function option/type:el  { option/extension el; }
-function option/type:sh  { option/extension sh:src; }
+function option/type:sh  { option/extension sh:src:bash:zsh:fish; }
 function option/type:awk { option/extension awk; }
 function option/type:py  { option/extension py; }
 function option/type:rb  { option/extension rb; }
