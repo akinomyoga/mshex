@@ -673,6 +673,20 @@ mshex/util/eval-after-load mshex/my-key-bindings
 #==============================================================================
 #  shell/terminal settings - prompt
 
+function ble/prompt/backslash:mshex/screen-pwd {
+  if ble/is-function ble/contrib/prompt-git/initialize; then
+    local "${_ble_contrib_prompt_git_vars[@]}"
+    if ble/contrib/prompt-git/initialize; then
+      ble/prompt/print '('
+      ble/prompt/backslash:contrib/git-name
+      ble/prompt/print ') '
+    fi
+  fi
+  ble/prompt/backslash:W
+  ble/prompt/print ' @ '
+  ble/prompt/backslash:w
+}
+
 #%%m set_prompt
 function mshex/set-prompt {
   # prompt
@@ -694,33 +708,39 @@ function mshex/set-prompt {
     local title_host='<user>@<host>'
   fi
 
-  # title
-  case "$TERM" in
-  screen*)
-      local label1='['"$title_host"'] <jobs> <pwd> @ <pwp>'
-      local screenWindowLabel='${SCREEN_WINDOW_TITLE}${SCREEN_WINDOW_TITLE:+ }['"${title_host:+<host>}"'] <jobs> <pwd> @ <pwp>'
-      local title1=']0;'"$label1"''
-#%%if mode=="zsh"
-      local screenWindowTitle='k'"$screenWindowLabel"'\'
-#%%else
-      local screenWindowTitle='k'"$screenWindowLabel"'\\'
-#%%end
-      local title="$title1$screenWindowTitle"
-      ;;
-  *)
-      local label='['"$title_host"'] <jobs> <pwd> @ <pwp>'
-#%%if mode=="zsh"
-      local title="$(mshex/term/set_title "$label")";
-#%%else
-      local title="$(mshex/term/set_title.escaped "$label")";
-#%%end
-      ;;
-  esac
+  local spec_pwd='<pwd> @ <pwp>'
+  [[ $BLE_VERSION ]] && spec_pwd='\q{mshex/screen-pwd}'
+  local label1='['$title_host'] <jobs> '$spec_pwd
+  local label2='${SCREEN_WINDOW_TITLE}${SCREEN_WINDOW_TITLE:+ }['${title_host:+'<host>'}'] <jobs> '$spec_pwd
 
-  export PS1='<A>'"$title"'<Z>'"$_prompt"
+  if [[ $BLE_VERSION ]]; then
+    bleopt prompt_xterm_title="$label1"
+    bleopt prompt_screen_title="$label2"
+    export PS1=$_prompt
+  else
+    # title
+    case "$TERM" in
+    (screen*)
 #%%if mode=="zsh"
-  export RPS1='<pwp>';
+      local title=$'\e]0;'$label1$'\a\ek'$label2$'\e\\'
+#%%else
+      local title=$'\e]0;'$label1$'\a\ek'$label2$'\e\\\\'
 #%%end
+      ;;
+    (*)
+#%%if mode=="zsh"
+      local title=$(mshex/term/set_title "$label1")
+#%%else
+      local title=$(mshex/term/set_title.escaped "$label1")
+#%%end
+      ;;
+    esac
+
+    export PS1='<A>'"$title"'<Z>'"$_prompt"
+#%%if mode=="zsh"
+    export RPS1='<pwp>';
+#%%end
+  fi
 }
 #%%end
 #%%if mode=="zsh"
