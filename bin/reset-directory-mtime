@@ -1,0 +1,19 @@
+#!/bin/bash
+
+
+function main {
+  shopt -s nullglob
+  local dir
+  find . -type d -print0 | tac -s '' |  while IFS= read -d '' dir || [[ $dir ]]; do
+    local -a files; files=("$dir"/*)
+    if ((${#files[@]})); then
+      local latest=$(ls -dt "${files[@]}" | head -1)
+      touch -r "$latest" "$dir"
+      echo "[$dir] $(date +'%F %T %Z' -r "$dir") (from $latest)"
+    else
+      echo "[$dir] $(date +'%F %T %Z' -r "$dir") (unchanged)"
+    fi
+  done
+}
+
+main
