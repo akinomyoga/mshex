@@ -60,7 +60,7 @@ options
 
 grep options
 
-  --color
+  --color[=WHEN]
   -C NUMBER
   -U, --binary
   -F, --fixed-strings
@@ -102,6 +102,8 @@ EOF
 
     (--color)
       color_option=--color=always ;;
+    (--color=*)
+      color_option=$arg ;;
     (-o|--only-matching) optflags=o$optflags ;;
     (-h|--no-filename) optflags=h$optflags ;;
     (-x)

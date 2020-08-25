@@ -78,7 +78,7 @@ EOF
 
 opt_options_end=
 
-grc_options=(--color -U)
+grc_options=(-U)
 inputfiles=()
 
 regex_type=E
@@ -255,16 +255,13 @@ function enumerate_matches.i2 {
     local tab='\x1b[37m< TAB \/>\x1b[39m'
     local cr='\x1b[7m^M\x1b[27m'
 
-    exec 6>&1
-    grc --color "${grc_options[@]}" "$bpat" "${inputfiles[@]}" | gawk '
+    grc --color=never "${grc_options[@]}" "$bpat" "${inputfiles[@]}" | gawk '
       {
         line = $0;
-        gsub(/\x1b\[[ -?]*[@-~]/, "", line); # remove csi
         if (match(line, /^(([^:]|:[^0-9]|:[0-9]+[^:0-9])*):[0-9]+:/, m) > 0) {
           file = m[1];
           if (!target_files_dict[file]) {
             target_files_dict[file] = 1;
-            print file > "/dev/fd/6";
             print ">>> " file;
           }
         }
@@ -274,11 +271,14 @@ function enumerate_matches.i2 {
       /^>>> /{s/^>>> (.*)/\x1b[1m+++ \1\x1b[m/;p;d;}
 
       # h = header \n content
-      s/\x1b\[[ -?]*[@-~]//g
       s/^(([^:]+|:+[0-9]*[^:0-9])*):+([0-9]+):(.*)$/\x1b[36m    \3:\x1b[m \n\4/
       s/ +([ 0-9]{5}:)/\1/
       /\n/!s/^/\n/
       h
+
+      # skip unchanged line
+      g;s/[^\n]*\n//;s/${bpat_escaped}/${after_escaped}/g
+      G;/^([^\n]*)\n[^\n]*\n\1$/d
 
       # p header - modify(content)
       g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_rws&$sgr_rwe/g;
@@ -295,7 +295,23 @@ function enumerate_matches.i2 {
         /\n/!d
         s/^[^\n]*\n//
       bL
-    " 1>&5
+    " | gawk '
+      {
+        line = $0;
+        gsub(/\x1b\[[ -?]*[@-~]/, "", line);
+        if (line ~ /^\+{3} /) {
+          fileline = $0;
+          filename = substr(line, 5);
+        } else {
+          if (filename) {
+            print filename;
+            print fileline > "/dev/fd/5";
+            filename = "";
+          }
+          print $0 > "/dev/fd/5";
+        }
+      }
+    '
   }
 
   IFS=$'\n' eval 'result=($(search_target_files))'
@@ -315,7 +331,7 @@ if ((${#target_files[@]} <= 0)); then
 fi
 if [[ $apat && ! $fSkipColl ]]; then
   echo '------- collision? --------'
-  grc "${grc_options[@]}" "$apat" "${inputfiles[@]}"
+  grc --color=auto "${grc_options[@]}" "$apat" "${inputfiles[@]}"
 fi
 echo '---------------------------'
 
