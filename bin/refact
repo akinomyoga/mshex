@@ -258,12 +258,12 @@ function enumerate_matches.i2 {
     exec 6>&1
     grc --color "${grc_options[@]}" "$bpat" "${inputfiles[@]}" | gawk '
       {
-        line=$0;
-        gsub(/\x1b\[[ -?]*[@-~]/,"",line); # remove csi
-        if(match(line,/^(([^:]|:[^0-9]|:[0-9]+[^:0-9])*):[0-9]+:/,m)>0){
-          file=m[1];
-          if(!target_files_dict[file]){
-            target_files_dict[file]=1;
+        line = $0;
+        gsub(/\x1b\[[ -?]*[@-~]/, "", line); # remove csi
+        if (match(line, /^(([^:]|:[^0-9]|:[0-9]+[^:0-9])*):[0-9]+:/, m) > 0) {
+          file = m[1];
+          if (!target_files_dict[file]) {
+            target_files_dict[file] = 1;
             print file > "/dev/fd/6";
             print ">>> " file;
           }
@@ -271,30 +271,30 @@ function enumerate_matches.i2 {
         print $0;
       }
     ' | $GSED -r "
-       /^>>> /{s/^>>> (.*)/\x1b[1m+++ \1\x1b[m/;p;d;}
+      /^>>> /{s/^>>> (.*)/\x1b[1m+++ \1\x1b[m/;p;d;}
 
-       # h = header \n content
-       s/\x1b\[[ -?]*[@-~]//g
-       s/^(([^:]+|:+[0-9]*[^:0-9])*):+([0-9]+):(.*)$/\x1b[36m    \3:\x1b[m \n\4/
-       s/ +([ 0-9]{5}:)/\1/
-       /\n/!s/^/\n/
-       h
+      # h = header \n content
+      s/\x1b\[[ -?]*[@-~]//g
+      s/^(([^:]+|:+[0-9]*[^:0-9])*):+([0-9]+):(.*)$/\x1b[36m    \3:\x1b[m \n\4/
+      s/ +([ 0-9]{5}:)/\1/
+      /\n/!s/^/\n/
+      h
 
-       # p header - modify(content)
-       g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_rws&$sgr_rwe/g;
-       s/.*/$sgr_rls&\x1b[m/;
-       s/\t/$tab/g;s/\r/$cr/g
-       G;s/\n([^\n]*)$//;s/^(.*)\n([^\n]*)$/\2-\1/;p
+      # p header - modify(content)
+      g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_rws&$sgr_rwe/g;
+      s/.*/$sgr_rls&\x1b[m/;
+      s/\t/$tab/g;s/\r/$cr/g
+      G;s/\n([^\n]*)$//;s/^(.*)\n([^\n]*)$/\2-\1/;p
 
-       # p header + modify(content)
-       g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_aws${after_escaped}$sgr_awe/g
-       s/.*/$sgr_als&\x1b[m/;s/\n/\x1b[m&$sgr_als$sgr_aws/g;
-       s/\t/$tab/g;s/\r/$cr/g
-       :L
-         G;s/\n([^\n]*)$//;s/^(.*)\n([^\n]*)$/\2+\1/;P
-         /\n/!d
-         s/^[^\n]*\n//
-       bL
+      # p header + modify(content)
+      g;s/[^\n]*\n//;s/${bpat_escaped}/$sgr_aws${after_escaped}$sgr_awe/g
+      s/.*/$sgr_als&\x1b[m/;s/\n/\x1b[m&$sgr_als$sgr_aws/g;
+      s/\t/$tab/g;s/\r/$cr/g
+      :L
+        G;s/\n([^\n]*)$//;s/^(.*)\n([^\n]*)$/\2+\1/;P
+        /\n/!d
+        s/^[^\n]*\n//
+      bL
     " 1>&5
   }
 
