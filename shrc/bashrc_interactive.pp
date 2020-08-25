@@ -305,15 +305,14 @@ function mshex/alias:git/check-commit-arguments {
 }
 function mshex/alias:git {
   if (($#==0)); then
-    ( # printf '\e[1m$ git status\e[m\n'
-      git -c color.status=always status || exit
-      printf '\n\e[1m$ git branch\e[m\n'
-      git -c color.ui=always branch -vv
-      printf '\n\e[1m$ git remote\e[m\n'
-      git -c color.ui=always remote -v
-      printf '\n\e[1m$ git log -n 5\e[m\n'
-      mshex/alias:git t -n 5
-    ) | less -FSRX
+    # printf '\e[1m$ git status\e[m\n'
+    git -c color.status=always status || return 1
+    printf '\n\e[1m$ git branch\e[m\n'
+    git -c color.ui=always branch -vv
+    printf '\n\e[1m$ git remote\e[m\n'
+    git -c color.ui=always remote -v
+    printf '\n\e[1m$ git log -n 5\e[m\n'
+    mshex/alias:git t -n 5
   else
     local default=
 
