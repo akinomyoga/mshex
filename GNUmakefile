@@ -6,11 +6,14 @@
 
 PREFIX := $(MWGDIR)
 MWGDIR := $(PREFIX)
+ifeq ($(MWGDIR),)
+  MWGDIR := $(HOME)/.mwg
+endif
 MWGPP := gawk -f $(CURDIR)/ext/mwg_pp.awk
 MKCMD := ./make_command.sh
 
 all: compile
-.PHONY: all install dist compile
+.PHONY: all install dist compile clean
 
 define install/mkdir
 install += $1
@@ -36,7 +39,7 @@ define install/copy
 endef
 
 define install/shrc/copy
-  $$(eval $$(call shrc/$1,share/mshex/shrc/$1))
+  $$(eval $$(call install/copy,shrc/$1,share/mshex/shrc/$1))
 endef
 
 define install/shrc/generate-bash-zsh
@@ -152,6 +155,9 @@ compile: $(compile)
 install: pre_install $(install)
 pre_install:
 	$(MKCMD) update
+
+clean:
+	-rm -rf out
 
 dist:
 	cd .. && tar cavf mshex.`date +%Y%m%d`.tar.xz ./mshex --exclude=*/backup --exclude=*~ --exclude=./mshex/.git --exclude=./mshex/shrc/out

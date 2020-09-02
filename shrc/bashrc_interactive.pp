@@ -22,10 +22,10 @@
 #==============================================================================
 # Include
 
-source "$MWGDIR/share/mshex/shrc/dict.sh"
+source "$MWGDIR/share/mshex/shrc/dict.sh" || return "$?"
 
 # 141ms = (ファイル読み取り 62ms) + (mshex/dict 操作 47ms)
-source "$MWGDIR/share/mshex/shrc/term.sh"
+source "$MWGDIR/share/mshex/shrc/term.sh" || return "$?"
 
 #==============================================================================
 # Fedora / CentOS
