@@ -82,7 +82,7 @@ function cz/edit {
   fi
 
   /bin/rm -f "$tmp"
-  if [[ :$opts: == *:remove-backup:* && -f $tmp~ ]]; then
+  if [[ :$opts: != *:preserve-backup:* && -f $tmp~ ]]; then
     /bin/rm -f "$tmp~"
   fi
 
@@ -108,7 +108,7 @@ function cz/encrypt1 {
   fi
 
   /bin/rm -f "$in"
-  if [[ :$arg_opts: == *:remove-backup:* && -f $in~ ]]; then
+  if [[ :$arg_opts: != *:preserve-backup:* && -f $in~ ]]; then
     /bin/rm -f "$in~"
   fi
   return 0
@@ -148,7 +148,7 @@ function read_arguments {
     (--edit) flag_edit=1 ;;
     (-b)
       # don't remove the backup file
-      arg_opts=$arg_opts:remove-backup ;;
+      arg_opts=$arg_opts:preserve-backup ;;
     (-*)
       flag_error=1
       echo "cz: unknown option $arg" >&2 ;;
