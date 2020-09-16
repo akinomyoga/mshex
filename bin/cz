@@ -137,15 +137,16 @@ function cz/decrypt1 {
   return 0
 }
 
-arg_opts=
-flag_edit=
-input_filename=
+## @fn read_arguments args...
+##   @var[out] arg_opts
+##   @var[out] input_filename
 function read_arguments {
   local flag_error=
   while (($#)); do
     local arg=$1; shift
     case "$arg" in
-    (--edit) flag_edit=1 ;;
+    (--edit) arg_opts=$arg_opts:edit ;;
+    (-c|--cat) arg_opts=$arg_opts:cat ;;
     (-b)
       # don't remove the backup file
       arg_opts=$arg_opts:preserve-backup ;;
@@ -179,10 +180,14 @@ function read_arguments {
   [[ ! $flag_error ]]
 }
 
+arg_opts=
+input_filename=
 read_arguments "$@" || exit 1
 
-if [[ $flag_edit ]]; then
+if [[ :$arg_opts: == *:edit:* ]]; then
   cz/edit "$input_filename" "$arg_opts"
+elif [[ :$arg_opts: == *:cat:* ]]; then
+  openssl/decrypt "$input_filename" /dev/stdout | xz -d -
 elif [[ $input_filename == *.cz || $input_filename == *.cz2 ]]; then
   cz/decrypt1 "$input_filename" "${input_filename%.*}"
 else
