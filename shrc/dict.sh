@@ -53,18 +53,18 @@ if [[ $ZSH_VERSION || $mshex_bash -ge 40000 ]]; then
   function mshex/dict/.echo {
     local hname=$1
     local key=$2
-    eval "echo \"\${$hname[\$key]}\""
+    eval "echo \"\${${hname}[\$key]}\""
   }
   function mshex/dict/.get {
     local vname=$1
     local hname=$2
     local key=$3
-    eval "$vname=\"\${$hname[\$key]}\""
+    eval "$vname=\"\${${hname}[\$key]}\""
   }
   function mshex/dict/.getkeys {
     local vname=$1
     local hname=$2
-    eval "$vname=(\"\${!$hname[@]}\")"
+    eval "$vname=(\"\${!${hname}[@]}\")"
   }
 
   # # key に特別な値が含まれている場合に困る
