@@ -303,6 +303,41 @@ function mshex/alias:git/check-commit-arguments {
 
   return
 }
+function mshex/alias:git/register-repository {
+  local name=$(
+    git remote -v | gawk '
+      function update_name(remote1, name1) {
+        if (remote == remote1) return;
+        if (remote == "upstream") return;
+        if (remote == "origin" && remote1 != "upstream") return;
+        remote = remote1;
+        name = name1;
+      }
+      { sub(/\.git$/, "", $2); }
+      match($2, /^(git@)?(ssh\.)?github\.com:([^/]+)\/([^/]+)$/, m) > 0 {
+        update_name($1, m[3] "/" m[4]);
+      }
+      match($2, /^(git|https?):\/\/github\.com\/([^/]+)\/([^/]+)$/, m) > 0 {
+        update_name($1, m[2] "/" m[3]);
+      }
+      END { if (remote != "") print name; }
+    ')
+  [[ $name ]] || return 0
+
+  local repository_path=$(readlink -f "$(git rev-parse --show-toplevel)")
+  local link0=${MWGDIR:-$HOME/.mwg}/git/$name
+  local link=$link0 index=1
+  while [[ -e $link || -L $link ]]; do
+    if [[ -d $link ]]; then
+      local link_path=$(readlink -f "$link")
+      [[ ${link_path%/} == "${repository_path%/}" ]] && return
+    fi
+    link=$link0+$((index++))
+  done
+
+  mshex/mkd "${link%/*}"
+  ln -s "$repository_path" "$link"
+}
 function mshex/alias:git {
   if (($#==0)); then
     # printf '\e[1m$ git status\e[m\n'
@@ -313,6 +348,7 @@ function mshex/alias:git {
     git -c color.ui=always remote -v
     printf '\n\e[1m$ git log -n 5\e[m\n'
     mshex/alias:git t -n 5
+    mshex/alias:git/register-repository
   else
     local default=
 
