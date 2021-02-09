@@ -45,6 +45,7 @@ declare fDefaultExcludes=
 
 optflags=
 
+shopt -s extglob
 function process-arguments {
   while (($#)); do
     local arg=$1
@@ -72,16 +73,17 @@ grep options
 findsrc options:
 
   -x, --extension=EXTENSIONS
-  -a, -A
-  -b, -B
+  -a, --exclude-dotfile
+  -A, --include-dotfile
+  -b, --exclude-backup
+  -B, --include-backup
   -t, --type=SRCTYPE
   --exclude=PATTERN
 
   --excludes-default
 
 EOF
-      exit
-      ;;
+      exit ;;
     (-C)
       array#push grep_opts -C "$1"
       shift 1 ;;
@@ -109,7 +111,7 @@ EOF
     (-x)
       array#push findsrc_args "$arg" "$1"
       shift 1 ;;
-    (-[abAB]|--exclude=*|--type=*|--exntesion=*)
+    (-[aAbB]|--@(ex|in)clude-@(dotfile|backup)|--exclude=*|--type=*|--exntesion=*)
       array#push findsrc_args "$arg" ;;
     (-t) # findsrc type
       array#push findsrc_args "$arg" "$1"

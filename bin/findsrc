@@ -28,13 +28,13 @@ fi
 
 function pat2regex {
   # (|){}^$ 等は意味を保持する (ファイル名に用いられそうにないから)
-  local pat="$1"
-  pat="${pat//+/\\+}"
-  pat="${pat//./\\.}"
-  pat="${pat//'?'/[^/]}"
-  pat="${pat//'**'/.*}"
-  pat="${pat//'*'/[^/]*}"
-  regex="$pat"
+  local pat=$1
+  pat=${pat//+/\\+}
+  pat=${pat//./\\.}
+  pat=${pat//'?'/[^/]}
+  pat=${pat//'**'/.*}
+  pat=${pat//'*'/[^/]*}
+  regex=$pat
   # echo dbg: pat2regex $regex >&2
 }
 
@@ -59,9 +59,9 @@ typeSpecified=
 
 function option/extension {
   while (($#)); do
-    local arg="$1"; shift
+    local arg=$1; shift
     local rex='^:|::|:$|^$'
-    [[ "$arg" =~ $rex ]] && fNoExtension=1
+    [[ $arg =~ $rex ]] && fNoExtension=1
 
     IFS=: eval 'local arr=($arg) ext'
     for ext in "${arr[@]}"; do
@@ -81,7 +81,7 @@ function option/check-optarg1 {
 function option/type {
   option/check-optarg1 "$@" || return 1
 
-  local type="$1"
+  local type=$1
   if ble/is-function "option/type:$type"; then
     typeSpecified=1
     "option/type:$type"
@@ -124,14 +124,14 @@ function option/type:all { fALL=1; }
 
 function read_arguments {
   while (($#)); do
-    local arg="$1" option="$1"
+    local arg=$1 option=$1
     shift
     case "$arg" in
     (-[^-]*)
-      local i iN="${#arg}"
+      local i iN=${#arg}
       for ((i=1;i<iN;i++)); do
-        local c="${arg:i:1}"
-        local option="-$c"
+        local c=${arg:i:1}
+        local option=-$c
         case "$option" in
         (-t) option/type "$@"; shift ;;
         (-x) option/extension "$1"; shift ;;
@@ -145,6 +145,10 @@ function read_arguments {
         esac
       done
       ;;
+    (--include-dotfile) excludesDotFiles=  ;;
+    (--exclude-dotfile) excludesDotFiles=1 ;;
+    (--include-backup)  excludesBackup=    ;;
+    (--exclude-backup)  excludesBackup=1   ;;
     (--help)
       ifold -s -i -w 80 <<EOF
 findsrc [options...] [type...]
@@ -162,10 +166,10 @@ Multiple extensions separated by colons can be specified.
 
   --exclude=PATTERN
 
-  -A    exclude dotfiles (default).
-  -a    include dotfiles.
-  -B    exclude backup files (default).
-  -b    include backup files.
+  -A, --exclude-dotfile   exclude dotfiles (default).
+  -a, --exclude-dotfile   include dotfiles.
+  -B, --exclude-backup    exclude backup files (default).
+  -b, --exclude-backup    include backup files.
 
 EOF
       exit 0 ;;
@@ -184,13 +188,13 @@ EOF
 }
 
 function read_arguments_from_dotfile {
-  local dir="$PWD"
+  local dir=$PWD
   while
-    local foption="$dir/.srcoption"
-    [[ ! -f "$foption" ]]
+    local foption=$dir/.srcoption
+    [[ ! -f $foption ]]
   do
     [[ ! $dir || $dir == "${dir%/*}" ]] && return
-    dir="${dir%/*}"
+    dir=${dir%/*}
   done
 
   local title line rex='(^|[ 	])#.+$' iline=0 args=
@@ -199,7 +203,7 @@ function read_arguments_from_dotfile {
     [[ $line =~ $rex ]] && line=${line::${#line}-${#BASH_REMATCH}}
     [[ ! ${line//[ 	]} ]] && continue
     eval "args=($line)"
-    title="$foption:$iline" read_arguments "${args[@]}"
+    title=$foption:$iline read_arguments "${args[@]}"
   done < "$foption"
 }
 
