@@ -75,7 +75,7 @@ while (($#)); do
   (--char-width=*)
     arg=${arg#--char-width=}
     declare regex
-    if regex='(east|west)' && [[ arg =~ $regex ]]; then
+    if regex='^(east|west)$' && [[ $arg =~ $regex ]]; then
       fCharWidth="$arg"
     else
       fERROR=1
@@ -84,7 +84,7 @@ while (($#)); do
   (--indent-type=*)
     arg=${arg#--indent-type=}
     declare regex
-    if regex='(spaces|copy)' && [[ arg =~ $regex ]]; then
+    if regex='^(spaces|copy)$' && [[ $arg =~ $regex ]]; then
       oIndentType="$arg"
     else
       fERROR=1
