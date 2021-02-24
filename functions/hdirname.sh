@@ -24,7 +24,6 @@ function hdirname/readlink {
     PATH=/bin:/usr/bin readlink -f "$path" ;;
   (darwin*|*)
     # Mac OSX には readlink -f がない。
-    local PWD=$PWD OLDPWD=$OLDPWD
     while [[ -h $path ]]; do
       local link=$(PATH=/bin:/usr/bin readlink "$path" 2>/dev/null || true)
       [[ $link ]] || break
