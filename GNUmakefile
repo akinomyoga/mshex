@@ -113,6 +113,7 @@ $(eval $(call install/bin/copy,tarc))
 $(eval $(call install/bin/copy,hist-uniq))
 $(eval $(call install/bin/copy,iostat.sh))
 $(eval $(call install/bin/copy,reset-directory-mtime))
+$(eval $(call install/bin/copy,crun))
 
 #------------------------------------------------------------------------------
 # directory libexec
