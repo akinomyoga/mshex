@@ -37,7 +37,8 @@ if [[ -e /etc/redhat-release ]]; then
   # スクリプトファイルを読み込んだ時に、PATH を間違えていたり存在しないコマンドを
   # 大量に使っていたりすると大変な事になる。C-c を連打しても止められない。
   # <a href="http://luna2-linux.blogspot.jp/2011/03/fedora-14.html">ALL about Linux: Fedora 14 でコマンドを打ち間違えると・・・</a>
-  unset -f command_not_found_handle
+  # Note: zsh は関数がない時にエラーメッセージを出力する。
+  unset -f command_not_found_handle 2>/dev/null
 
   # 勝手に screen のタイトルに変なものを設定しようとする。
   if [[ $PROMPT_COMMAND == ble/* ]]; then
