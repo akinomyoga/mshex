@@ -356,6 +356,7 @@ function mshex/alias:git {
     case "$1" in
     (u) git add -u ;;
     (l) ls -ld $(git ls-files "${@:2}") ;;
+    (wc) wc $(git ls-files "${@:2}") ;;
 
     (p) git add -p "${@:2}" ;;
     (amend)  git commit --amend --no-edit "${@:2}" ;;
