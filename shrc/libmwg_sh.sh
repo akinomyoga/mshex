@@ -11,52 +11,6 @@ function source_if { [[ -e $1 ]] && source "$@" >/dev/null; }
 function mkd { [[ -d $1 ]] || mkdir -p "$1"; }
 
 #------------------------------------------------------------------------------
-# PATH : environmental variable
-
-function mwg.PATH.add {
-  mwg.PATH.remove "$@"
-
-  local name=$1; shift
-  local paths; eval "paths=\${$name}"
-  for p in "$@"; do
-    paths=$p${paths:+:}$paths
-  done
-  eval "export $name='$paths'"
-}
-
-function mwg.PATH.append {
-  mwg.PATH.remove "$@"
-
-  local name=$1; shift
-  local paths; eval "paths=\${$name}"
-  for p in "$@"; do
-    paths="$paths${paths:+:}$p"
-  done
-  eval "export $name='$paths'"
-}
-
-function mwg.PATH.remove {
-  local name=$1; shift
-  local paths; eval "paths=\${$name}"
-  for p in "$@"; do
-    paths="${paths//:$p:/:}"
-    paths="${paths#$p:}"
-    paths="${paths%:$p}"
-    if [[ $paths == "$p" ]]; then
-      paths=''
-      break
-    fi
-  done
-  #echo "export $name='$paths'"
-  eval "export $name='$paths'"
-}
-
-function mwg.PATH.show {
-  local name=${1-PATH} | sed 's/:/\n/g'
-  eval "echo \"\${$name}\""
-}
-
-#------------------------------------------------------------------------------
 # String manipulations
 
 mwg_String_table_lalpha='abcdefghijklmnopqrstuvwxyz'
