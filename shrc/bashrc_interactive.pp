@@ -275,7 +275,15 @@ function mshex/alias:history {
   if (($#)); then
     history "$@"
   else
-    history 10 | awk '{printf("!%-3d !%s\n", NR - 11, $0);}'
+    if [[ $_ble_attached ]]; then
+      local end; ble/history/get-count -v end
+      local i=$((end-10)); ((i<0)) && i=0
+      for ((;i<end;i++)); do
+        printf 'B!%-3d !%-*d %s\n' $((i-end)) ${#end} $((i+1)) "${_ble_history_edit[i]}"
+      done
+    else
+      history 10 | awk '{printf("!%-3d !%s\n", NR - 11, $0);}'
+    fi
   fi
 }
 alias h=mshex/alias:history
