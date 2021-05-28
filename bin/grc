@@ -44,6 +44,7 @@ regexp=
 declare fDefaultExcludes=
 
 optflags=
+opt_regex=-E
 
 shopt -s extglob
 function process-arguments {
@@ -90,6 +91,8 @@ EOF
       shift 1 ;;
     (-C?*)
       array#push grep_opts -C "${arg:2}" ;;
+    (-F|--fixed-strings)
+      opt_regex=-F ;;
     (-U|--binary|-F|--fixed-strings|-i|--ignore-case)
       array#push grep_opts "$arg" ;;
     (-Wg*)
@@ -161,10 +164,11 @@ if ((${#grep_files[@]}==0)); then
 fi
 
 if ((${#grep_files[@]}>=1)); then
+  array#push grep_opts "$opt_regex"
   [[ $optflags == *w* ]] && array#push grep_opts -w # (パターン) 単語に一致
   [[ $optflags == *o* ]] && array#push grep_opts -o # (出力) 一致部分のみ
   [[ $optflags == *h* ]] && array#push grep_opts -h # (出力) ファイル名を出力
   [[ $optflags == *n* || $optflags != *[ho]* ]] && array#push grep_opts -n # (出力) 行番号を出力
   [[ $optflags != *[ho]* ]] && array#push grep_opts -H # (出力) ファイル名を出力しない
-  printf '%s\n' "${grep_files[@]}" | xargs grep -E $color_option "${grep_opts[@]}" "$regexp"
+  printf '%s\n' "${grep_files[@]}" | xargs grep $color_option "${grep_opts[@]}" "$regexp"
 fi
