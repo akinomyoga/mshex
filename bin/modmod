@@ -41,7 +41,7 @@ else
     printf '%s\n' "${files[@]}"
   fi
 fi | awk '
-  /\.(dll|ocx|so|lib|a|la|exe|bat|com|cmd|sh|awk|ws[hf]|vb[es]|hta|tt[fc])~?$/ {
+  /\.(dll|ocx|so|lib|a|la|exe|bat|com|cmd|(ba|z)?sh|awk|py|gp|ws[hf]|vb[es]|hta|tt[fc])~?$/ {
     # jse?
     print "x" $0;
     next;
