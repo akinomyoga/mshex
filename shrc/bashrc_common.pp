@@ -26,7 +26,11 @@
 #-------------------------------------------------------------------------------
 
 #[[ ! $LANG ]] && export LANG='ja_JP.UTF-8'
-export LANG='ja_JP.UTF-8'
+if [[ $TERM == linux ]]; then
+  export LANG='C.UTF-8'
+else
+  export LANG='ja_JP.UTF-8'
+fi
 export TIME_STYLE='+%Y-%m-%d %H:%M:%S'
 [[ $HOSTNAME ]] && export HOSTNAME # export されていない事がある
 
