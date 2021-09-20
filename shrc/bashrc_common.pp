@@ -25,8 +25,7 @@
 #
 #-------------------------------------------------------------------------------
 
-#[[ ! $LANG ]] && export LANG='ja_JP.UTF-8'
-if [[ $TERM == linux ]]; then
+if [[ $TERM == linux || $TERM == minix || $TERM == sun* ]]; then
   export LANG='C.UTF-8'
 else
   export LANG='ja_JP.UTF-8'
