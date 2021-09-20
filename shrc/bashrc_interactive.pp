@@ -817,9 +817,8 @@ function mwg.windowtitle { mshex/set-window-title "$@"; }
 #  shell/terminal setting
 
 # history
-export HISTSIZE=100000
 #%%if mode=="zsh" (
-
+export HISTSIZE=100000
 export HISTFILE=$HOME/.zshhistory
 export SAVEHIST=100000
 setopt HIST_IGNORE_DUPS
@@ -830,10 +829,10 @@ zshaddhistory() {
 }
 
 #%%elif mode=="bash"
-
-export HISTFILESIZE=100000
-export HISTIGNORE='?:fg:fg *'
-export HISTCONTROL='ignoredups'
+HISTSIZE=
+HISTFILESIZE=
+HISTIGNORE='?:fg:fg *'
+HISTCONTROL='ignoredups'
 export LINES COLUMNS
 shopt -s checkwinsize
 shopt -s histappend
