@@ -829,8 +829,9 @@ zshaddhistory() {
 }
 
 #%%elif mode=="bash"
-HISTSIZE=
-HISTFILESIZE=
+# Note: bash --norc で起動した時に履歴が消滅するのを防ぐ為 export する
+export HISTSIZE=
+export HISTFILESIZE=
 HISTIGNORE='?:fg:fg *'
 HISTCONTROL='ignoredups'
 export LINES COLUMNS
