@@ -41,11 +41,25 @@ if [[ -e /etc/redhat-release ]]; then
   unset -f command_not_found_handle 2>/dev/null
 
   # 勝手に screen のタイトルに変なものを設定しようとする。
-  if [[ $PROMPT_COMMAND == ble/* ]]; then
-    _ble_base_attach_PROMPT_COMMAND=
-  else
-    PROMPT_COMMAND=
+  _mshex_init_vars=(PROMPT_COMMAND)
+  if [[ ${BLE_VERSION-} && $PROMPT_COMMAND == ble/* ]]; then
+    _mshex_init_arr=("${!_ble_base_attach_PROMPT_COMMAND[@]}")
+    _mshex_init_arr=("${_mshex_init_arr[@]/#/_ble_base_attach_PROMPT_COMMAND[}")
+    _mshex_init_arr=("${_mshex_init_arr[@]/%/]}")
+    ble/array#push _mshex_init_vars "${_mshex_init_arr[@]}"
   fi
+
+  for _mshex_init_var in "${_mshex_init_vars[@]}"; do
+    case ${!_mshex_init_var} in
+    (__vte_prompt_command) ;;
+    ('printf "\033]0;'*|'printf "\033k'*) ;;
+    (__vte_osc7) ;;
+    (/etc/sysconfig/bash-prompt-*) ;;
+    (*) continue ;;
+    esac
+    builtin eval -- "$_mshex_init_var="
+  done
+  unset -v _mshex_init_var _mshex_init_vars
 
   # alias ll='ls -l --color=auto'
   unalias ll &>/dev/null
