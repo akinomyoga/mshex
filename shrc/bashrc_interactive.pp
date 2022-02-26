@@ -327,6 +327,11 @@ function mshex/alias:git/check-commit-arguments {
   return
 }
 function mshex/alias:git/register-repository {
+  local repository_path=$(readlink -f "$(git rev-parse --show-toplevel)")
+  [[ $repository_path == "$HOME"/git/* ]] &&
+    mshex/string#match "${repository_path#$HOME/git/}" '^[^/]+/[^/]+$' &&
+    return 0
+
   local name=$(
     git remote -v | gawk '
       function update_name(remote1, name1) {
@@ -347,7 +352,6 @@ function mshex/alias:git/register-repository {
     ')
   [[ $name ]] || return 0
 
-  local repository_path=$(readlink -f "$(git rev-parse --show-toplevel)")
   local link0=${MWGDIR:-$HOME/.mwg}/git/$name
   local link=$link0 index=1
   while [[ -e $link || -L $link ]]; do

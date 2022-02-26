@@ -52,6 +52,7 @@ if [[ $- == *i* ]]; then
   done"
     }
   fi
+  function mshex/string#match { [[ $1 =~ $2 ]]; }
 
   source "$MWGDIR"/share/mshex/shrc/bashrc_interactive.sh
 
@@ -87,6 +88,7 @@ if [[ $- == *i* ]]; then
   # = () { mshex/cdhist/select; }
 #%%elif mode=="zsh"
   function mshex/array#push { eval "$1+=(\"\${@:2}\")"; }
+  function mshex/string#match { [[ $1 =~ $2 ]]; }
   source $MWGDIR/share/mshex/shrc/zshrc_interactive.sh
 #%%)
 fi
