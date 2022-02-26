@@ -237,9 +237,9 @@ function rex_grep.construct {
     rex_grep+=('/\.[^/]')
   fi
 
-  for ((i=0;i<${#excludedPatterns[*]};i++)); do
-    local regex
-    pat2regex "${excludedPatterns[i]}"
+  local exclude regex
+  for exclude in "${excludedPatterns[@]}"; do
+    pat2regex "$exclude"
     rex_grep+=("(^|/)$regex(/|$)")
   done
 
@@ -250,9 +250,15 @@ function main {
   local rex_grep
   rex_grep.construct
 
+  local -a find_exclude_expr=()
+  local exclude
+  for exclude in "${excludedPatterns[@]}"; do
+    ble/array#push find_exclude_expr -name "$exclude" -prune -o
+  done
+
   # 実行
   if [[ $fALL ]]; then
-    find 2>/dev/null | \grep -Ev "$rex_grep" | sort
+    find . "${find_exclude_expr[@]}" -print 2>/dev/null | \grep -Ev "$rex_grep" | sort
   else
     local rex
     IFS='|' eval 'rex=".*[^/]\.(${extensions[*]})"'
@@ -267,14 +273,14 @@ function main {
     # echo "rex_grep=$rex_grep" >&2
 
     # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
-    find_options=()
+    local -a find_options=()
 
     if [[ $OSTYPE == darwin* || $OSTYPE == freebsd* || $OSTYPE == bsd* ]]; then
       ble/array#push find_options -E
     else
       ble/array#push find_options -regextype posix-extended
     fi
-    find . "${find_options[@]}" -type f -and -regex "$rex_find" 2>/dev/null | \grep -Ev "$rex_grep" | sort
+    find . "${find_options[@]}" "${find_exclude_expr[@]}" \( -type f -and -regex "$rex_find" -and -print \) 2>/dev/null | \grep -Ev "$rex_grep" | sort
     # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+' | sort
   fi
 }
