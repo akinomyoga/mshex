@@ -245,32 +245,37 @@ function rex_grep.construct {
 
   IFS='|' eval 'rex_grep="${rex_grep[*]}"'
 }
-rex_grep.construct
 
-# 実行
-if [[ $fALL ]]; then
-  find 2>/dev/null | \grep -Ev "$rex_grep" | sort
-else
-  declare rex
-  IFS='|' eval 'rex=".*[^/]\.(${extensions[*]})"'
-  findRegex+=("$rex")
+function main {
+  local rex_grep
+  rex_grep.construct
 
-  [[ $fNoExtension ]] && findRegex+=("(.*/)?[^/.]+")
-
-  declare rex_find
-  IFS='|' eval 'rex_find="${findRegex[*]}"'
-
-  # echo "rex_find=$rex_find" >&2
-  # echo "rex_grep=$rex_grep" >&2
-  
-  # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
-  find_options=()
-
-  if [[ $OSTYPE == darwin* || $OSTYPE == freebsd* || $OSTYPE == bsd* ]]; then
-    ble/array#push find_options -E
+  # 実行
+  if [[ $fALL ]]; then
+    find 2>/dev/null | \grep -Ev "$rex_grep" | sort
   else
-    ble/array#push find_options -regextype posix-extended
+    local rex
+    IFS='|' eval 'rex=".*[^/]\.(${extensions[*]})"'
+    findRegex+=("$rex")
+
+    [[ $fNoExtension ]] && findRegex+=("(.*/)?[^/.]+")
+
+    local rex_find
+    IFS='|' eval 'rex_find="${findRegex[*]}"'
+
+    # echo "rex_find=$rex_find" >&2
+    # echo "rex_grep=$rex_grep" >&2
+
+    # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
+    find_options=()
+
+    if [[ $OSTYPE == darwin* || $OSTYPE == freebsd* || $OSTYPE == bsd* ]]; then
+      ble/array#push find_options -E
+    else
+      ble/array#push find_options -regextype posix-extended
+    fi
+    find . "${find_options[@]}" -type f -and -regex "$rex_find" 2>/dev/null | \grep -Ev "$rex_grep" | sort
+    # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+' | sort
   fi
-  find . "${find_options[@]}" -type f -and -regex "$rex_find" 2>/dev/null | \grep -Ev "$rex_grep" | sort
-  # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+' | sort
-fi
+}
+main "$@"
