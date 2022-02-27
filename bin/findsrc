@@ -41,6 +41,8 @@ function pat2regex {
 #--------------------------------------
 # options
 
+opts=
+
 fArgumentError=
 
 # find
@@ -226,41 +228,35 @@ if [[ ! $typeSpecified ]]; then
   option/type:pl
 fi
 
-# egrep -v の引数を構築
-function rex_grep.construct {
-  rex_grep=('^$')
-
-  if [[ $excludesBackup ]]; then
-    rex_grep+=('/backup/|\.[[:digit:]]{8}($|\.\w+)|~$')
-    [[ $fALL ]] && rex_grep+=('~$')
-  fi
-
-  if [[ $excludesDotFiles ]]; then
-    rex_grep+=('/\.[^/]')
-  fi
-
-  local exclude regex
-  for exclude in "${excludedPatterns[@]}"; do
-    pat2regex "$exclude"
-    rex_grep+=("(^|/)$regex(/|$)")
-  done
-
-  IFS='|' eval 'rex_grep="${rex_grep[*]}"'
-}
-
 function main {
-  local rex_grep
-  rex_grep.construct
+  # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
+  local -a find_options=()
+  if [[ $OSTYPE == darwin* || $OSTYPE == freebsd* || $OSTYPE == bsd* ]]; then
+    ble/array#push find_options -E
+  else
+    ble/array#push find_options -regextype posix-extended
+  fi
 
   local -a find_exclude_expr=()
-  local exclude
-  for exclude in "${excludedPatterns[@]}"; do
-    ble/array#push find_exclude_expr -name "$exclude" -prune -o
-  done
+  if [[ $excludesBackup ]]; then
+    ble/array#push find_exclude_expr -regex '^.*/backup/.*$|^.*(\.[0-9]{8}(\.[_a-zA-Z0-9]+)?|~)$' -prune -o
+  fi
+  if [[ $excludesDotFiles ]]; then
+    ble/array#push find_exclude_expr -regex '^.*/\.[^/].*$' -prune -o
+  fi
+  if ((${#excludedPatterns[@]})); then
+    ble/array#push find_exclude_expr '('
+    local exclude count=0
+    for exclude in "${excludedPatterns[@]}"; do
+      ((count++)) && ble/array#push find_exclude_expr -o
+      ble/array#push find_exclude_expr -name "$exclude"
+    done
+    ble/array#push find_exclude_expr ')' -prune -o
+  fi
 
   # 実行
   if [[ $fALL ]]; then
-    find . "${find_exclude_expr[@]}" -print 2>/dev/null | \grep -Ev "$rex_grep" | sort
+    find . "${find_options[@]}" "${find_exclude_expr[@]}" -print 2>/dev/null
   else
     local rex
     IFS='|' eval 'rex="^.*[^/]\.(${extensions[*]})\$"'
@@ -271,19 +267,39 @@ function main {
     local rex_find
     IFS='|' eval 'rex_find="${findRegex[*]}"'
 
-    # echo "rex_find=$rex_find" >&2
-    # echo "rex_grep=$rex_grep" >&2
+    find . "${find_options[@]}" "${find_exclude_expr[@]}" \( -type f -and -regex "$rex_find" -and -print \) 2>/dev/null
+  fi | {
+    if [[ :$opts: == *:use-grep-to-exclude:* ]]; then
+      local rex_grep
+      rex_grep.construct
+      rex_grep=('^$')
 
-    # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
-    local -a find_options=()
+      if [[ $excludesBackup ]]; then
+        rex_grep+=('/backup/|\.[0-9]{8}(\.[_a-zA-Z0-9]+)?$|~$')
+        [[ $fALL ]] && rex_grep+=('~$')
+      fi
+      if [[ $excludesDotFiles ]]; then
+        rex_grep+=('/\.[^/]')
+      fi
+      local exclude regex
+      for exclude in "${excludedPatterns[@]}"; do
+        pat2regex "$exclude"
+        rex_grep+=("(^|/)$regex(/|$)")
+      done
 
-    if [[ $OSTYPE == darwin* || $OSTYPE == freebsd* || $OSTYPE == bsd* ]]; then
-      ble/array#push find_options -E
+      IFS='|' eval 'rex_grep="${rex_grep[*]}"'
+
+      \grep -Ev "$rex_grep" | sort
     else
-      ble/array#push find_options -regextype posix-extended
+      sort
     fi
-    find . "${find_options[@]}" "${find_exclude_expr[@]}" \( -type f -and -regex "$rex_find" -and -print \) 2>/dev/null | \grep -Ev "$rex_grep" | sort
-    # find -regex '..*\.\('"${rex_extensions//|/\\|}"'\)'|egrep -v '/backup/|\.[[:digit:]]{8}\.\w+' | sort
-  fi
+  }
 }
+
+# 2022-02-27 find のオプションで exlcude まで処理する実装に切り替えた。
+# 然し後で問題が生じるかもしれないので、取り敢えずは grep による実装も
+# 残してある。grep による制限もかける場合には以下のオプションを使用す
+# る。
+#opts=$opts:use-grep-to-exclude
+
 main "$@"
