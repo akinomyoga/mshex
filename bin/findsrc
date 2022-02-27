@@ -38,43 +38,26 @@ function pat2regex {
   # echo dbg: pat2regex $regex >&2
 }
 
-#--------------------------------------
+#------------------------------------------------------------------------------
 # options
-
-opts=
-
-fArgumentError=
-
-# find
-fALL=
-findRegex=()
-fNoExtension= # not implemented
-extensions=()
-
-# excludes
-excludesDotFiles=1
-excludesBackup=1
-excludedPatterns=()
-
-# types
-typeSpecified=
 
 function option/extension {
   while (($#)); do
     local arg=$1; shift
     local rex='^:|::|:$|^$'
-    [[ $arg =~ $rex ]] && fNoExtension=1
+    [[ $arg =~ $rex ]] && opts=$opts:find-extenstionless
 
-    IFS=: eval 'local arr=($arg) ext'
+    local ext
+    IFS=: builtin eval 'local -a arr=($arg)'
     for ext in "${arr[@]}"; do
-      [[ $ext ]] && extensions+=("${ext#.}")
+      [[ $ext ]] && opt_find_extensions+=("${ext#.}")
     done
   done
 }
 
 function option/check-optarg1 {
   if (($#==0)); then
-    fArgumentError=1
+    flags=E$flags
     echo "${title:-findsrc}: missing option argument for option -$c." >&2
     return 1
   fi
@@ -85,10 +68,10 @@ function option/type {
 
   local type=$1
   if ble/is-function "option/type:$type"; then
-    typeSpecified=1
+    flags=T$flags
     "option/type:$type"
   else
-    fArgumentError=1
+    flags=E$flags
     echo "${title:-findsrc}: unknown type = '$type'."
   fi
 }
@@ -111,7 +94,7 @@ function option/type:c++ {
   )
   local rex
   IFS='|' eval 'rex="(.*/|^)(${cxx_headers[*]})"'
-  findRegex+=("$rex")
+  opt_find_regex+=("$rex")
 }
 function option/type:js  { option/extension js:css; }
 function option/type:f   { option/extension f:inc; }
@@ -122,9 +105,9 @@ function option/type:py  { option/extension py; }
 function option/type:rb  { option/extension rb; }
 function option/type:pl  { option/extension pl; }
 function option/type:plain { :; }
-function option/type:all { fALL=1; }
+function option/type:all { opts=$opts:find-all-files; }
 
-function read_arguments {
+function readargs/process {
   while (($#)); do
     local arg=$1 option=$1
     shift
@@ -137,20 +120,20 @@ function read_arguments {
         case "$option" in
         (-t) option/type "$@"; shift ;;
         (-x) option/extension "$1"; shift ;;
-        (-a) excludesDotFiles=  ;;
-        (-A) excludesDotFiles=1 ;;
-        (-b) excludesBackup=    ;;
-        (-B) excludesBackup=1   ;;
+        (-a) flags=a$flags     ;;
+        (-A) flags=${flags//a} ;;
+        (-b) flags=b$flags     ;;
+        (-B) flags=${flags//b} ;;
         (-*)
           echo "${title:-findsrc}: unknown option ($option)" >&2
-          fArgumentError=1 ;;
+          flags=E$flags ;;
         esac
       done
       ;;
-    (--include-dotfile) excludesDotFiles=  ;;
-    (--exclude-dotfile) excludesDotFiles=1 ;;
-    (--include-backup)  excludesBackup=    ;;
-    (--exclude-backup)  excludesBackup=1   ;;
+    (--include-dotfile) flags=a$flags     ;;
+    (--exclude-dotfile) flags=${flags//a} ;;
+    (--include-backup)  flags=b$flags     ;;
+    (--exclude-backup)  flags=${flags//b} ;;
     (--help)
       ifold -s -i -w 80 <<EOF
 findsrc [options...] [type...]
@@ -177,19 +160,19 @@ EOF
       exit 0 ;;
     (--type=*)      option/type "${arg#*=}" ;;
     (--extension=*) option/extension "${arg#*=}" ;;
-    (--exclude=*)   excludedPatterns+=("${arg#*=}") ;;
+    (--exclude=*)   opt_exclude_glob+=("${arg#*=}") ;;
     (-|--*)
       echo "${title:-findsrc}: unknown option ($option)" >&2
-      fArgumentError=1 ;;
+      flags=E$flags ;;
     (*)
       local regex
       pat2regex "$arg"
-      findRegex+=("(.*/|^)$regex\$") ;;
+      opt_find_regex+=("(.*/|^)$regex\$") ;;
     esac
   done
 }
 
-function read_arguments_from_dotfile {
+function readargs/load_dotfile {
   local dir=$PWD
   while
     local foption=$dir/.srcoption
@@ -207,82 +190,103 @@ function read_arguments_from_dotfile {
     set -f
     eval "args=($line)"
     set +f
-    title=$foption:$iline read_arguments "${args[@]}"
+    title=$foption:$iline readargs/process "${args[@]}"
   done < "$foption"
 }
 
-read_arguments_from_dotfile
-read_arguments "$@"
+function readargs {
+  opts= flags=
+  opt_find_extensions=()
+  opt_find_regex=()
+  opt_exclude_glob=()
 
-[[ $fArgumentError ]] && exit 1
+  # 2022-02-27 find のオプションで exlcude まで処理する実装に切り替えた。
+  # 然し後で問題が生じるかもしれないので、取り敢えずは grep による実装も
+  # 残してある。grep による制限もかける場合には以下のオプションを使用す
+  # る。
+  #opts=$opts:use-grep-to-exclude
 
-if [[ ! $typeSpecified ]]; then
-  option/type:c++
-  option/type:js
-  option/type:f
-  option/type:el
-  option/type:sh
-  option/type:awk
-  option/type:py
-  option/type:rb
-  option/type:pl
-fi
+  readargs/load_dotfile
+  readargs/process "$@"
+
+  [[ $flags == *E* ]] && return 2
+
+  if [[ $flags != *T* ]]; then
+    option/type:c++
+    option/type:js
+    option/type:f
+    option/type:el
+    option/type:sh
+    option/type:awk
+    option/type:py
+    option/type:rb
+    option/type:pl
+  fi
+}
+
+#------------------------------------------------------------------------------
 
 function main {
-  # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
+  local opts flags
+  local -a opt_exclude_glob
+  readargs "$@" || return 2
+
   local -a find_options=()
+
+  # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
   if [[ $OSTYPE == darwin* || $OSTYPE == freebsd* || $OSTYPE == bsd* ]]; then
     ble/array#push find_options -E
   else
     ble/array#push find_options -regextype posix-extended
   fi
 
-  local -a find_exclude_expr=()
-  if [[ $excludesBackup ]]; then
-    ble/array#push find_exclude_expr -regex '^.*/backup/.*$|^.*(\.[0-9]{8}(\.[_a-zA-Z0-9]+)?|~)$' -prune -o
+  # exclude
+  local -a exclude=()
+  if [[ $flags != *b* ]]; then
+    ((${#exclude[@]})) && ble/array#push exclude -o
+    ble/array#push exclude -regex '^.*/backup/.*$|^.*(\.[0-9]{8}(\.[_a-zA-Z0-9]+)?|~)$'
   fi
-  if [[ $excludesDotFiles ]]; then
-    ble/array#push find_exclude_expr -regex '^.*/\.[^/].*$' -prune -o
+  if [[ $flags != *a* ]]; then
+    ((${#exclude[@]})) && ble/array#push exclude -o
+    ble/array#push exclude -regex '^.*/\.[^/].*$'
   fi
-  if ((${#excludedPatterns[@]})); then
-    ble/array#push find_exclude_expr '('
-    local exclude count=0
-    for exclude in "${excludedPatterns[@]}"; do
-      ((count++)) && ble/array#push find_exclude_expr -o
-      ble/array#push find_exclude_expr -name "$exclude"
-    done
-    ble/array#push find_exclude_expr ')' -prune -o
+  local pat
+  for pat in "${opt_exclude_glob[@]}"; do
+    ((${#exclude[@]})) && ble/array#push exclude -o
+    ble/array#push exclude -name "$pat"
+  done
+  ((${#exclude[@]})) &&
+    ble/array#push find_options \( "${exclude[@]}" \) -prune -o
+
+  # search target
+  if [[ :$opts: != *:find-all-files:* ]]; then
+    local rex
+    IFS='|' eval 'rex="^.*[^/]\.(${opt_find_extensions[*]})\$"'
+    opt_find_regex+=("$rex")
+
+    [[ :$opts: == *:find-extenstionless:* ]] && opt_find_regex+=("^(.*/)?[^/.]+\$")
+
+    local rex_find
+    IFS='|' eval 'rex_find="${opt_find_regex[*]}"'
+    
+    ble/array#push find_options \( -type f -and -regex "$rex_find" \)
   fi
 
   # 実行
-  if [[ $fALL ]]; then
-    find . "${find_options[@]}" "${find_exclude_expr[@]}" -print 2>/dev/null
-  else
-    local rex
-    IFS='|' eval 'rex="^.*[^/]\.(${extensions[*]})\$"'
-    findRegex+=("$rex")
-
-    [[ $fNoExtension ]] && findRegex+=("^(.*/)?[^/.]+\$")
-
-    local rex_find
-    IFS='|' eval 'rex_find="${findRegex[*]}"'
-
-    find . "${find_options[@]}" "${find_exclude_expr[@]}" \( -type f -and -regex "$rex_find" -and -print \) 2>/dev/null
-  fi | {
+  find . "${find_options[@]}" -print 2>/dev/null | {
     if [[ :$opts: == *:use-grep-to-exclude:* ]]; then
       local rex_grep
       rex_grep.construct
       rex_grep=('^$')
 
-      if [[ $excludesBackup ]]; then
+      if [[ $flags != *b* ]]; then
         rex_grep+=('/backup/|\.[0-9]{8}(\.[_a-zA-Z0-9]+)?$|~$')
-        [[ $fALL ]] && rex_grep+=('~$')
       fi
-      if [[ $excludesDotFiles ]]; then
+      if [[ $flags != *a* ]]; then
         rex_grep+=('/\.[^/]')
       fi
       local exclude regex
-      for exclude in "${excludedPatterns[@]}"; do
+      for exclude in "${opt_exclude_glob[@]}"; do
         pat2regex "$exclude"
         rex_grep+=("(^|/)$regex(/|$)")
       done
@@ -295,11 +299,5 @@ function main {
     fi
   }
 }
-
-# 2022-02-27 find のオプションで exlcude まで処理する実装に切り替えた。
-# 然し後で問題が生じるかもしれないので、取り敢えずは grep による実装も
-# 残してある。grep による制限もかける場合には以下のオプションを使用す
-# る。
-#opts=$opts:use-grep-to-exclude
 
 main "$@"
