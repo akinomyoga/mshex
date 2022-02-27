@@ -182,7 +182,7 @@ EOF
     (*)
       local regex
       pat2regex "$arg"
-      findRegex+=("(.*/)?$regex") ;;
+      findRegex+=("(.*/|^)$regex\$") ;;
     esac
   done
 }
@@ -261,10 +261,10 @@ function main {
     find . "${find_exclude_expr[@]}" -print 2>/dev/null | \grep -Ev "$rex_grep" | sort
   else
     local rex
-    IFS='|' eval 'rex=".*[^/]\.(${extensions[*]})"'
+    IFS='|' eval 'rex="^.*[^/]\.(${extensions[*]})\$"'
     findRegex+=("$rex")
 
-    [[ $fNoExtension ]] && findRegex+=("(.*/)?[^/.]+")
+    [[ $fNoExtension ]] && findRegex+=("^(.*/)?[^/.]+\$")
 
     local rex_find
     IFS='|' eval 'rex_find="${findRegex[*]}"'
