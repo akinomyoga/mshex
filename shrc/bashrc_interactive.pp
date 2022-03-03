@@ -198,7 +198,7 @@ function mshex/alias:make/nproc {
       mapfile buffer < /proc/cpuinfo
     else
       buffer=$(< /proc/cpuinfo)
-      IFS=$'\n' eval 'buffer=($buffer)'
+      IFS=$'\n' builtin eval 'buffer=($buffer)'
     fi
     local line count=0
     for line in "${buffer[@]}"; do

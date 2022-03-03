@@ -2,7 +2,7 @@
 
 _ble_bash=$((BASH_VERSINFO[0]*10000+BASH_VERSINFO[1]*100+BASH_VERSINFO[2]))
 if ((_ble_bash>=30100)); then
-  function array#push { IFS=' ' eval "$1+=(\"\${@:2}\")"; }
+  function array#push { IFS=' ' builtin eval "$1+=(\"\${@:2}\")"; }
 else
   function array#push/impl {
     eval "$1[\${#$1[@]}]=\"\$2\""
@@ -160,7 +160,9 @@ if [[ -z $regexp ]]; then
 fi
 
 if ((${#grep_files[@]}==0)); then
-  GLOBIGNORE=* IFS=$'\n' eval 'grep_files=($(findsrc "${findsrc_args[@]}"))'
+  set -f
+  IFS=$'\n' builtin eval -- 'grep_files=($(findsrc "${findsrc_args[@]}"))'
+  set +f
 fi
 
 if ((${#grep_files[@]}>=1)); then

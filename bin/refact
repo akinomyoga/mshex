@@ -99,7 +99,7 @@ while (($#)); do
     (--skip-collisions)     fSkipColl=1 ;;
     (-F|--fixed-strings) regex_type=F ;;
     (-Wg,?*)
-      IFS=, eval 'grc_options+=(${arg:4})' ;;
+      IFS=, builtin eval 'grc_options+=(${arg:4})' ;;
     (--help)
       flagHelp=1 ;;
     (--) opt_options_end=1 ;;
@@ -314,7 +314,7 @@ function enumerate_matches.i2 {
     '
   }
 
-  IFS=$'\n' eval 'result=($(search_target_files))'
+  IFS=$'\n' builtin eval 'result=($(search_target_files))'
 
   local file
   for file in "${result[@]}"; do

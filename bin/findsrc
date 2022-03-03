@@ -16,7 +16,7 @@ else
 fi
 
 if ((_ble_bash>=30100)); then
-  function ble/array#push { IFS=' ' eval -- "$1+=(\"\${@:2}\")"; }
+  function ble/array#push { IFS=' ' builtin eval -- "$1+=(\"\${@:2}\")"; }
 else
   function ble/array#push {
     while (($#>=2)); do
@@ -93,7 +93,7 @@ function option/type:c++ {
     system_error tuple typeindex typeinfo type_traits utility valarray
   )
   local rex
-  IFS='|' eval 'rex="(.*/|^)(${cxx_headers[*]})"'
+  IFS='|' builtin eval 'rex="(.*/|^)(${cxx_headers[*]})"'
   opt_find_regex+=("$rex")
 }
 function option/type:js  { option/extension js:css; }
@@ -265,13 +265,13 @@ function main {
   # search target
   if [[ :$opts: != *:find-all-files:* ]]; then
     local rex
-    IFS='|' eval 'rex="^.*[^/]\.(${opt_find_extensions[*]})\$"'
+    IFS='|' builtin eval 'rex="^.*[^/]\.(${opt_find_extensions[*]})\$"'
     opt_find_regex+=("$rex")
 
     [[ :$opts: == *:find-extenstionless:* ]] && opt_find_regex+=("^(.*/)?[^/.]+\$")
 
     local rex_find
-    IFS='|' eval 'rex_find="${opt_find_regex[*]}"'
+    IFS='|' builtin eval 'rex_find="${opt_find_regex[*]}"'
     
     ble/array#push find_options \( -type f -and -regex "$rex_find" \)
   fi
@@ -296,7 +296,7 @@ function main {
         rex_grep+=("(^|/)$regex(/|$)")
       done
 
-      IFS='|' eval 'rex_grep="${rex_grep[*]}"'
+      IFS='|' builtin eval 'rex_grep="${rex_grep[*]}"'
 
       \grep -Ev "$rex_grep" | sort
     else

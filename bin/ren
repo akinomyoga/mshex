@@ -346,8 +346,11 @@ function _ren {
     while read -r src && read -r dst; do
       [[ -e "$src" ]] || continue
   
-      [[ $fEval ]] && IFS= GLOBIGNORE=\* eval "dst=($dst)"
-  
+      if [[ $fEval ]]; then
+        set -f
+        IFS= builtin eval "dst=($dst)"
+        set +f
+      fi
 
       local qsrc=${src//$q/$Q}
       local qdst=${dst//$q/$Q}

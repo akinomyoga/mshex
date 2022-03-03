@@ -74,7 +74,7 @@ function PATH._readArguments {
       _PATH_flags=${_PATH_flags}e
       return ;;
     (*)
-      IFS=$_PATH_sep eval "_PATH_paths=(\"\${_PATH_paths[@]}\" \$1)"
+      IFS=$_PATH_sep builtin eval "_PATH_paths=(\"\${_PATH_paths[@]}\" \$1)"
       shift ;;
     esac
   done
