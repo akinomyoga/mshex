@@ -50,7 +50,11 @@ if [[ -e /etc/redhat-release ]]; then
   fi
 
   for _mshex_init_var in "${_mshex_init_vars[@]}"; do
+#%%if mode=="zsh"
+    case ${(P)_mshex_init_var} in
+#%%else
     case ${!_mshex_init_var} in
+#%%end
     (__vte_prompt_command) ;;
     ('printf "\033]0;'*|'printf "\033k'*) ;;
     (__vte_osc7) ;;
