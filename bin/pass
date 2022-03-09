@@ -1,33 +1,77 @@
 #!/usr/bin/env bash
 
+shopt -u nocasematch
+
 function print-help {
   printf '%s\n' \
          'usage: pass [options]' \
          '' \
          'OPTIONS' \
-         '    --edit' \
-         '    --help' \
+         '    --edit   ... edit the file' \
+         '    --passwd ... mask passwords' \
+         '    --help   ... show this help' \
          ''
 }
+
+function read-arguments {
+  flags=
+  while (($#)); do
+    local arg=$1; shift
+    case $arg in
+    (edit|--edit)
+      flags=e$flags ;;
+    (--passwd)
+      flags=p$flags ;;
+    (--help)
+      flags=H$flags ;;
+
+    (--*)
+      printf '%s\n' "pass: unrecognized option '$arg'" >&2
+      flags=E$flags ;;
+    (-?*)
+      local i c
+      for ((i=1;i<${#arg};i++)); do
+        c=${arg:i:1}
+        case $c in
+        ([ep]) flags=$c$flags ;;
+        (*)
+          printf '%s\n' "pass: unrecognized option '$arg'" >&2
+          flags=E$flags ;;
+        esac
+      done ;;
+    (*)
+      printf '%s\n' "pass: unrecognized argument '$arg'" >&2
+      flags=E$flags ;;
+    esac
+
+  done
+
+}
+
+flags=
+read-arguments "$@"
+if [[ $flags == *E* ]]; then
+  exit 2
+elif [[ $flags == *H* ]]; then
+  print-help
+  exit 0
+fi
 
 dir=~/.ssh
 filename=$dir/passwd.cz2
 [[ ! -f $filename && -f $dir/passwd.cz ]] &&
   filename=$dir/passwd.cz
 
-if (($#==0)); then
-  czless --passwd "$filename"
-elif (($#==1)); then
-  case $1 in
-  (edit|--edit)
-    cz --edit "$filename" ;;
-  (--help)
-    print-help ;;
-  (*)
-    print-help
-    exit 1 ;;
-  esac
-else
-  print-help
-  exit 1
-fi
+case $flags in
+(*e*)
+  if [[ ! -e $filename.master ]]; then
+    printf 'pass: %s\n' 'The file in this host is not the master' >&2
+    exit 2
+  else
+    cz --edit "$filename"
+  fi ;;
+(*p*)
+  czless --passwd "$filename" ;;
+(*)
+  czless "$filename" ;;
+esac
