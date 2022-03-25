@@ -232,11 +232,27 @@ function mshex/alias:make/update-makefile-pp {
     fi
   fi
 }
-function mshex/alias:make {
-  local fHere= arg regex
-  for arg in "$@"; do
-    regex='^(-C|-f)' && [[ $arg =~ $regex ]] && fHere=1
+function mshex/alias:make/scan-arguments {
+  flags= opt_mfile= opt_mdir=
+  while (($#)); do
+    local arg=$1; shift
+    case $arg in
+    (--*) ;;
+    (-*f)
+      opt_mfile=${arg#*[fC]}
+      [[ $opt_mfile ]] || { opt_mfile=$1; shift; } ;;
+    (-*C)
+      opt_mdir=${arg#*[fC]}
+      [[ $opt_mdir ]] || { opt_mdir=$1; shift; } ;;
+    (*) ;;
+    esac
   done
+  [[ $opt_mdir || $opt_mfile ]] &&
+    flags=h$flags
+}
+function mshex/alias:make {
+  local opt_mfile opt_mdir flags
+  mshex/alias:make/scan-arguments "$@"
 
   local make=make
   type gmake &>/dev/null && make=gmake
@@ -244,42 +260,72 @@ function mshex/alias:make {
   local ret; mshex/alias:make/nproc; local nproc=$ret
   mshex/array#push make_options -j $((nproc*3/2))
 
-  if [[ $fHere || -f Makefile || -f Makefile.pp || -f GNUmakefile || -f GNUmakefile.pp ]]; then
+  if [[ $flags == *h* || -f Makefile || -f Makefile.pp || -f GNUmakefile || -f GNUmakefile.pp ]]; then
     mshex/alias:make/update-makefile-pp Makefile
     mshex/alias:make/update-makefile-pp GNUmakefile
 
-    local makefile=
-    if [[ -f GNUmakefile ]]; then
-      makefile=GNUmakefile
-    elif [[ -f Makefile ]]; then
-      makefile=Makefile
-    fi
+    if
+      local makefile=
+      if [[ $opt_mfile && $opt_mfile != *.ninja ]]; then
+        makefile=$opt_mfile
+      elif [[ $opt_mdir && -f $opt_mdir/GNUmakefile ]]; then
+        makefile=$opt_mdir/GNUmakefile
+      elif [[ $opt_mdir && -f $opt_mdir/Makefile ]]; then
+        makefile=$opt_mdir/Makefile
+      elif [[ -f GNUmakefile ]]; then
+        makefile=GNUmakefile
+      elif [[ -f Makefile ]]; then
+        makefile=Makefile
+      fi
+      [[ $makefile ]]
+    then
+      if [[ $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
+        mshex/alias:make/"sub:$1" "$makefile" "${@:2}"
+      else
+        "$make" "${make_options[@]}" "$@"
+      fi
 
-    if [[ $makefile && $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
-      mshex/alias:make/"sub:$1" "$makefile" "${@:2}"
+    elif
+      local ninjafile=
+      if [[ $opt_mfile && $opt_mfile == *.ninja ]]; then
+        ninjafile=$opt_mfile
+      elif [[ $opt_mdir && -f $opt_mdir/build.ninja ]]; then
+        ninjafile=$opt_mdir/build.ninja
+      fi
+      [[ $ninjafile ]]
+    then
+      ninja "${make_options[@]}" "$@"
+
     else
       "$make" "${make_options[@]}" "$@"
     fi
   else
     local dir=${PWD%/}
     while :; do
-      local makefile=
-      if [[ -f $dir/GNUmakefile ]]; then
-        makefile=$dir/GNUmakefile
-      elif [[ -f $dir/Makefile ]]; then
-        makefile=$dir/Makefile
-      fi
-
-      if [[ $makefile ]]; then
+      if
+        local makefile=
+        if [[ -f $dir/GNUmakefile ]]; then
+          makefile=$dir/GNUmakefile
+        elif [[ -f $dir/Makefile ]]; then
+          makefile=$dir/Makefile
+        fi
+        [[ $makefile ]]
+      then
         if [[ $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
           mshex/alias:make/"sub:$1" "$makefile" "${@:2}"
         else
           "$make" "${make_options[@]}" -C "${dir:-/}" "$@"
         fi
-        return
+        return $?
+      elif [[ -f $dir/build.ninja ]]; then
+        ninja "${make_options[@]}" -C "${dir:-/}" "$@"
+        return $?
+      elif [[ -f $dir/build/build.ninja ]]; then
+        ninja "${make_options[@]}" -C "$dir/build" "$@"
+        return $?
       elif [[ $dir != */* ]]; then
         "$make" "${make_options[@]}" "$@"
-        return
+        return $?
       else
         dir=${dir%/*}
       fi
@@ -520,9 +566,11 @@ mshex/mkd "$mshex_tmpdir"
 
 function mshex/display {
   local fsshtty="$mshex_tmpdir/SSH_TTY"
-  if [[ -s $fsshtty ]]; then
-    export DISPLAY=$(< "$fsshtty")
-  fi
+  [[ -s $fsshtty ]] || return 0
+  local value=$(< "$fsshtty")
+  [[ $DISPLAY == "$value" ]] && return 0
+  printf '%s\n' "DISPLAY: update '$DISPLAY' -> '$value'"
+  export DISPLAY=$(< "$fsshtty")
 }
 
 function mshex/display/save {
