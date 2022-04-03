@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
-# settings
-
-REMOVE_DIR=$HOME/.recycle
-REMOVE_WAIT_DIR=$REMOVE_DIR/recent
-REMOVE_GOMI_DIR=$REMOVE_DIR/old
+REMOVE_DIR_NAME=.recycle
+REMOVE_SUBDIR_WAIT=recent
+REMOVE_SUBDIR_GOMI=old
 
 : ${VISUAL:=less}
 [[ ${VISUAL##*/} == less ]] && VISUAL=("$VISUAL" -XSFr)
 
 #------------------------------------------------------------------------------
 # utils
+
+((__bash=BASH_VERSINFO[0]*10000+BASH_VERSINFO[1]*100+BASH_VERSINFO[2]))
 
 shopt -s nullglob
 
@@ -58,25 +58,109 @@ function unescape_filename {
   fi
 }
 
-#------------------------------------------------------------------------------
-# update
+if ((__bash>=30100)); then
+  function array#push {
+    local __script='A+=("${@:2}")'
+    __script=${__script//A/"$1"}
+    builtin eval -- "$__script"
+  }
+else
+  function array#push {
+    local __script='local vA;for vA in "${@:2}";do A[${#A[@]}]=$vA; done'
+    __script=${__script//A/"$1"}
+    builtin eval -- "$__script"
+  }
+fi
 
-if [[ -d $REMOVE_DIR/wait ]]; then
-  if [[ -d $REMOVE_WAIT_DIR ]]; then
-    mv "$REMOVE_DIR/wait"/* "$REMOVE_WAIT_DIR"/
-    rmdir "$REMOVE_DIR/wait"
-  else
-    mv "$REMOVE_DIR/wait" "$REMOVE_WAIT_DIR"
+#------------------------------------------------------------------------------
+# migrate
+
+function recycle#migrate {
+  local recycle=$1
+  local wait_dir=$recycle/recent
+  local gomi_dir=$recycle/old
+
+  # 古い形式のディレクトリ
+  if [[ -d $recycle/wait ]]; then
+    if [[ -d $wait_dir ]]; then
+      mv "$recycle/wait"/* "$wait_dir"/
+      rmdir "$recycle/wait"
+    else
+      mv "$recycle/wait" "$wait_dir"
+    fi
   fi
-fi
-if [[ -d $REMOVE_DIR/gomi ]]; then
-  if [[ -d $REMOVE_GOMI_DIR ]]; then
-    mv "$REMOVE_DIR/gomi"/* "$REMOVE_GOMI_DIR"/
-    rmdir "$REMOVE_DIR/gomi"
-  else
-    mv "$REMOVE_DIR/gomi" "$REMOVE_GOMI_DIR"
+  if [[ -d $recycle/gomi ]]; then
+    if [[ -d $gomi_dir ]]; then
+      mv "$recycle/gomi"/* "$gomi_dir"/
+      rmdir "$recycle/gomi"
+    else
+      mv "$recycle/gomi" "$gomi_dir"
+    fi
   fi
-fi
+}
+
+function subcommand:add-recycle {
+  local home flags= recycles
+  recycles=()
+  for home; do
+    if [[ ! -d $home ]]; then
+      flags=E$flags
+      if [[ -e $home || -L $home ]]; then
+        printf '%s\n' "$home: this is not a directory." >&2
+      else
+        printf '%s\n' "$home: the directory does not exists." >&2
+      fi
+      continue
+    elif [[ ! -O $home ]]; then
+      flags=E$flags
+      printf '%s\n' "$home: the directory is not owned by the current user." >&2
+      continue
+    elif [[ ! -w $home ]]; then
+      flags=E$flags
+      printf '%s\n' "$home: the directory is not writable." >&2
+      continue
+    fi
+
+    local recycle=$home/$REMOVE_DIR_NAME
+    if [[ -e $recycle || -L $recycle ]]; then
+      flags=E$flags
+      printf '%s\n' "$home/$REMOVE_DIR_NAME: the file already exists." >&2
+      continue
+    fi
+
+    array#push recycles "$recycle"
+  done
+  [[ $flags == *E* ]] && return 2
+  mkd "${recycles[@]}"
+}
+
+_remove_base=
+function recycle#resolve {
+  local home=${HOME%/}
+  local path=$(cd -P .; printf '%sx' "${PWD}")
+  path=${path%x} path=${path%/}
+
+  while [[ $path != "$home" ]]; do
+    local base=$path/$REMOVE_DIR_NAME
+    if [[ -d $base && -O $base ]]; then
+      if ! [[ -r $base && -w $base ]]; then
+        printf '%s\n' "$base: directory permission is wrong." >&2
+        exit 1
+      fi
+      _remove_base=$base
+      break
+    fi
+
+    [[ $path == */* ]] || break
+    path=${path%/*}
+  done
+
+  [[ $_remove_base ]] || _remove_base=$home/$REMOVE_DIR_NAME
+
+  _remove_base_wait=$_remove_base/$REMOVE_SUBDIR_WAIT
+  _remove_base_gomi=$_remove_base/$REMOVE_SUBDIR_GOMI
+  recycle#migrate "$_remove_base"
+}
 
 #------------------------------------------------------------------------------
 
@@ -103,7 +187,7 @@ usage: ${bold}remove${sgr0} ${red}[${cyan}OPTIONS${red}]${sgr0} ${cyan}FILE${sgr
 ${bold}FILE${sgr0}
 
   Specify files and directories to remove. To remove directories, the \`${ul}-r${sgr0}' option is required. \
-The removed files and directories are saved in ${ul}\$HOME/.recycle/recent${sgr0}.
+The removed files and directories are saved in ${ul}\$HOME/.recycle/recent${sgr0} or in the local ${ul}.recycle${sgr0} directory.
 
 ${bold}OPTIONS${sgr0}
 
@@ -113,6 +197,8 @@ ${bold}OPTIONS${sgr0}
         List files removed within a month.
   ${bold}    --flush-old${sgr0}
         Completely delete files removed before a month ago.
+  ${bold}    --add-recycle${sgr0}
+        Create local recycle directories under the paths specified by ${cyan}FILE${sgr0}.
 
   ${bold}    --color${red}[${sgr39}=always${red}]${sgr0}
   ${bold}    --color=auto${sgr0}
@@ -201,19 +287,23 @@ function subcommand:list-garbages/check-newfile {
 }
 
 function subcommand:list-garbages {
-  [[ -d $REMOVE_WAIT_DIR ]] || return
+  recycle#resolve
+  if [[ $_remove_base != "${HOME%/}/$REMOVE_DIR_NAME" ]]; then
+    printf '%s\n' "# local .recycle directory '$_remove_base' is used"
+  fi
+  [[ -d $_remove_base_wait ]] || return 0
   local entry
   local date time gfile wdir
   local rtime file opath
   local _wdir _file
-  for entry in "$REMOVE_WAIT_DIR"/*; do
+  for entry in "$_remove_base_wait"/*; do
     [[ -e $entry ]] || continue
-    entry=${entry#"$REMOVE_WAIT_DIR/"}
+    entry=${entry#"$_remove_base_wait/"}
 
     if [[ $entry == ????????-??????-* ]]; then
       date=${entry::8}
       time=${entry:9:6}
-      gfile=$REMOVE_WAIT_DIR/$entry
+      gfile=$_remove_base_wait/$entry
       file=${entry:16}
       unescape_filename -v file "$file"
 
@@ -232,8 +322,8 @@ function subcommand:list-garbages {
       subcommand:list-garbages/color-directory
       echo "$rtime $_wdir"
 
-      for gfile in "$REMOVE_WAIT_DIR/$entry"/{*,.*}; do
-        file=${gfile#"$REMOVE_WAIT_DIR/$entry"/}
+      for gfile in "$_remove_base_wait/$entry"/{*,.*}; do
+        file=${gfile#"$_remove_base_wait/$entry"/}
         [[ $file == . || $file == .. ]] && continue
         unescape_filename -v file "$file"
 
@@ -248,7 +338,8 @@ function subcommand:list-garbages {
 }
 
 function subcommand:flush-old {
-  rm -rf "$REMOVE_GOMI_DIR"
+  recycle#resolve
+  rm -rf "$_remove_base_gomi"
 }
 
 #------------------------------------------------------------------------------
@@ -263,7 +354,7 @@ fBackup= # remove-backup
 fColor=auto
 
 subcommand=
-function subcommand.set {
+function readargs/set:subcommand {
   if [[ $subcommand ]]; then
     echo "mshex/remove:(arg:$arg -> $subcommand): multiple subcommands are specified." >&2
     subcommand=error
@@ -277,7 +368,7 @@ fError=
 files=()
 
 if (($#==0)); then
-  subcommand.set list-garbages
+  readargs/set:subcommand list-garbages
 fi
 
 while (($#)); do
@@ -288,7 +379,7 @@ while (($#)); do
     files[${#files[@]}]=$arg
   else
     case "$arg" in
-    (--help)          subcommand.set help ;;
+    (--help)          readargs/set:subcommand help ;;
     (--recursive)     fR=1 ;;
     (--force)         fF=1 ;;
     (--verbose)       fV=1 ;;
@@ -299,17 +390,18 @@ while (($#)); do
     (--color)         fColor=always ;;
     (--color=*)       fColor=${arg#*=}
                       : ${fColor:=always} ;;
-    (--list-garbages) subcommand.set list-garbages ;;
+    (--list-garbages) readargs/set:subcommand list-garbages ;;
     (--remove-backup) fBackup=1 ;;
     (--) fLiteral=1 ;;
-    (--flush-old)     subcommand.set flush-old ;;
+    (--flush-old)     readargs/set:subcommand flush-old ;;
+    (--add-recycle)   readargs/set:subcommand add-recycle ;;
     (--*)
       fError=1
       echo "mshex/remove: unrecognized option \`$arg'." >&2 ;;
     (-?*)
       for ((i=1;i<${#arg};i++)); do
         case "${arg:i:1}" in
-        ('?') subcommand.set help ;;
+        ('?') readargs/set:subcommand help ;;
         (i) fI=always ;;
         (I) fI=once   ;;
         (r) fR=1  ;;
@@ -317,7 +409,7 @@ while (($#)); do
         (v) fV=-v ;;
         (s) fS=1  ;;
         (b) fBackup=1 ;;
-        (l) subcommand.set list-garbages ;;
+        (l) readargs/set:subcommand list-garbages ;;
         (*)
           fError=1
           echo "mshex/remove: unrecognized option \`-${arg:i:1}'" >&2 ;;
@@ -335,13 +427,8 @@ if [[ $fColor == always || $fColor == auto && -t 1 ]]; then
 fi
 
 if [[ $subcommand ]]; then
-  [[ ! $fError ]] && subcommand:"$subcommand" "${files[@]}"
+  subcommand:"$subcommand" "${files[@]}"
   exit
-fi
-
-if ((${#files[@]}==0)); then
-  echo "mshex/remove: no files to remove are specified" >&2
-  exit 1
 fi
 
 function register_backup_files {
@@ -355,9 +442,6 @@ function register_backup_files {
   done
   files=("${files[@]}" "${backup_files[@]}")
 }
-if [[ $fBackup ]]; then
-  register_backup_files
-fi
 
 function check_files_are_removable_files {
   local file
@@ -378,7 +462,7 @@ function check_files_are_on_the_same_disk {
     root_synonym=$(df / | awk 'NR==2 && /^[A-Z]:/ {print "/cygdrive/" tolower(substr($1,1,1));}')
   fi
 
-  mkd "$REMOVE_DIR"
+  mkd "$_remove_base"
   local result=$(
     export root_synonym
 
@@ -395,7 +479,7 @@ function check_files_are_on_the_same_disk {
       dffiles[${#dffiles[@]}]=$file
     done
 
-    { df -- "$REMOVE_DIR" "${dffiles[@]}" | awk '
+    { df -- "$_remove_base" "${dffiles[@]}" | awk '
       BEGIN {root_synonym = ENVIRON["root_synonym"];}
       function normalize(path){return path == root_synonym? "/": path;}
       NR==2{mount_point=normalize($NF);next;}
@@ -407,6 +491,7 @@ function check_files_are_on_the_same_disk {
       if [[ $line == odisk=* ]]; then
         local index=${line%odist=}
         echo "mshex/remove: '${files[index]}' is on a different disk from that of the recycle directory"
+        echo "mshex/remove: Please consider creating a local .recycle directory in the top-level user directory in the disk (cf --help)."
       else
         echo "$line"
       fi
@@ -415,22 +500,17 @@ function check_files_are_on_the_same_disk {
   fi
 }
 
-# checking files
-if [[ ! $fR || ! $fF ]]; then
-  check_files_are_removable_files
-  check_files_are_on_the_same_disk
-fi
-
 #------------------------------------------------------------------------------
 # create backup directory
-now=$(date +%Y%m%d-%H%M%S)
 
+## @fn delete_waiting_files
+##   @var now
 function delete_waiting_files {
-  [[ -d $REMOVE_WAIT_DIR ]] || return
+  [[ -d $_remove_base_wait ]] || return
 
   local -a gomigomi=()
-  for file in "$REMOVE_WAIT_DIR"/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]*; do
-    local date=${file#$REMOVE_WAIT_DIR/}
+  for file in "$_remove_base_wait"/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]*; do
+    local date=${file#$_remove_base_wait/}
     date=${date::8}
     if ((date+100<${now::8})); then
       gomigomi[${#gomigomi[@]}]=$file
@@ -438,31 +518,10 @@ function delete_waiting_files {
   done
 
   if ((${#gomigomi[@]}>0)); then
-    mkd "$REMOVE_GOMI_DIR"
-    mv $fV "${gomigomi[@]}" "$REMOVE_GOMI_DIR"
+    mkd "$_remove_base_gomi"
+    mv $fV "${gomigomi[@]}" "$_remove_base_gomi"
   fi
 }
-
-delete_waiting_files
-
-destination=$REMOVE_WAIT_DIR
-[[ $fS ]] && destination=$REMOVE_DIR
-mkd "$destination"
-
-if [[ $fI == once ]]; then
-  {
-    echo '-- filelist --'
-    if type colored &>/dev/null; then
-      colored ls -ld "${files[@]%/}"
-    else
-      #find -- "${files[@]%/}"
-      ls -ld "${files[@]%/}"
-    fi
-  } | "${VISUAL[@]}"
-
-  mshex.yn -n "mshex/remove: remove the above files?" || exit 2
-  fI=
-fi
 
 function interactive_confirm_file {
   local file=$1
@@ -495,7 +554,46 @@ function interactive_confirm_file {
 ## @var[in] destination
 ## @var[in] now
 ## @var[in] files[]
-function remove_impl {
+function subcommand:remove {
+  local -a files; files=("$@")
+  if ((${#files[@]}==0)); then
+    echo "mshex/remove: no files to remove are specified" >&2
+    return 1
+  fi
+
+  recycle#resolve
+  if [[ $fBackup ]]; then
+    register_backup_files
+  fi
+
+  # checking files
+  if [[ ! $fR || ! $fF ]]; then
+    check_files_are_removable_files
+    check_files_are_on_the_same_disk
+  fi
+
+  local now=$(date +%Y%m%d-%H%M%S)
+
+  delete_waiting_files
+
+  destination=$_remove_base_wait
+  [[ $fS ]] && destination=$_remove_base
+  mkd "$destination"
+
+  if [[ $fI == once ]]; then
+    {
+      echo '-- filelist --'
+      if type colored &>/dev/null; then
+        colored ls -ld "${files[@]%/}"
+      else
+        ls -ld "${files[@]%/}"
+      fi
+    } | "${VISUAL[@]}"
+
+    mshex.yn -n "mshex/remove: remove the above files?" || exit 2
+    fI=
+  fi
+
   if ((${#files[@]}==1)); then
     local src=${files[0]%/} dst esc
     interactive_confirm_file "$src" || return
@@ -527,4 +625,4 @@ function remove_impl {
   fi
 }
 
-remove_impl
+subcommand:remove "${files[@]}"
