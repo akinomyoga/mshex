@@ -59,6 +59,16 @@ fi
 #-------------------------------------------------------------------------------
 # updated files
 
+function checksum {
+  if type -t md5sum &>/dev/null; then
+    md5sum "$@"
+  elif type -t md5 &>/dev/null; then
+    md5 -r "$@"
+  else
+    cksum "$@"
+  fi
+}
+
 function issame {
   local src=$1
   local dst=$2
@@ -69,7 +79,7 @@ function issame {
     [[ ! -e $src || ! -e $dst ]] && return 1
     [[ -d $src && -d $dst ]] && return 0
     [[ -d $src || -d $dst ]] && return 1
-    [[ $(md5sum "$src" "$dst" | awk '{print $1}' | uniq | wc -l) == 1 ]]
+    [[ $(checksum "$src" "$dst" | awk '{print $1}' | uniq | wc -l) == 1 ]]
   fi
 }
 

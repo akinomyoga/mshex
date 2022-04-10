@@ -231,11 +231,12 @@ function main {
   local -a opt_exclude_glob
   readargs "$@" || return 2
 
+  local -a find_preoptions=()
   local -a find_options=()
 
   # 処理系によって正規表現が異なる (因みに -regex option は非 POSIX 標準の様だ)
   if [[ $OSTYPE == darwin* || $OSTYPE == freebsd* || $OSTYPE == bsd* ]]; then
-    ble/array#push find_options -E
+    ble/array#push find_preoptions -E
   else
     ble/array#push find_options -regextype posix-extended
   fi
@@ -277,8 +278,8 @@ function main {
   fi
 
   # 実行
-  #echo find . "${find_options[@]}" -print 1>&2
-  find . "${find_options[@]}" -print 2>/dev/null | {
+  #echo find "${find_preoptions[@]}" . "${find_options[@]}" -print 2>/dev/null
+  find "${find_preoptions[@]}" . "${find_options[@]}" -print 2>/dev/null | {
     if [[ :$opts: == *:use-grep-to-exclude:* ]]; then
       local rex_grep
       rex_grep.construct

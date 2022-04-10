@@ -5,11 +5,21 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
+checksum() {
+  if command -v md5sum >/dev/null 2>&1; then
+    md5sum "$@"
+  elif command -v md5 >/dev/null 2>&1; then
+    md5 -r "$@"
+  else
+    cksum "$@"
+  fi
+}
+
 is_same(){
   if test ! -f "$1" -o ! -f "$2"; then
     return 1
   else
-    md5sum "$1" "$2" | awk 'NR==1{hash1=$1}NR==2{hash2=$1}END{issame=hash1!=""&&hash2!=""&&hash1==hash2;exit !issame}' &>/dev/null
+    checksum "$1" "$2" | awk 'NR==1{hash1=$1}NR==2{hash2=$1}END{issame=hash1!=""&&hash2!=""&&hash1==hash2;exit !issame}' &>/dev/null
   fi
 }
 
