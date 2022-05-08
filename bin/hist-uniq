@@ -80,7 +80,7 @@ else
     echo "$line"
   done
   echo "hist-uniq: $total lines -> $count lines" >&2
-fi | tac | grep -v '^#' > "$HOME/1.tmp"
+fi | tac | grep -av '^#' > "$HOME/1.tmp"
 
 if [[ ! -s $HOME/1.tmp ]]; then
   echo "hist-uniq: failed to generate $HOME/1.tmp"
