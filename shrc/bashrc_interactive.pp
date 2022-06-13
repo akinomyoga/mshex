@@ -565,12 +565,18 @@ mshex/mkd "$mshex_tmpdir"
 # setup DISPLAY
 
 function mshex/display {
-  local fsshtty="$mshex_tmpdir/SSH_TTY"
-  [[ -s $fsshtty ]] || return 0
-  local value=$(< "$fsshtty")
+  local value=${1-}
+  if [[ $value ]]; then
+    [[ $value == *.* ]] || value=$value.0
+    [[ $value == *:* ]] || value=:$value
+  else
+    local fsshtty="$mshex_tmpdir/SSH_TTY"
+    [[ -s $fsshtty ]] || return 0
+    local value=$(< "$fsshtty")
+  fi
   [[ $DISPLAY == "$value" ]] && return 0
   printf '%s\n' "DISPLAY: update '$DISPLAY' -> '$value'"
-  export DISPLAY=$(< "$fsshtty")
+  export DISPLAY=$value
 }
 
 function mshex/display/save {
@@ -589,7 +595,7 @@ function mshex/display/.login {
 mshex/display/.login
 
 # old names
-function mwg/display { mshex/display; }
+function mwg/display { mshex/display "$@"; }
 function mwg/display/.save { mshex/display/save; }
 
 #------------------------------------------------------------------------------
