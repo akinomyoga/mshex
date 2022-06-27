@@ -69,7 +69,9 @@ variable = '\b[_[:alpha:]][[:word:]]*(?=\+?=)'
 # ${var...}
 state (symbol,variable) = `(\$\{)([#!]?[_[:alpha:]][[:word:]]*|[-*@#?$!0]|[1-9][0-9]*)` begin
   symbol = '\}' exit
+  specialchar = '\\[\\"\'$`]'
   include "bash_simple_expansion.lang"
+  string delim '\'' '\'' multiline
 end
 
 # $var
