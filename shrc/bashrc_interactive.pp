@@ -527,6 +527,8 @@ function mshex/alias:git {
 
     (commit) mshex/alias:git/check-commit-arguments && git "$@" ;;
 
+    (pick) git cherry-pick "${@:2}" ;;
+
     (set-mtime)
       mshex/alias:git/apply-commit-time-to-mtime ;;
 
