@@ -72,6 +72,9 @@ state (symbol,variable) = `(\$\{)([#!]?[_[:alpha:]][[:word:]]*|[-*@#?$!0]|[1-9][
   specialchar = '\\[\\"\'$`]'
   include "bash_simple_expansion.lang"
   string delim '\'' '\'' multiline
+  environment string delim '\$?"' '"' multiline begin
+    specialchar = '\\["$`\\]'
+  end
 end
 
 # $var
