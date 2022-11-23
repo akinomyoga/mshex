@@ -108,7 +108,7 @@ function subcommand:add-recycle {
       if [[ -e $home || -L $home ]]; then
         printf '%s\n' "$home: this is not a directory." >&2
       else
-        printf '%s\n' "$home: the directory does not exists." >&2
+        printf '%s\n' "$home: the directory does not exist." >&2
       fi
       continue
     elif [[ ! -O $home ]]; then
@@ -432,12 +432,17 @@ if [[ $subcommand ]]; then
 fi
 
 function register_backup_files {
-  local file backup_file backup_files
+  local index file backup_file backup_files
   backup_files=()
-  for file in "${files[@]}"; do
+  for index in "${!files[@]}"; do
+    file=${files[index]}
     local backup_file=$file~
-    if [[ -e $file && -f $backup_file ]]; then
+    if [[ -f $backup_file ]]; then
       backup_files[${#backup_files[@]}]=$backup_file
+
+      # 2022-11-23 If backup file is found but the main file is not found, we
+      # skip the removing of the main file.
+      [[ -e $file || -L $file ]] || unset -v 'files[index]'
     fi
   done
   files=("${files[@]}" "${backup_files[@]}")
