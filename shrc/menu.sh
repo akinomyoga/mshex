@@ -214,7 +214,7 @@ function mshex/menu/.impl {
     stty -echo
   fi
 
-  local a_index=
+  local a_index= key
   shopt -s extglob
   while :; do
     mshex/term/readkey key
