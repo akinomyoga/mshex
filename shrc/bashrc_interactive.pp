@@ -40,6 +40,9 @@ if [[ -e /etc/redhat-release ]]; then
   # Note: zsh は関数がない時にエラーメッセージを出力する。
   unset -f command_not_found_handle 2>/dev/null
 
+  # /etc/profile.d/nano-default-editor.sh が勝手に EDITOR を nano に設定する。
+  unset -v EDITOR
+
   # 勝手に screen のタイトルに変なものを設定しようとする。
   _mshex_init_vars=(PROMPT_COMMAND)
   if [[ ${BLE_VERSION-} && $PROMPT_COMMAND == ble/* ]]; then
