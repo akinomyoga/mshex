@@ -588,13 +588,18 @@ function mshex/display/save {
   if [[ ! $STY && $SSH_TTY && $DISPLAY ]]; then
     if [[ $(tty) == "$SSH_TTY" ]]; then
       <<< "$DISPLAY" sed 's/^127\.0\.0\.1:/:/;s/^localhost:/:/' > "$mshex_tmpdir/SSH_TTY"
+      return 0
     fi
   fi
+  return 1
 }
 
 function mshex/display/.login {
-  [[ ! $STY && $DISPLAY ]] && mshex/display/save
-  [[ $STY && ! $DISPLAY ]] && mshex/display
+  mshex/display/save && return 0
+
+  if [[ $STY && ! $DISPLAY ]]; then
+    mshex/display
+  fi
 }
 
 mshex/display/.login
