@@ -535,6 +535,35 @@ function mshex/alias:git {
     (set-mtime)
       mshex/alias:git/apply-commit-time-to-mtime ;;
 
+    (tag-rename)
+      local old=$2 new=$3
+      if [[ ! $old ]]; then
+        echo "tag '$old' is empty" >&2
+        return 2
+      elif [[ ! $new ]]; then
+        echo "new tag '$new' is empty" >&2
+        return 2
+      fi
+      git tag "$new" "$old" &&
+        git tag -d "$old" ;;
+
+    (tag-move)
+      local tag=$2 new=$3
+      if [[ ! $tag ]]; then
+        echo "tag '$tag' is empty" >&2
+        return 2
+      elif [[ ! $new ]]; then
+        echo "commit '$new' is empty" >&2
+        return 2
+      elif ! git cat-file -e "$new^{commit}"; then
+        echo "commit '$new' is not found" >&2
+        return 1
+      fi
+      git tag "$tag.bk" "$tag" &&
+        git tag -d "$tag" &&
+        git tag "$tag" "$new" &&
+        git tag -d "$tag.bk" ;;
+
     (*) default=1 ;;
     esac
 
