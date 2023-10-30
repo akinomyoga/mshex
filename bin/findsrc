@@ -104,6 +104,7 @@ function option/type:awk { option/extension awk; }
 function option/type:py  { option/extension py; }
 function option/type:rb  { option/extension rb; }
 function option/type:pl  { option/extension pl; }
+function option/type:rs  { option/extension rs; }
 function option/type:plain { :; }
 function option/type:all { opts=$opts:find-all-files; }
 
@@ -221,6 +222,7 @@ function readargs {
     option/type:py
     option/type:rb
     option/type:pl
+    option/type:rs
   fi
 }
 
