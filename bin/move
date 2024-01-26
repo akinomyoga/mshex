@@ -13,16 +13,16 @@ function array#push {
 
 function mv_file_with_bk {
   local q=\' Q=\'\\\'\'
-  local src="$1"
-  local dst="$2"
+  local src=$1
+  local dst=$2
   if [[ ! -e $src ]]; then
     echo "$prog! file '${src//$q/$Q}' does not exists." >&2
     return 1
   fi
 
   [[ -d $dst ]] && dst=${dst%/}/${src##*/}
-  local src2="$src~"
-  local dst2="$dst~"
+  local src2=$src~
+  local dst2=$dst~
 
   # check dst
   if [[ -e $dst ]]; then
@@ -32,14 +32,13 @@ function mv_file_with_bk {
 
   # mv src dst
   local mv1="mv '${src//$q/$Q}' '${dst//$q/$Q}'"
-  [[ $hasGit ]] && [[ $(git ls-files "$src" 2>/dev/null) ]] && mv1="git $mv1"
-  echo "$mv1"
+  [[ $hasGit && $(git ls-files "$src" 2>/dev/null) ]] && mv1="git $mv1"
   array#push move_commands "$mv1"
 
   # mv src~ dst~
   if [[ -e $src2 ]]; then
     local mv2="mv '${src2//$q/$Q}' '${dst2//$q/$Q}'"
-    [[ $hasGit ]] && [[ $(git ls-files "$src2" 2>/dev/null) ]] && mv2="git $mv2"
+    [[ $hasGit && $(git ls-files "$src2" 2>/dev/null) ]] && mv2="git $mv2"
     echo "$mv2"
     array#push move_commands "$mv2"
   fi
@@ -54,8 +53,8 @@ elif (($#==1)); then
 elif (($#==2)); then
   mv_file_with_bk "$1" "$2"
 else
-  eval dst='${'$#'}'
-  echo "# dst=$dst"
+  eval "dst=\$$#"
+  #echo "# dst=$dst"
   if [[ ! -d "$dst" ]]; then
     echo "$0! target file is not a directory." >&2
     exit 1
