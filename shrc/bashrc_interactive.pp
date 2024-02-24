@@ -363,11 +363,11 @@ function mshex/alias:git/apply-commit-time-to-mtime {
 
 function mshex/alias:git/check-commit-arguments {
   while (($#)); do
-    local arg="$1"; shift
+    local arg=$1; shift
     local msg=
-    case "$arg" in
-    (-m)  msg="$1"; shift ;;
-    (-m*) msg="${arg:2}"  ;;
+    case $arg in
+    (-m)  msg=$1; shift ;;
+    (-m*) msg=${arg:2}  ;;
     esac
 
     if [[ $msg == COMMIT || $msg != *' '* && -f $msg ]]; then
@@ -443,7 +443,7 @@ function mshex/alias:git {
 
     # stepcounter
     # from ephemient's answer at http://stackoverflow.com/questions/4822471/count-number-of-lines-in-a-git-repository
-    (c) git diff --stat 4b825dc642cb6eb9a060e54bf8d69288fbee4904 ;;
+    (wc) git diff --stat 4b825dc642cb6eb9a060e54bf8d69288fbee4904 ;;
 
     (b)
       if (($#==1)); then
@@ -528,7 +528,19 @@ function mshex/alias:git {
           ifold -s -w "$COLUMNS" --indent="$indent"
       fi ;;
 
-    (commit) mshex/alias:git/check-commit-arguments && git "$@" ;;
+    (commit) mshex/alias:git/check-commit-arguments "${@:2}" && git "$@" ;;
+    (c)
+      shift
+      local -a args=()
+      while [[ ${1-} == -* ]]; do
+        mshex/array#push args "$1"
+        shift
+      done
+      (($#)) && mshex/array#push args -m "$*"
+      mshex/alias:git/check-commit-arguments "${args[@]}" &&
+        git commit "${args[@]}" ;;
+    (i)
+      git rebase -i "${@:2}" ;;
 
     (pick) git cherry-pick "${@:2}" ;;
 
