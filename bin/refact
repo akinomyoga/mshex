@@ -99,7 +99,8 @@ function refact/read-arguments/error {
 function refact/read-arguments/option:W {
   case $1 in
   (g,?*)
-    IFS=, builtin eval 'grc_options+=(${arg:4})' ;;
+    local arg=${1:2}
+    IFS=, builtin eval 'grc_options+=($arg)' ;;
   (*)
     refact/read-arguments/error "unrecognized option '-W$1'" ;;
   esac
@@ -142,7 +143,7 @@ function refact/read-arguments {
             fi
             arg=$1; shift
           fi
-          refact/read-arguments/process:"$c" "$arg"
+          refact/read-arguments/option:"$c" "$arg"
           break ;;
         (*)
           refact/read-arguments/error "unrecognized option '-$c'." ;;
