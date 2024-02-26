@@ -44,29 +44,35 @@ function mv_file_with_bk {
   fi
 }
 
-if (($#==0)); then
-  echo "usage: $0 <files...> <target>" >&2
-  exit 1
-elif (($#==1)); then
-  echo "$0! target file is not specified." >&2
-  exit 1
-elif (($#==2)); then
-  mv_file_with_bk "$1" "$2"
-else
-  eval "dst=\$$#"
-  #echo "# dst=$dst"
-  if [[ ! -d "$dst" ]]; then
-    echo "$0! target file is not a directory." >&2
-    exit 1
+function main {
+  local -a args
+  args=("$@")
+  if (($#==0)); then
+    echo "usage: $0 <files...> <target>" >&2
+    return 2
+  elif (($#==1)); then
+    echo "$0! target file is not specified." >&2
+    return 2
+  elif (($#==2)); then
+    mv_file_with_bk "$1" "$2"
+  else
+    local dst=${args[${#args[@]}-1]}
+    if [[ ! -d $dst ]]; then
+      echo "$0! target file is not a directory." >&2
+      return 2
+    fi
+
+    local flagError= src
+    for src in "${@:1:$#-1}"; do
+      mv_file_with_bk "$src" "$dst" || flagError=1
+    done
+    [[ $flagError ]] && return 1
   fi
 
-  flagError=
-  for src in "${@:1:$#-1}"; do
-    mv_file_with_bk "$src" "$dst" || flagError=1
+  local cmd
+  for cmd in "${move_commands[@]}"; do
+    eval "$cmd"
   done
-  [[ $flagError ]] && exit 1
-fi
+}
 
-for cmd in "${move_commands[@]}"; do
-  eval "$cmd"
-done
+main "$@"
