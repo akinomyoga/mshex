@@ -626,7 +626,9 @@ function subcommand:remove {
         raws[${#raws[@]}]=$file
       fi
     done
-    ((${#raws[@]})) && mv $fV -- "${raws[@]}" "$dst"/
+    if ((${#raws[@]})); then
+      mv $fV -- "${raws[@]}" "$dst"/
+    fi
   fi
 }
 
