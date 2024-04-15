@@ -244,26 +244,25 @@ function main {
   fi
 
   # exclude
-  local -a exclude=()
+  local -a exclude=(-name .git)
   if [[ $flags != *b* ]]; then
-    ((${#exclude[@]})) && ble/array#push exclude -o
+    ble/array#push exclude -o
     ble/array#push exclude -regex '^.*/backup/.*$|^.*(\.[0-9]{8}(\.[_a-zA-Z0-9]+)?|~)$'
   fi
   if [[ $flags != *a* ]]; then
-    ((${#exclude[@]})) && ble/array#push exclude -o
+    ble/array#push exclude -o
     ble/array#push exclude -regex '^.*/\.[^/].*$'
   fi
   local pat
   for pat in "${opt_exclude_glob[@]}"; do
-    ((${#exclude[@]})) && ble/array#push exclude -o
+    ble/array#push exclude -o
     case $pat in
-    (./*)  ble/array#push exclude -path "$pat" ;;
-    ( */*) ble/array#push exclude -path "$pat" -o -path "*/$pat" ;;
-    (*)    ble/array#push exclude -name "$pat" ;;
+    (./*) ble/array#push exclude -path "$pat" ;;
+    (*/*) ble/array#push exclude -path "$pat" -o -path "*/$pat" ;;
+    (*)   ble/array#push exclude -name "$pat" ;;
     esac
   done
-  ((${#exclude[@]})) &&
-    ble/array#push find_options \( "${exclude[@]}" \) -prune -o
+  ble/array#push find_options \( "${exclude[@]}" \) -prune -o
 
   # search target
   if [[ :$opts: != *:find-all-files:* ]]; then
