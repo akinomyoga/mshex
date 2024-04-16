@@ -227,7 +227,7 @@ function mshex/alias:make/sub:t {
 
 function mshex/alias:make/update-makefile-pp {
   local name=$1
-  if [[ $name -ot $name.pp ]]; then
+  if [[ -s $name.pp && $name -ot $name.pp ]]; then
     if type mwg_pp.awk &>/dev/null; then
       mwg_pp.awk "$name.pp" > "$name" || return
     else
@@ -241,17 +241,41 @@ function mshex/alias:make/scan-arguments {
     local arg=$1; shift
     case $arg in
     (--*) ;;
-    (-*f)
-      opt_mfile=${arg#*[fC]}
-      [[ $opt_mfile ]] || { opt_mfile=$1; shift; } ;;
-    (-*C)
-      opt_mdir=${arg#*[fC]}
-      [[ $opt_mdir ]] || { opt_mdir=$1; shift; } ;;
+    (-*[Cf]*)
+      local optarg=${arg#*[Cf]}
+      local opt=${arg%"$optarg"}
+      if [[ ! $optarg ]]; then
+        (($#)) || continue
+        optarg=$1; shift
+      fi
+
+      case $opt in
+      (*f)
+        [[ -e $optarg ]] && opt_mfile=$optarg ;;
+      (*C)
+        [[ -d $optarg ]] && opt_mdir=$optarg ;;
+      esac ;;
     (*) ;;
     esac
   done
   [[ $opt_mdir || $opt_mfile ]] &&
     flags=h$flags
+}
+## @fn mshex/alias:make/detect-taskfile [dir [cd]]
+##   @var[out] handler taskfile chdir
+function mshex/alias:make/detect-taskfile {
+  local dir=${1:-.}
+  if [[ -f $dir/GNUmakefile ]]; then
+    handler=make taskfile=$dir/GNUmakefile chdir=${2:+$dir}
+  elif [[ -f $dir/Makefile ]]; then
+    handler=make taskfile=$dir/Makefile chdir=${2:+$dir}
+  elif [[ -f $dir/build.ninja ]]; then
+    handler=ninja taskfile=$dir/build.ninja chdir=${2:+$dir}
+  elif [[ -f $dir/Cargo.toml ]]; then
+    handler=cargo taskfile=$dir/Cargo.toml chdir=${2:+$dir}
+  else
+    return 1
+  fi
 }
 function mshex/alias:make {
   local opt_mfile opt_mdir flags
@@ -263,77 +287,58 @@ function mshex/alias:make {
   local ret; mshex/alias:make/nproc; local nproc=$ret
   mshex/array#push make_options -j $((nproc*3/2))
 
-  if [[ $flags == *h* || -f Makefile || -f Makefile.pp || -f GNUmakefile || -f GNUmakefile.pp ]]; then
+  local handler=make taskfile=Makefile chdir=
+  if [[ $opt_mfile ]]; then
+    # When a task file is explicitly specified.
+    case ${opt_mfile##*/} in
+    (*.ninja)    handler=ninja taskfile=$opt_mfile ;;
+    (Cargo.toml) handler=cargo taskfile=$opt_mfile ;;
+    (*)          handler=make  taskfile=$opt_mfile ;;
+    esac
+  elif [[ $opt_mdir ]]; then
+    if mshex/alias:make/detect-taskfile "$opt_mdir"; then
+      true
+    else
+      # When the specified directory doesn't contain a task file, the option
+      # might have not been the build directory.  In such a case, we fall back
+      # to the normal processing in the current directory, yet we do not search
+      # the parent directories.
+      mshex/alias:make/update-makefile-pp Makefile
+      mshex/alias:make/update-makefile-pp GNUmakefile
+      mshex/alias:make/detect-taskfile
+    fi
+  else
     mshex/alias:make/update-makefile-pp Makefile
     mshex/alias:make/update-makefile-pp GNUmakefile
 
-    if
-      local makefile=
-      if [[ $opt_mfile && $opt_mfile != *.ninja ]]; then
-        makefile=$opt_mfile
-      elif [[ $opt_mdir && -f $opt_mdir/GNUmakefile ]]; then
-        makefile=$opt_mdir/GNUmakefile
-      elif [[ $opt_mdir && -f $opt_mdir/Makefile ]]; then
-        makefile=$opt_mdir/Makefile
-      elif [[ -f GNUmakefile ]]; then
-        makefile=GNUmakefile
-      elif [[ -f Makefile ]]; then
-        makefile=Makefile
-      fi
-      [[ $makefile ]]
-    then
-      if [[ $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
-        mshex/alias:make/"sub:$1" "$makefile" "${@:2}"
-      else
-        "$make" "${make_options[@]}" "$@"
-      fi
-
-    elif
-      local ninjafile=
-      if [[ $opt_mfile && $opt_mfile == *.ninja ]]; then
-        ninjafile=$opt_mfile
-      elif [[ $opt_mdir && -f $opt_mdir/build.ninja ]]; then
-        ninjafile=$opt_mdir/build.ninja
-      fi
-      [[ $ninjafile ]]
-    then
-      ninja "${make_options[@]}" "$@"
-
-    else
-      "$make" "${make_options[@]}" "$@"
-    fi
-  else
     local dir=${PWD%/}
-    while :; do
-      if
-        local makefile=
-        if [[ -f $dir/GNUmakefile ]]; then
-          makefile=$dir/GNUmakefile
-        elif [[ -f $dir/Makefile ]]; then
-          makefile=$dir/Makefile
-        fi
-        [[ $makefile ]]
-      then
-        if [[ $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
-          mshex/alias:make/"sub:$1" "$makefile" "${@:2}"
-        else
-          "$make" "${make_options[@]}" -C "${dir:-/}" "$@"
-        fi
-        return $?
-      elif [[ -f $dir/build.ninja ]]; then
-        ninja "${make_options[@]}" -C "${dir:-/}" "$@"
-        return $?
-      elif [[ -f $dir/build/build.ninja ]]; then
-        ninja "${make_options[@]}" -C "$dir/build" "$@"
-        return $?
-      elif [[ $dir != */* ]]; then
-        "$make" "${make_options[@]}" "$@"
-        return $?
-      else
-        dir=${dir%/*}
-      fi
+    while
+      mshex/alias:make/detect-taskfile "${dir:-/}" 1 && break
+      mshex/alias:make/detect-taskfile "$dir/build" 1 && break
+      [[ $dir == */* ]]
+    do
+      dir=${dir%/*}
     done
   fi
+
+  case $handler in
+  (ninja)
+    [[ $chdir ]] && mshex/array#push make_options -C "$chdir"
+    ninja "${make_options[@]}" "$@" ;;
+
+  (cargo)
+    make_options=()
+    [[ $chdir ]] && mshex/array#push make_options --manifest-path="$taskfile"
+    cargo build "${make_options[@]}" "$@" ;;
+
+  (make)
+    if [[ $1 == ? ]] && declare -f mshex/alias:make/"sub:$1" >/dev/null; then
+      mshex/alias:make/"sub:$1" "$taskfile" "${@:2}"
+    else
+      [[ $chdir ]] && mshex/array#push make_options -C "$chdir"
+      "$make" "${make_options[@]}" "$@"
+    fi ;;
+  esac
 }
 alias m=mshex/alias:make
 function ble/cmdinfo/complete:m { ble/complete/progcomp make; }
