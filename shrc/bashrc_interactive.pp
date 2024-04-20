@@ -311,24 +311,27 @@ function mshex/alias:make {
     mshex/alias:make/update-makefile-pp Makefile
     mshex/alias:make/update-makefile-pp GNUmakefile
 
-    local dir=${PWD%/}
+    local dir=${PWD%/} flag_chdir=
     while
-      mshex/alias:make/detect-taskfile "${dir:-/}" 1 && break
-      mshex/alias:make/detect-taskfile "$dir/build" 1 && break
+      mshex/alias:make/detect-taskfile "${dir:-/}" "$flag_chdir" && break
+      mshex/alias:make/detect-taskfile "$dir/build" "$flag_chdir" && break
       [[ $dir == */* ]]
     do
       dir=${dir%/*}
+      flag_chdir=yes
     done
   fi
 
   case $handler in
   (ninja)
     [[ $chdir ]] && mshex/array#push make_options -C "$chdir"
+    echo ninja "${make_options[@]}" "$@"
     ninja "${make_options[@]}" "$@" ;;
 
   (cargo)
     make_options=()
     [[ $chdir ]] && mshex/array#push make_options --manifest-path="$taskfile"
+    echo cargo build "${make_options[@]}" "$@"
     cargo build "${make_options[@]}" "$@" ;;
 
   (make)
