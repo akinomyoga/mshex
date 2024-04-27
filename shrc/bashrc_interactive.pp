@@ -433,7 +433,32 @@ function mshex/alias:git {
     printf '\n\e[1m$ git branch\e[m\n'
     git -c color.ui=always branch -vv
     printf '\n\e[1m$ git remote\e[m\n'
-    git -c color.ui=always remote -v
+    git -c color.ui=always remote -v | gawk '
+      function flush_remote() {
+        if (g_header) {
+          print g_header " (" g_tag ")";
+          g_header = "";
+        }
+      }
+      function update_remote(header, tag) {
+        if (header != g_header) {
+          flush_remote();
+          g_header = header;
+          g_tag = tag;
+        } else {
+          g_tag = g_tag ", "tag;
+        }
+      }
+      match($0, / \([^()]+\)$/) >= 2 {
+        header = substr($0, 1, RSTART - 1);
+        tag = substr($0, RSTART + 2, RLENGTH - 3);
+        update_remote(header, tag);
+        next;
+      }
+
+      { flush_remote(); print $0; }
+      END { flush_remote(); }
+    '
     printf '\n\e[1m$ git log -n 5\e[m\n'
     mshex/alias:git t -n 5
     mshex/alias:git/register-repository
