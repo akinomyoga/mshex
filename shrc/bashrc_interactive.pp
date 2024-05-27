@@ -366,6 +366,7 @@ alias h=mshex/alias:history
 function mshex/alias:git/apply-commit-time-to-mtime {
   # modified version from http://stackoverflow.com/questions/2458042/restore-files-modification-time-in-git
   git log --pretty=%at --name-status |
+    awk '$1 ~ /^[AM]$/ { dir = $2; sub(/\/.*/, "", dir); if (!g_dir[dir]++) print $1, dir; } {print}' |
     perl -ane '($x,$f)=@F;next if !$x;$t=$x,next if !defined($f);next if $s{$f};$s{$f}=utime($t,$t,$f),next if $x=~/[AM]/;'
 }
 
