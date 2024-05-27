@@ -467,7 +467,8 @@ function mshex/alias:git {
 
     case "$1" in
     (u) git add -u ;;
-    (l) ls -ld $(git ls-files "${@:2}") ;;
+    (l) ls -ld $(git ls-files "${@:2}" | sed 's:/.*::' | uniq) ;;
+    (lr) ls -ld $(git ls-files "${@:2}") ;; # recursive version of "g l"
     (wc) wc $(git ls-files "${@:2}") ;;
 
     (p) git add -p "${@:2}" ;;
