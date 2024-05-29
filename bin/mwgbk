@@ -106,7 +106,7 @@ mwgbk_file () {
   # avoid overwriting
   if test -e "$dst"; then
     if test -z "$fFORCE" && is_same "$file" "$dst"; then
-      echo "mwgbk: the file '$file' has already backupped to '$dst'." >&2
+      echo "mwgbk: the file '$file' has already backed up to '$dst'." >&2
       return 0
     fi
 
@@ -117,7 +117,7 @@ mwgbk_file () {
   i=0
   while test -e "$dst"; do
     if test -z "$fFORCE" && is_same "$file" "$dst"; then
-      echo "mwgbk: the file '$file' has already backupped to '$dst'." >&2
+      echo "mwgbk: the file '$file' has already backed up to '$dst'." >&2
       return 0
     fi
 
