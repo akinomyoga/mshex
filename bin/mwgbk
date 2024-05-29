@@ -1,56 +1,60 @@
 #!/usr/bin/env bash
 
-if [ $# -lt 1 ]; then
-  echo "usage: $0 <filename>" > /dev/stderr
+if (($# < 1)); then
+  echo "usage: $0 <filename>" >&2
   exit 1
 fi
 
-checksum() {
-  if command -v md5sum >/dev/null 2>&1; then
+function checksum {
+  if type -t md5sum &>/dev/null; then
     md5sum "$@"
-  elif command -v md5 >/dev/null 2>&1; then
+  elif type -t md5 &>/dev/null; then
     md5 -r "$@"
   else
     cksum "$@"
   fi
 }
 
-is_same(){
-  if test ! -f "$1" -o ! -f "$2"; then
+function is_same {
+  if [[ ! -f $1  || ! -f $2 ]]; then
     return 1
   else
     checksum "$1" "$2" | awk 'NR==1{hash1=$1}NR==2{hash2=$1}END{issame=hash1!=""&&hash2!=""&&hash1==hash2;exit !issame}' &>/dev/null
   fi
 }
 
-get_directory_name () {
-  if test "$1" == "${1##*/}"; then
-    echo "$PWD"
+## @fn get_directory_name path
+##   @var[out] REPLY
+function get_directory_name {
+  if [[ $1 != */* ]]; then
+    REPLY=$PWD
   else
-    echo "${1%/*}"
+    REPLY=${1%/*}
   fi
 }
 
+## @fn get_parent_directory path
+##   @var[out] REPLY
 function get_parent_directory {
-  if test "$1" == /; then
-    echo /
+  if [[ $1 == / ]]; then
+    REPLY=/
   else
     get_directory_name "${1%/}"
   fi
 }
 
+## @fn insert_date file date
+##   @var[out] REPLY
 function insert_date {
-  local file="$1"
-  local date="$2"
+  local file=$1 date=$2
 
   local rex1='^(.*[^/])\.((tar\.)?[^/.]+)$'
-  if [[ "$file" =~ $rex1 ]]; then
-    local filename="${BASH_REMATCH[1]}"
-    local extension="${BASH_REMATCH[2]}"
-    echo "$filename.$date.$extension"
+  if [[ $file =~ $rex1 ]]; then
+    local filename=${BASH_REMATCH[1]}
+    local extension=${BASH_REMATCH[2]}
+    REPLY=$filename.$date.$extension
   else
-    echo "$file.$date"
-    return
+    REPLY=$file.$date
   fi
 }
 
@@ -58,79 +62,92 @@ fMOVE=
 fFORCE=
 fTRAVERSE=
 
+## @fn get_backup_directory path
+##   @var[out] REPLY
+##
+##   @var[in] fTRAVERSE
 function get_backup_directory {
-  local file="$1"
-  local dir="$(get_directory_name "$file")"
+  local file=$1
+  get_directory_name "$file"
+  local dir=$REPLY
 
-  if test -z "$fTRAVERSE"; then
-    local bkdir="$dir/backup"
-    test -d "$bkdir" && echo "$bkdir"
+  local out=
+  if [[ ! $fTRAVERSE ]]; then
+    local bkdir=$dir/backup
+    [[ -d $bkdir ]] && out=$bkdir
   else
-    local pdir="$dir"
-    while ! test -d "$pdir/backup" -o -z "${pdir%[/.]}"; do
-      pdir="$(get_parent_directory "$pdir")"
+    local pdir=$dir
+    while [[ ! -d $pdir/backup && ${pdir%[/.]} ]]; do
+      get_parent_directory "$pdir"
+      pdir=$REPLY
     done
 
-    if test -n "$pdir" -a -d "$pdir/backup"; then
-      local bkdir="$pdir/backup${dir:${#pdir}}"
-      test -d "$bkdir" || mkdir -p "$bkdir"
-      echo "$bkdir"
+    if [[ $pdir && -d $pdir/backup ]]; then
+      local bkdir=$pdir/backup${dir:${#pdir}}
+      [[ -d $bkdir ]] || mkdir -p "$bkdir"
+      out=$bkdir
     fi
   fi
+  REPLY=$out
 }
 
-mwgbk_file () {
-  local file="$1"
-  if test ! -f "$file"; then
-    if test ! -e "$file"; then
-      echo "mwgbk! the file does not exist." 1>&2
+function mwgbk_file {
+  local file=$1
+  if [[ ! -f $file ]]; then
+    if [[ ! -e $file ]]; then
+      echo "mwgbk! the file does not exist." >&2
     else
-      echo "mwgbk! the file is not an ordinary file." 1>&2
+      echo "mwgbk! the file is not an ordinary file." >&2
     fi
-    exit 1
+    exit 2
   fi
 
-  local filebk="${file%'~'}" rex_dotfile='^(.*/)?\.([^/]+)$'
+  local REPLY
+
+  local filebk=${file%'~'} rex_dotfile='^(.*/)?\.([^/]+)$'
   if [[ $filebk =~ $rex_dotfile ]]; then
-    filebk="${BASH_REMATCH[1]}${BASH_REMATCH[2]}"
+    filebk=${BASH_REMATCH[1]}${BASH_REMATCH[2]}
   fi
-  local bkdir="$(get_backup_directory "$file")"
-  if test -n "$bkdir"; then
+  get_backup_directory "$file"
+  local bkdir=$REPLY
+  if [[ $bkdir ]]; then
     filebk="$bkdir/${filebk##*/}"
   fi
-  
-  date=`date -r "$file" +'%Y%m%d'`
-  dst=`insert_date "$filebk" "$date" `
-  
+
+  local date=$(date -r "$file" +'%Y%m%d')
+  insert_date "$filebk" "$date"
+  dst=$REPLY
+
   #----------------------------------------------------------------------------
   # avoid overwriting
-  if test -e "$dst"; then
-    if test -z "$fFORCE" && is_same "$file" "$dst"; then
+  if [[ -e $dst ]]; then
+    if [[ ! $fFORCE ]] && is_same "$file" "$dst"; then
       echo "mwgbk: the file '$file' has already backed up to '$dst'." >&2
       return 0
     fi
 
-    date=`date -r "$file" +'%Y%m%d-%H%M%S'`
-    dst=`insert_date "$filebk" "$date" `
+    date=$(date -r "$file" +'%Y%m%d-%H%M%S')
+    insert_date "$filebk" "$date"
+    dst=$REPLY
   fi
-  
+
   i=0
-  while test -e "$dst"; do
-    if test -z "$fFORCE" && is_same "$file" "$dst"; then
+  while [[ -e "$dst" ]]; do
+    if [[ ! $fFORCE ]] && is_same "$file" "$dst"; then
       echo "mwgbk: the file '$file' has already backed up to '$dst'." >&2
       return 0
     fi
 
-    date2="$date[$i]"
-    dst=`insert_date "$filebk" "$date2" `
+    insert_date "$filebk" "$date[$i]"
+    dst=$REPLY
     i=$((i+1))
   done
 
   #----------------------------------------------------------------------------
   # copy the file
- 
-  if test -z "$fMOVE"; then
-    echo copy "$file" to "$dst"
+
+  if [[ ! $fMOVE ]]; then
+    echo "copy $file to $dst"
     cp -p "$file" "$dst"
   else
     echo "move $file to $dst"
@@ -138,15 +155,16 @@ mwgbk_file () {
   fi
 }
 
-
-fFILE=
-
-while test $# -ge 1; do
-  if test -z "$fFILE" -a "x${1::1}" == 'x-'; then
-    if test "x${1::2}" == 'x--'; then
-      case "x${1:2}" in
-      (xhelp)
-        ifold -i -s --indent='(  -[^ ]+)? +' -w 80 <<EOF >&2
+function main {
+  fFILE=
+  while (($# >= 1)); do
+    if [[ ! $fFILE && $1 == -* ]]; then
+      if [[ $1 == --* ]]; then
+        case ${1:2} in
+        (help)
+          ifold -i -s --indent='(  -[^ ]+)? +' -w 80 <<EOF >&2
+mwgbk (akinomyoga/mshex)
+Copyright 2011-2013, 2015, 2016, 2022, 2024 Koichi Murase
 usage: mwgbk [options] files...
 
 options
@@ -172,52 +190,56 @@ options
 
   --list    既定のバックアップ先ディレクトリ内のファイル一覧を表示します。
 
-mwgbk, copyright (c) 2011-2013 KM. All rights reserved.
-
 EOF
-        exit ;;
-      (xdir)
-        declare bkdir="$(fTRAVERSE=1 get_backup_directory .)"
-        test -z "$bkdir" && bkdir="$PWD"
-        echo "$bkdir"
-        exit ;;
-      (xlist)
-        shift
-        
-        declare bkdir="$(fTRAVERSE=1 get_backup_directory .)"
-        test -z "$bkdir" && bkdir="$PWD"
-        echo "$bkdir"
-        if type l &>/dev/null; then
-          l "$@" "$bkdir"
-        else
-          ls -la "$@" "$bkdir"
-        fi
-        exit ;;
-      (x)
-        # 以降の引数はファイル名と見做す
-        fFILE=1 ;;
-      (*)
-        echo "unknown long-name option '$1'" >&2
-        exit 1 ;;
-      esac
-    else
-      declare i
-      for((i=1;i<${#1};i++)); do
-        case "${1:i:1}" in
-        (m) fMOVE=1 ;;
-        (M) fMOVE=  ;;
-        (f) fFORCE=1;;
-        (F) fFORCE= ;;
-        (t) fTRAVERSE=1 ;;
-        (T) fTRAVERSE=  ;;
+          exit ;;
+        (dir)
+          local REPLY
+          fTRAVERSE=1 get_backup_directory .
+          local bkdir=$REPLY
+          [[ ! $bkdir ]] && bkdir=$PWD
+          echo "$bkdir"
+          exit ;;
+        (list)
+          shift
+
+          local REPLY
+          fTRAVERSE=1 get_backup_directory .
+          local bkdir=$REPLY
+          [[ ! $bkdir ]] && bkdir=$PWD
+          echo "$bkdir"
+          if type -t l &>/dev/null; then
+            l "$@" "$bkdir"
+          else
+            ls -la "$@" "$bkdir"
+          fi
+          exit ;;
+        ('')
+          # 以降の引数はファイル名と見做す
+          fFILE=1 ;;
         (*)
-          echo "unknown option '-${1:i:1}'" >&2
-          ;;
+          echo "unknown long-name option '$1'" >&2
+          exit 1 ;;
         esac
-      done
+      else
+        local i
+        for ((i=1;i<${#1};i++)); do
+          case ${1:i:1} in
+          (m) fMOVE=1 ;;
+          (M) fMOVE=  ;;
+          (f) fFORCE=1;;
+          (F) fFORCE= ;;
+          (t) fTRAVERSE=1 ;;
+          (T) fTRAVERSE=  ;;
+          (*)
+            echo "unknown option '-${1:i:1}'" >&2
+            ;;
+          esac
+        done
+      fi
+    else
+      mwgbk_file "$1"
     fi
-  else
-    mwgbk_file "$1"
-  fi
-  shift
-done
+    shift
+  done
+}
+main "$@"
