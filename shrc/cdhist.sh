@@ -39,7 +39,7 @@ function mshex/cdhist/.indexof {
   for ((i=0;i<${#_mshex_cdhist};i++)); do
     if [[ $1 == "${_mshex_cdhist[i]}" ]]; then
       ret=$i
-      return
+      return 0
     fi
   done
 

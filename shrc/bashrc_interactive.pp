@@ -229,7 +229,7 @@ function mshex/alias:make/update-makefile-pp {
   local name=$1
   if [[ -s $name.pp && $name -ot $name.pp ]]; then
     if type mwg_pp.awk &>/dev/null; then
-      mwg_pp.awk "$name.pp" > "$name" || return
+      mwg_pp.awk "$name.pp" > "$name" || return "$?"
     else
       echo "$name.pp: mwg_pp.awk is not found" &>/dev/null
     fi
@@ -385,8 +385,7 @@ function mshex/alias:git/check-commit-arguments {
       return 1
     fi
   done
-
-  return
+  return 0
 }
 function mshex/alias:git/register-repository {
   local repository_path=$(readlink -f "$(git rev-parse --show-toplevel)")
@@ -419,7 +418,7 @@ function mshex/alias:git/register-repository {
   while [[ -e $link || -L $link ]]; do
     if [[ -d $link ]]; then
       local link_path=$(readlink -f "$link")
-      [[ ${link_path%/} == "${repository_path%/}" ]] && return
+      [[ ${link_path%/} == "${repository_path%/}" ]] && return 0
     fi
     link=$link0+$((index++))
   done

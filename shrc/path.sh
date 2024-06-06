@@ -31,7 +31,7 @@
 #     + 重複しているパス要素を常に全て削除する様に変更。
 #
 
-[[ ${MSHEX_LIB_PATH_SH+1} ]] && return
+[[ ${MSHEX_LIB_PATH_SH+1} ]] && return 0
 MSHEX_LIB_PATH_SH=1
 
 MSHEX_LIB_PATH_SH_localVariables=(
@@ -67,12 +67,12 @@ function PATH._readArguments {
     (--help)
       echo "usage: $_PATH_cmdname [-v VARNAME] [-F SEP] [-n] PATHS..."
       _PATH_flags=${_PATH_flags}x
-      return ;;
+      return 0 ;;
     (-*)
       echo "$_PATH_cmdname: unknown option" >&2
       echo "usage: $_PATH_cmdname [-v VARNAME] [-F SEP] [-n] PATHS..." >&2
       _PATH_flags=${_PATH_flags}e
-      return ;;
+      return 0 ;;
     (*)
       IFS=$_PATH_sep builtin eval "_PATH_paths=(\"\${_PATH_paths[@]}\" \$1)"
       shift ;;
@@ -98,7 +98,7 @@ function PATH.canonicalize {
   local "${MSHEX_LIB_PATH_SH_localVariables[@]}"
   local _PATH_cmdname=PATH.canonicalize
   PATH._readArguments "$@"
-  [[ $_PATH_flags == *x* ]] && return
+  [[ $_PATH_flags == *x* ]] && return 0
   [[ $_PATH_flags == *e* ]] && return 1
   
   PATH._canonicalizeImpl
@@ -109,7 +109,7 @@ function PATH.remove {
   local "${MSHEX_LIB_PATH_SH_localVariables[@]}"
   local _PATH_cmdname=PATH.remove
   PATH._readArguments "$@"
-  [[ $_PATH_flags == *x* ]] && return
+  [[ $_PATH_flags == *x* ]] && return 0
   [[ $_PATH_flags == *e* ]] && return 1
 
   local _PATH_path
@@ -131,7 +131,7 @@ function PATH.prepend {
   local "${MSHEX_LIB_PATH_SH_localVariables[@]}"
   local _PATH_cmdname=PATH.prepend
   PATH._readArguments "$@"
-  [[ $_PATH_flags == *x* ]] && return
+  [[ $_PATH_flags == *x* ]] && return 0
   [[ $_PATH_flags == *e* ]] && return 1
 
   local _PATH_path _PATH_cpath=
@@ -149,7 +149,7 @@ function PATH.append {
   local "${MSHEX_LIB_PATH_SH_localVariables[@]}"
   local _PATH_cmdname=PATH.append
   PATH._readArguments "$@"
-  [[ $_PATH_flags == *x* ]] && return
+  [[ $_PATH_flags == *x* ]] && return 0
   [[ $_PATH_flags == *e* ]] && return 1
 
   local _PATH_path

@@ -33,7 +33,7 @@
 #     * 'keys=(!hash[@])' に対応
 #
 
-((_mshex_dict_PragmaOnce>=1)) && return
+((_mshex_dict_PragmaOnce>=1)) && return 0
 _mshex_dict_PragmaOnce=1
 
 if [[ $ZSH_VERSION || $mshex_bash -ge 40000 ]]; then
@@ -181,8 +181,8 @@ function mshex/dict {
       local key=${expr:${#hname}+1}; key=${key%\]}
       local tmp=
       mshex/dict/.get tmp "$hname" "$key"
-      test -$flag "$tmp"
-      return ;;
+      test -"$flag" "$tmp"
+      return "$?" ;;
     (?*=?*\[*\]) # vname=hname[key]
       local head=${expr%%\[*}
       local key=${expr:${#head}+1}; key=${key%\]}

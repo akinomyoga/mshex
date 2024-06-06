@@ -58,7 +58,7 @@ if [[ $- == *i* ]]; then
 
   function mshex/.settrap {
     # ble には元から同じ機能がある
-    ((_ble_bash)) && return
+    ((_ble_bash)) && return 0
 
     local tmp1 tmp2
     mshex/dict 'tmp1=_mshex_term[fHR]' 'tmp2=_mshex_term[sgr0]'

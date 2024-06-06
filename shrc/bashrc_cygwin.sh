@@ -19,11 +19,11 @@ if [[ $- == *i* ]]; then
 
   # emacs
   if [[ $TERM == cygwin && ! $ROSATERM ]]; then
-    function emacs() (
+    function emacs (
       CYGWIN=tty /bin/emacs -nw "$@"
-      local ret=$?
+      local ext=$?
       stty echo -nl
-      return "$ret"
+      return "$ext"
     )
   fi
 

@@ -14,7 +14,7 @@
 # source "$MWGDIR/share/mshex/shrc/term.sh"
 #------------------------------------------------------------------------------
 
-((_mshex_menu_PragmaOnce>=1)) && return
+((_mshex_menu_PragmaOnce>=1)) && return 0
 _mshex_menu_PragmaOnce=1
 
 mshex/term/register-key dl1 dl1 $'\e[M'
@@ -60,7 +60,7 @@ function mshex/menu/.show {
 }
 function mshex/menu/.goto {
   local -i new_index=$1
-  ((new_index==_mshex_menu_index)) && return
+  ((new_index==_mshex_menu_index)) && return 0
 
   if ((new_index>=0&&new_index<_mshex_menu_count)); then
     local _mshex_menu_stdout

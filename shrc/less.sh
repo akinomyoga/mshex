@@ -18,10 +18,10 @@
 #   * padparadscha:~/.bashrc から移動
 #
 
-[[ ${_mshex_shrc_less_sh+set} ]] && return
+[[ ${_mshex_shrc_less_sh+set} ]] && return 0
 _mshex_shrc_less_sh=1
 
-[[ $- == *i* ]] || return
+[[ $- == *i* ]] || return 0
 
 function mshex/less/initialize {
   local -i colors=$(tput colors)
@@ -48,11 +48,11 @@ function advice:nocasematch-off {
     shopt -u nocasematch
   fi
 
-  "$@"; local ret=$?
+  "$@"; local ext=$?
 
   [[ $opt_nocasematch ]] && shopt -s nocasematch
 
-  return "$ret"
+  return "$ext"
 }
 
 function mshex/less.impl {

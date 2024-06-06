@@ -17,7 +17,7 @@
 ## mshex/term/set_title         title
 ## mshex/term/set_title.escaped title
 
-((_mshex_term_PragmaOnce>=2)) && return
+((_mshex_term_PragmaOnce>=2)) && return 0
 _mshex_term_PragmaOnce=2
 
 declare "${_mshex_dict_declare[@]//DICTNAME/_mshex_term}"

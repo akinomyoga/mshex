@@ -138,8 +138,8 @@ fi
 function mwg.String.Base64Encode.__get {
   local text="$*" i j s
   if ((${#text}>150)) && [[ $mwg_String_Base64_which ]]; then
-    return=$(echo -n "$text" | base64)
-    return
+    return=$(printf %s "$text" | base64)
+    return 0
   fi
 
   unset 'buff[*]'
