@@ -172,5 +172,5 @@ if ((${#grep_files[@]}>=1)); then
   [[ $optflags == *h* ]] && array#push grep_opts -h # (出力) ファイル名を出力
   [[ $optflags == *n* || $optflags != *[ho]* ]] && array#push grep_opts -n # (出力) 行番号を出力
   [[ $optflags != *[ho]* ]] && array#push grep_opts -H # (出力) ファイル名を出力しない
-  printf '%s\n' "${grep_files[@]}" | xargs grep $color_option "${grep_opts[@]}" "$regexp"
+  printf '%s\0' "${grep_files[@]}" | xargs -0 grep $color_option "${grep_opts[@]}" "$regexp"
 fi
