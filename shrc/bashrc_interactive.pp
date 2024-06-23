@@ -430,11 +430,11 @@ function mshex/alias:git/register-repository {
 function mshex/alias:git {
   if (($#==0)); then
     # printf '\e[1m$ git status\e[m\n'
-    git -c color.status=always status --ignore-submodules=untracked --column=always || return 1
+    git --no-pager -c color.status=always status --ignore-submodules=untracked --column=always || return 1
     printf '\n\e[1m$ git branch\e[m\n'
-    git -c color.ui=always branch -vv
+    git --no-pager -c color.ui=always branch -vv
     printf '\n\e[1m$ git remote\e[m\n'
-    git -c color.ui=always remote -v | gawk '
+    git --no-pager -c color.ui=always remote -v | gawk '
       function flush_remote() {
         if (g_header) {
           print g_header " (" g_tag ")";
