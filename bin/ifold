@@ -195,6 +195,9 @@ function ifold_core {
 
     textJustify=ENVIRON["fTextJustify"]!="";
 
+    # c_justify_fill = "distribute";
+    c_justify_fill = "left";
+
     CW_WEST=0;
     CW_EAST=1;
     charWidth=ENVIRON["fCharWidth"];
@@ -219,13 +222,9 @@ function ifold_core {
   }
 
   function max(a,b){return a>b?a:b;}
-  function strrepeat(STR,COUNT, ret){
-    ret="";
-    for(;COUNT>0;COUNT=rshift(COUNT,1)){
-      if(and(COUNT,1))ret=ret STR;
-      STR=STR STR;
-    }
-    return ret;
+
+  function strpad(count) {
+    return sprintf("%*s", count, "");
   }
 
   #----------------------------------------------------------------------------
@@ -244,19 +243,26 @@ function ifold_core {
   #----------------------------------------------------------------------------
   # line_breaking = spaces
 
-  function construct_line_from_words(words,start,end,padding, _s,_i,_iN,_nsep,_ipad,_ipadPrev){
-    if(start>=end)return "";
+  function construct_line_from_words(words, start, end, padding, _, ret, i, iN, sep_count, pad1, ipad, ipad_prev) {
+    if (start >= end) return "";
 
-    _s=words[start];
-    _iN=end-start;
-    _nsep=_iN-1;
-    _ipadPrev=0;
-    for(_i=1;_i<_iN;_i++){
-      _ipad=int(padding*_i/_nsep+0.5);
-      _s=_s strrepeat(" ",1+_ipad-_ipadPrev) words[start+_i];
-      _ipadPrev=_ipad;
+    ret = words[start];
+    iN = end - start;
+    sep_count = iN - 1;
+    ipad_prev = 0;
+    for (i = 1; i < iN; i++) {
+      if (c_justify_fill == "distribute") {
+        ipad = int(padding * i / sep_count + 0.5);
+        pad1 = ipad - ipad_prev;
+        ipad_prev = ipad;
+      } else if (c_justify_fill == "left") {
+        pad1 = int(padding / sep_count) + (iN - i <= padding % sep_count ? 1 : 0);
+      }
+
+      ret = ret strpad(1 + pad1) words[start + i];
     }
-    return _s;
+
+    return ret;
   }
 
   function spaces_words2lines(lines,nword,words,width, nline,lw,i,j,wlen,ladd,rest,padding){
@@ -529,29 +535,34 @@ function ifold_core {
     return _count;
   }
 
-  function ea_concat(clusters,start,end,padding, _scount,_ipad,_ipad_prev,_ret,i){
-    _ret="";
+  function ea_concat(clusters, start, end, padding, _, i, ret, sep_count, sep_index, pad1, ipad, ipad_prev){
+    ret = "";
 
-    if(padding){
-      _scount=0;
-      for(i=start;i<end;i++)
-        if(clusters[i] ~ /^([ \t]+|.*[：；，、。．？！])$/)_scount++;
+    if (padding) {
+      sep_count = 0;
+      for(i = start; i < end; i++)
+        if (clusters[i] ~ /^([ \t]+|.*[：；，、。．？！])$/) sep_count++;
 
-      _ipad_prev=0;
-      _si=0;
+      ipad_prev = 0;
+      sep_index = 0;
     }
 
-    for(i=start;i<end;i++){
-      if(padding&&(clusters[i] ~ /^([ \t]+|.*[：；，、。．？！])$/)){
-        _ipad=int(padding*++_si/_scount+0.5);
-        _ret=_ret clusters[i] strrepeat(" ",_ipad-_ipad_prev);
-        _ipad_prev=_ipad;
+    for (i = start; i < end; i++) {
+      if (padding && (clusters[i] ~ /^([ \t]+|.*[：；，、。．？！])$/)) {
+        if (c_justify_fill == "distribute") {
+          ipad = int(padding * ++sep_index / sep_count + 0.5);
+          pad1 = ipad - ipad_prev;
+          ipad_prev = ipad;
+        } else {
+          pad1 = int(padding / sep_count) + (sep_count - ++sep_index < padding % sep_count ? 1: 0);
+        }
+        ret = ret clusters[i] strpad(pad1);
         continue;
       }
 
-      _ret=_ret clusters[i];
+      ret = ret clusters[i];
     }
-    return _ret;
+    return ret;
   }
   function east_asian_fold(content,lines,width,tabOffset, _lcount,_clusters,_count,_limit,c,cw,offset,j,i,rest,l0,l1,padding,nc){
     width=max(1,width);
@@ -563,7 +574,7 @@ function ifold_core {
       c=_clusters[i];
 
       cw=c2w_a2w(c,offset,_limit);
-      if(c ~ /^[ \t]+$/)c=strrepeat(" ",cw);
+      if (c ~ /^[ \t]+$/) c = strpad(cw);
       rest=_limit-offset;
       if(cw<=rest){
         offset+=cw;
@@ -693,7 +704,7 @@ function ifold_core {
     if(flagCheckSgr)sgr_update(lines[0]);
     if(nline>1){
       if(indentType==IT_SPACES)
-        indent=strrepeat(" ",indentWidth);
+        indent = strpad(indentWidth);
       if(flagCheckSgr){
         indent=indentSgr indent;
         for(i=1;i<nline;i++){
