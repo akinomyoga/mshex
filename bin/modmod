@@ -52,7 +52,7 @@ fi | awk '
     next;
   }
 
-  /^(.*\/)?[^./]+$/ {
+  /^(.*\/)?[^./]+$|^(M|GNUm)akefile$|^(README|LICENSE|ChangeLog)$/ {
     print "o" $0;
     next;
   }
