@@ -265,14 +265,14 @@ function mshex/alias:make/scan-arguments {
 ##   @var[out] handler taskfile chdir
 function mshex/alias:make/detect-taskfile {
   local dir=${1:-.}
-  if [[ -f $dir/GNUmakefile ]]; then
-    handler=make taskfile=$dir/GNUmakefile chdir=${2:+$dir}
-  elif [[ -f $dir/Makefile ]]; then
-    handler=make taskfile=$dir/Makefile chdir=${2:+$dir}
-  elif [[ -f $dir/build.ninja ]]; then
-    handler=ninja taskfile=$dir/build.ninja chdir=${2:+$dir}
-  elif [[ -f $dir/Cargo.toml ]]; then
-    handler=cargo taskfile=$dir/Cargo.toml chdir=${2:+$dir}
+  if [[ -f ${dir%/}/GNUmakefile ]]; then
+    handler=make taskfile=${dir%/}/GNUmakefile chdir=${2:+$dir}
+  elif [[ -f ${dir%/}/Makefile ]]; then
+    handler=make taskfile=${dir%/}/Makefile chdir=${2:+$dir}
+  elif [[ -f ${dir%/}/build.ninja ]]; then
+    handler=ninja taskfile=${dir%/}/build.ninja chdir=${2:+$dir}
+  elif [[ -f ${dir%/}/Cargo.toml ]]; then
+    handler=cargo taskfile=${dir%/}/Cargo.toml chdir=${2:+$dir}
   else
     return 1
   fi
