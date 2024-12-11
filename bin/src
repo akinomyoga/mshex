@@ -12,6 +12,44 @@ function dispatch:--help {
   echo
 }
 
+function dispatch:loc {
+  local -a files=()
+  local file
+  for file; do
+    if [[ -f $file && ! -h $file ]]; then
+      files+=("$file")
+    fi
+  done
+
+  gawk '
+    BEGINFILE {
+      g_line = 0;
+      g_space = 0;
+      g_comment = 0;
+      g_char = 0;
+    }
+
+    /^[[:space:]]*$/ { g_space++; }
+    /^[[:space:]]*#/ { g_comment++; }
+    { g_line++; g_char += length($0); }
+
+    function print_file_info() {
+      loc  = g_line - g_space;
+      sloc = loc - g_comment;
+      g_total_line += g_line;
+      g_total_loc  += loc;
+      g_total_sloc += sloc;
+      g_total_char += g_char;
+      printf("%7d %7d %7d %8d %s\n", g_line, loc, sloc, g_char, FILENAME);
+    }
+
+    ENDFILE { print_file_info(); }
+    END {
+      printf("%7d %7d %7d %8d %s\n", g_total_line, g_total_loc, g_total_sloc, g_total_char, "total");
+    }
+  ' "${files[@]}"
+}
+
 if declare -f dispatch:"$1" &>/dev/null; then
   dispatch:"$1" "${@:2}"
 elif [[ ! $1 ]]; then
