@@ -413,17 +413,27 @@ function mshex/alias:git/register-repository {
     ')
   [[ $name ]] || return 0
 
+  local link=
   local link0=${MWGDIR:-$HOME/.mwg}/git/$name
-  local link=$link0 index=1
-  while [[ -e $link || -L $link ]]; do
-    if [[ -d $link ]]; then
-      local link_path=$(readlink -f "$link")
-      [[ ${link_path%/} == "${repository_path%/}" ]] && return 0
+  local link1=$link0 index=1
+  while [[ -e $link1 || -L $link1 ]]; do
+    if [[ ! -e $link1 ]]; then
+      [[ $link ]] || link=$link1
+    elif [[ -L $link1 ]]; then
+      # If there is already a symbolic link that points to the current
+      # repository, we skip creating a new symbolic link.
+      local link1_path=$(readlink -f "$link1")
+      [[ ${link1_path%/} == "${repository_path%/}" ]] && return 0
     fi
-    link=$link0+$((index++))
+    link1=$link0+$((index++))
   done
 
   mshex/mkd "${link%/*}"
+  if [[ -L $link ]]; then
+    printf '%s\n' '# removing the following link'
+    ls -l "$link"
+    rm -f "$link"
+  fi
   ln -s "$repository_path" "$link"
 }
 function mshex/alias:git {
