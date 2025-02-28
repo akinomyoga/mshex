@@ -1139,20 +1139,33 @@ zshaddhistory() {
 }
 
 #%%elif mode=="bash"
-# Note: bash --norc で起動した時に履歴が消滅するのを防ぐ為 export する
-export HISTSIZE=
-export HISTFILESIZE=
-HISTIGNORE='?:fg:fg *'
-HISTCONTROL='ignoredups'
-export LINES COLUMNS
-shopt -s checkwinsize
-shopt -s histappend
-#shopt -s histverify
-shopt -s histreedit
-shopt -u hostcomplete
-shopt -s failglob
-((_ble_bash)) ||
-  shopt -s no_empty_cmd_completion
+
+function mshex/bashrc/initialize-history {
+  unset -f "$FUNCNAME"
+
+  # Note: bash --norc で起動した時に履歴が消滅するのを防ぐ為 export する
+  export HISTSIZE=
+  export HISTFILESIZE=
+  HISTIGNORE='?:fg:fg *'
+  HISTCONTROL='ignoredups'
+  export LINES COLUMNS
+  shopt -s checkwinsize
+  shopt -s histappend
+  #shopt -s histverify
+  shopt -s histreedit
+  shopt -u hostcomplete
+  shopt -s failglob
+  ((_ble_bash)) || shopt -s no_empty_cmd_completion
+
+
+  if type -P -- mksh &>/dev/null; then
+    local cmd
+    for cmd in $(compgen -c mksh | sort -u); do
+      eval -- "function $cmd { HISTSIZE=$((0x7FFF7FFF)) command $cmd \"\$@\"; }"
+    done
+  fi
+}
+mshex/bashrc/initialize-history
 
 #%%)
 
