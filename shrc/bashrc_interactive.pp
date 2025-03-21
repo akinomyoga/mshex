@@ -439,178 +439,187 @@ function mshex/alias:git/register-repository {
   fi
   ln -s "$repository_path" "$link"
 }
+
+function mshex/alias:git/status/print-branches {
+  git --no-pager -c color.ui=never branch -vv | gawk '
+    function max(a, b) { return a >= b ? a : b; }
+    function min(a, b) { return a <= b ? a : b; }
+
+    BEGIN {
+      g_branch_count = 0;
+      g_others_count = 0;
+      g_col1w = 0;
+      g_col2w = 0;
+      g_col3w = 0;
+
+      COLUMNS = 0 + ENVIRON["COLUMNS"];
+      if (COLUMNS == 0) COLUMNS = 80;
+    }
+
+    function process_line(line, _, m, name, hash, desc, col1, col2, col1w, col2w) {
+      if (match(line, /^(..)([^[:space:]]+)([[:space:]]+)([0-9a-f]+)/, m) <= 0) return 0;
+      desc = substr(line, RLENGTH + 1);
+      sub(/^[[:space:]]+/, "", desc);
+
+      # col1
+      name = m[2];
+      if (m[1] ~ /\*/) {
+        name = "\x1b[1;7m" name "\x1b[m";
+      }
+      hash = "\x1b[34m" m[4] "\x1b[m";
+      col1 = m[1] name;
+      col1w = 2 + length(m[2]);
+      col2 = hash;
+      col2w = length(m[4]);
+      col3 = "";
+      col3w = 0;
+
+      if (match(desc, /^\[([^][[:space:]:/]+)\/([^][[:space:]:]+)(: [[:alnum:][:space:],]+)?\]/, m2)) {
+        desc = substr(desc, RLENGTH + 1);
+        sub(/^[[:space:]]+/, "", desc);
+        desc = "[\x1b[1m" m2[1] "/" m2[2] "\x1b[m" m2[3] "] " desc;
+
+        col3 = "-> \x1b[1m" m2[1] "\x1b[m";
+        col3w = 3 + length(m2[1]);
+
+        if (match(m2[3], /\yahead ([0-9]+)/, m3)) {
+          col1 = col1 " \x1b[1;7;32m+" m3[1] "\x1b[m";
+          col1w += length(m3[1]) + 2;
+        }
+        if (match(m2[3], /\ybehind ([0-9]+)/, m3)) {
+          col1 = col1 " \x1b[1;7;31m+" m3[1] "\x1b[m";
+          col1w += length(m3[1]) + 2;
+        }
+      }
+
+      if (g_col1w < col1w) g_col1w = col1w;
+      if (g_col2w < col2w) g_col2w = col2w;
+      if (g_col3w < col3w) g_col3w = col3w;
+      g_branch[g_branch_count, "col1"] = col1;
+      g_branch[g_branch_count, "col1w"] = col1w;
+      g_branch[g_branch_count, "col2"] = col2;
+      g_branch[g_branch_count, "col2w"] = col2w;
+      g_branch[g_branch_count, "col3"] = col3;
+      g_branch[g_branch_count, "col3w"] = col3w;
+      g_branch[g_branch_count, "desc"] = desc;
+      g_branch_count++;
+
+      return 1;
+    }
+
+    function print_branches(_, i, j, ncol, nrow, col1, col2, col3, line) {
+      if (g_branch_count <= 8) {
+        for (i = 0; i < g_branch_count; i++) {
+          col1 = sprintf("%s%*s", g_branch[i, "col1"], g_col1w - g_branch[i, "col1w"], "");
+          col2 = sprintf("%s%*s", g_branch[i, "col2"], g_col2w - g_branch[i, "col2w"], "");
+          print col1 " " col2 " " g_branch[i, "desc"];
+        }
+      } else {
+        wcol = g_col1w + g_col2w + g_col3w + 5;
+        ncol = max(1, min(sqrt(int(g_branch_count) * 1.5), int(COLUMNS / wcol)));
+        nrow = int((g_branch_count + ncol - 1) / ncol);
+        for (i = 0; i < nrow; i++) {
+          line = "";
+          for (j = i; j < g_branch_count; j += nrow) {
+            col1 = sprintf("%s%*s", g_branch[j, "col1"], g_col1w - g_branch[j, "col1w"], "");
+            col2 = sprintf("%s%*s", g_branch[j, "col2"], g_col2w - g_branch[j, "col2w"], "");
+            col3 = sprintf("%s%*s", g_branch[j, "col3"], g_col3w - g_branch[j, "col3w"], "");
+            line = line " | " col1 " " col2 " " col3;
+          }
+          print substr(line, 4);
+        }
+      }
+    }
+
+    function print_others(_, i) {
+      for (i = 0; i < g_others_count; i++)
+        print g_others[i];
+    }
+
+    process_line($0) { next; }
+    { g_others[g_others_count++] = "\x1b[31m" $0 "\x1b[m"; }
+
+    END {
+      print_branches();
+      print_others();
+    }
+  '
+}
+
+function mshex/alias:git/status/print-remote {
+  git --no-pager -c color.ui=always remote -v | gawk '
+    BEGIN {
+      g_remote_list_count = 0;
+      COLUMNS = 0 + ENVIRON["COLUMNS"];
+      if (COLUMNS == 0) COLUMNS = 80;
+      c_max_columns = max(1, int(COLUMNS / 16));
+    }
+
+    function max(a, b) { return a >= b ? a : b; }
+    function div_ceil(a, b) { return int((a + b - 1) / b); }
+
+    function flush_remote() {
+      if (g_header) {
+        g_remote_list[g_remote_list_count] = g_header;
+        g_remote_list[g_remote_list_count, "tag"] = g_tag;
+        g_remote_list_count++;
+        g_header = "";
+      }
+    }
+    function update_remote(header, tag) {
+      if (header != g_header) {
+        flush_remote();
+        g_header = header;
+        g_tag = tag;
+      } else {
+        g_tag = g_tag ", " tag;
+      }
+    }
+    match($0, / \([^()]+\)$/) >= 2 {
+      header = substr($0, 1, RSTART - 1);
+      tag = substr($0, RSTART + 2, RLENGTH - 3);
+      update_remote(header, tag);
+      next;
+    }
+
+    function remote_dump(_, i, j, header, tag, nline, line) {
+      if (g_remote_list_count <= 5) {
+        for (i = 0; i < g_remote_list_count; i++) {
+          header = g_remote_list[i];
+          tag = g_remote_list[i, "tag"];
+          print header " (" tag ")";
+        }
+      } else {
+        nline = max(int(sqrt(g_remote_list_count / 2)), div_ceil(g_remote_list_count, c_max_columns));
+        for (i = 0; i < nline; i++) {
+          line = "";
+          for (j = i; j < g_remote_list_count; j += nline) {
+            header = g_remote_list[j];
+            gsub(/^[[:space:]]+|[[:space:]].*$/, "", header);
+            line = line sprintf("%-15s ", header);
+          }
+          sub(/[[:space:]]+$/, "", line);
+          print line;
+        }
+      }
+    }
+
+    { flush_remote(); print $0; }
+    END {
+      flush_remote();
+      remote_dump();
+    }
+  '
+}
+
 function mshex/alias:git {
   if (($#==0)); then
     # printf '\e[1m$ git status\e[m\n'
     git --no-pager -c color.status=always status --ignore-submodules=untracked --column=always || return 1
     printf '\n\e[1m$ git branch\e[m\n'
-    git --no-pager -c color.ui=never branch -vv | gawk '
-      function max(a, b) { return a >= b ? a : b; }
-      function min(a, b) { return a <= b ? a : b; }
-
-      BEGIN {
-        g_branch_count = 0;
-        g_others_count = 0;
-        g_col1w = 0;
-        g_col2w = 0;
-        g_col3w = 0;
-
-        COLUMNS = 0 + ENVIRON["COLUMNS"];
-        if (COLUMNS == 0) COLUMNS = 80;
-      }
-
-      function process_line(line, _, m, name, hash, desc, col1, col2, col1w, col2w) {
-        if (match(line, /^(..)([^[:space:]]+)([[:space:]]+)([0-9a-f]+)/, m) <= 0) return 0;
-        desc = substr(line, RLENGTH + 1);
-        sub(/^[[:space:]]+/, "", desc);
-
-        # col1
-        name = m[2];
-        if (m[1] ~ /\*/) {
-          name = "\x1b[1;7m" name "\x1b[m";
-        }
-        hash = "\x1b[34m" m[4] "\x1b[m";
-        col1 = m[1] name;
-        col1w = 2 + length(m[2]);
-        col2 = hash;
-        col2w = length(m[4]);
-        col3 = "";
-        col3w = 0;
-
-        if (match(desc, /^\[([^][[:space:]:/]+)\/([^][[:space:]:]+)(: [[:alnum:][:space:],]+)?\]/, m2)) {
-          desc = substr(desc, RLENGTH + 1);
-          sub(/^[[:space:]]+/, "", desc);
-          desc = "[\x1b[1m" m2[1] "/" m2[2] "\x1b[m" m2[3] "] " desc;
-
-          col3 = "-> \x1b[1m" m2[1] "\x1b[m";
-          col3w = 3 + length(m2[1]);
-
-          if (match(m2[3], /\yahead ([0-9]+)/, m3)) {
-            col1 = col1 " \x1b[1;7;32m+" m3[1] "\x1b[m";
-            col1w += length(m3[1]) + 2;
-          }
-          if (match(m2[3], /\ybehind ([0-9]+)/, m3)) {
-            col1 = col1 " \x1b[1;7;31m+" m3[1] "\x1b[m";
-            col1w += length(m3[1]) + 2;
-          }
-        }
-
-        if (g_col1w < col1w) g_col1w = col1w;
-        if (g_col2w < col2w) g_col2w = col2w;
-        if (g_col3w < col3w) g_col3w = col3w;
-        g_branch[g_branch_count, "col1"] = col1;
-        g_branch[g_branch_count, "col1w"] = col1w;
-        g_branch[g_branch_count, "col2"] = col2;
-        g_branch[g_branch_count, "col2w"] = col2w;
-        g_branch[g_branch_count, "col3"] = col3;
-        g_branch[g_branch_count, "col3w"] = col3w;
-        g_branch[g_branch_count, "desc"] = desc;
-        g_branch_count++;
-
-        return 1;
-      }
-
-      function print_branches(_, i, j, ncol, nrow, col1, col2, col3, line) {
-        if (g_branch_count <= 8) {
-          for (i = 0; i < g_branch_count; i++) {
-            col1 = sprintf("%s%*s", g_branch[i, "col1"], g_col1w - g_branch[i, "col1w"], "");
-            col2 = sprintf("%s%*s", g_branch[i, "col2"], g_col2w - g_branch[i, "col2w"], "");
-            print col1 " " col2 " " g_branch[i, "desc"];
-          }
-        } else {
-          wcol = g_col1w + g_col2w + g_col3w + 5;
-          ncol = max(1, min(sqrt(int(g_branch_count) * 1.5), int(COLUMNS / wcol)));
-          nrow = int((g_branch_count + ncol - 1) / ncol);
-          for (i = 0; i < nrow; i++) {
-            line = "";
-            for (j = i; j < g_branch_count; j += nrow) {
-              col1 = sprintf("%s%*s", g_branch[j, "col1"], g_col1w - g_branch[j, "col1w"], "");
-              col2 = sprintf("%s%*s", g_branch[j, "col2"], g_col2w - g_branch[j, "col2w"], "");
-              col3 = sprintf("%s%*s", g_branch[j, "col3"], g_col3w - g_branch[j, "col3w"], "");
-              line = line " | " col1 " " col2 " " col3;
-            }
-            print substr(line, 4);
-          }
-        }
-      }
-
-      function print_others(_, i) {
-        for (i = 0; i < g_others_count; i++)
-          print g_others[i];
-      }
-
-      process_line($0) { next; }
-      { g_others[g_others_count++] = "\x1b[31m" $0 "\x1b[m"; }
-
-      END {
-        print_branches();
-        print_others();
-      }
-    '
+    mshex/alias:git/status/print-branches
     printf '\n\e[1m$ git remote\e[m\n'
-    git --no-pager -c color.ui=always remote -v | gawk '
-      BEGIN {
-        g_remote_list_count = 0;
-        COLUMNS = 0 + ENVIRON["COLUMNS"];
-        if (COLUMNS == 0) COLUMNS = 80;
-        c_max_columns = max(1, int(COLUMNS / 16));
-      }
-
-      function max(a, b) { return a >= b ? a : b; }
-      function div_ceil(a, b) { return int((a + b - 1) / b); }
-
-      function flush_remote() {
-        if (g_header) {
-          g_remote_list[g_remote_list_count] = g_header;
-          g_remote_list[g_remote_list_count, "tag"] = g_tag;
-          g_remote_list_count++;
-          g_header = "";
-        }
-      }
-      function update_remote(header, tag) {
-        if (header != g_header) {
-          flush_remote();
-          g_header = header;
-          g_tag = tag;
-        } else {
-          g_tag = g_tag ", " tag;
-        }
-      }
-      match($0, / \([^()]+\)$/) >= 2 {
-        header = substr($0, 1, RSTART - 1);
-        tag = substr($0, RSTART + 2, RLENGTH - 3);
-        update_remote(header, tag);
-        next;
-      }
-
-      function remote_dump(_, i, j, header, tag, nline, line) {
-        if (g_remote_list_count <= 5) {
-          for (i = 0; i < g_remote_list_count; i++) {
-            header = g_remote_list[i];
-            tag = g_remote_list[i, "tag"];
-            print header " (" tag ")";
-          }
-        } else {
-          nline = max(int(sqrt(g_remote_list_count / 2)), div_ceil(g_remote_list_count, c_max_columns));
-          for (i = 0; i < nline; i++) {
-            line = "";
-            for (j = i; j < g_remote_list_count; j += nline) {
-              header = g_remote_list[j];
-              gsub(/^[[:space:]]+|[[:space:]].*$/, "", header);
-              line = line sprintf("%-15s ", header);
-            }
-            sub(/[[:space:]]+$/, "", line);
-            print line;
-          }
-        }
-      }
-
-      { flush_remote(); print $0; }
-      END {
-        flush_remote();
-        remote_dump();
-      }
-    '
+    mshex/alias:git/status/print-remote
     printf '\n\e[1m$ git log -n 10\e[m\n'
     mshex/alias:git t -n 10
     mshex/alias:git/register-repository
