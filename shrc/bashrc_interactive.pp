@@ -649,7 +649,37 @@ function mshex/alias:git {
 
     case "$1" in
     (u) git add -u ;;
-    (l) ls -ld $(git ls-files "${@:2}" | sed 's:/.*::' | uniq) ;;
+    (l)
+      if (($#>=2)); then
+        ls -ld $(
+          { echo '_mshex_alias_git_mode=input'
+            printf '%s\n' "${@:2}"
+            echo '_mshex_alias_git_mode=filter'
+            git ls-files "${@:2}"
+          } | gawk '
+            function starts_with(str, needle) { return substr(str, 1, length(needle)) == needle; }
+            BEGIN { g_input_count = 0; }
+            match($0, /^_mshex_alias_git_mode=(.*)$/, m) { mode = m[1]; next; }
+            mode == "input" { g_input[g_input_count++] = $0; next; }
+            {
+              file = $0;
+              sub(/\/.*$/, "", file);
+              for (i = 0; i < g_input_count; i++) {
+                if ($0 == g_input[i]) {
+                  file = $0;
+                } else if (starts_with($0, g_input[i] "/")) {
+                  tail = substr($0, length(g_input[i] "/") + 1);
+                  sub(/\/.*$/, "", tail);
+                  file = g_input[i] "/" tail;
+                }
+              }
+              if (!uniq[file]++) print file;
+            }
+          '
+        )
+      else
+        ls -ld $(git ls-files | sed 's:/.*::' | uniq)
+      fi ;;
     (lr) ls -ld $(git ls-files "${@:2}") ;; # recursive version of "g l"
     (wc) wc $(git ls-files "${@:2}") ;;
 
