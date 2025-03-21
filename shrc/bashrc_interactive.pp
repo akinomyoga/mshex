@@ -392,6 +392,8 @@ function mshex/alias:git/register-repository {
   [[ $repository_path == "$HOME"/git/* ]] &&
     mshex/string#match "${repository_path#$HOME/git/}" '^[^/]+/[^/]+$' &&
     return 0
+  [[ $repository_path == ${MWGDIR:-$HOME/.mwg}/git/* ]] &&
+    return 0
 
   local name=$(
     git remote -v | gawk '
@@ -427,6 +429,7 @@ function mshex/alias:git/register-repository {
     fi
     link1=$link0+$((index++))
   done
+  [[ $link ]] || link=$link1
 
   mshex/mkd "${link%/*}"
   if [[ -L $link ]]; then
