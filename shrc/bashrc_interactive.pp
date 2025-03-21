@@ -441,7 +441,12 @@ function mshex/alias:git/register-repository {
 }
 
 function mshex/alias:git/status/print-branches {
-  git --no-pager -c color.ui=never branch -vv | gawk '
+  {
+    echo _mshex_alias_git_status_mode=remote
+    git --no-pager -c color.ui=never remote
+    echo _mshex_alias_git_status_mode=branch
+    git --no-pager -c color.ui=never branch -vv
+  } | gawk '
     function max(a, b) { return a >= b ? a : b; }
     function min(a, b) { return a <= b ? a : b; }
 
@@ -452,8 +457,24 @@ function mshex/alias:git/status/print-branches {
       g_col2w = 0;
       g_col3w = 0;
 
+      g_remote_list = ",";
+
       COLUMNS = 0 + ENVIRON["COLUMNS"];
       if (COLUMNS == 0) COLUMNS = 80;
+    }
+
+    match($0, /^_mshex_alias_git_status_mode=(.*)$/, m) {
+      g_mode = m[1];
+      next;
+    }
+
+    g_mode == "remote" {
+      g_remote_list = g_remote_list $1 ","
+      next;
+    }
+    function is_remote(name, _, reg) {
+      reg = "," name ",";
+      return g_remote_list ~ reg;
     }
 
     function process_line(line, _, m, name, hash, desc, col1, col2, col1w, col2w) {
@@ -474,7 +495,7 @@ function mshex/alias:git/status/print-branches {
       col3 = "";
       col3w = 0;
 
-      if (match(desc, /^\[([^][[:space:]:/]+)\/([^][[:space:]:]+)(: [[:alnum:][:space:],]+)?\]/, m2)) {
+      if (match(desc, /^\[([^][[:space:]:/]+)\/([^][[:space:]:]+)(: [[:alnum:][:space:],]+)?\]/, m2) && is_remote(m2[1])) {
         desc = substr(desc, RLENGTH + 1);
         sub(/^[[:space:]]+/, "", desc);
         desc = "[\x1b[1m" m2[1] "/" m2[2] "\x1b[m" m2[3] "] " desc;
